@@ -11,7 +11,7 @@ import PerpanjangView from './views/PerpanjangView';
 import LelangView from './views/LelangView';
 
 import { getActiveSession, logoutSession } from './config/auth';
-import { getStoredUnits, subscribeToStoreUpdates, finishChargingUnit } from './services/storage';
+import { getStoredUnits, subscribeToStoreUpdates, finishChargingUnit, autoEnqueueOverdueUnits } from './services/storage';
 import { playChimeSound, sendNativeNotification } from './services/soundNotification';
 
 export default function App() {
@@ -26,6 +26,18 @@ export default function App() {
   // Track if completion sound was already played for current charging session
   const [finishedAlarmFired, setFinishedAlarmFired] = useState(false);
 
+  // Otomatis masukkan unit yang >= 15 hari belum di-charge saat aplikasi dibuka
+  useEffect(() => {
+    const { newlyEnqueued } = autoEnqueueOverdueUnits();
+    if (newlyEnqueued > 0) {
+      setToast({
+        title: "Antrian Otomatis Terisi",
+        message: `${newlyEnqueued} sepeda listrik yang sudah ≥15 hari belum di-charge otomatis diprioritaskan di antrian teratas.`,
+        type: "info"
+      });
+    }
+  }, []);
+
   // Subscribe to real-time storage & cross-tab sync
   useEffect(() => {
     const unsubscribe = subscribeToStoreUpdates((updated) => {
@@ -37,24 +49,21 @@ export default function App() {
   // Monitor charging timer completion and trigger chime sound + notification
   useEffect(() => {
     const interval = setInterval(() => {
-      const chargingUnit = units.find(u => u.statusCharger === 'CHARGING');
-      if (chargingUnit && chargingUnit.chargeEndAt) {
-        const remaining = chargingUnit.chargeEndAt - Date.now();
-        if (remaining <= 0 && !finishedAlarmFired) {
-          setFinishedAlarmFired(true);
-          playChimeSound();
-          sendNativeNotification("⚡ Waktu Pengisian 3 Jam Selesai!", {
-            body: `Sepeda #${chargingUnit.kodeGadai} (${chargingUnit.merkSepeda}) telah selesai diisi daya!`
-          });
-          setToast({
-            title: "Pengisian Selesai!",
-            message: `Waktu pengisian 3 jam untuk unit #${chargingUnit.kodeGadai} telah habis. Klik tombol Selesai untuk menaikkan antrian berikutnya.`,
-            type: "success"
-          });
-        } else if (remaining > 0 && finishedAlarmFired) {
-          setFinishedAlarmFired(false);
-        }
-      } else if (!chargingUnit && finishedAlarmFired) {
+      const activeCharging = units.filter(u => u.statusCharger === 'CHARGING');
+      const finished = activeCharging.find(u => u.chargeEndAt && u.chargeEndAt <= Date.now());
+
+      if (finished && !finishedAlarmFired) {
+        setFinishedAlarmFired(true);
+        playChimeSound();
+        sendNativeNotification("⚡ Pengisian Daya Selesai!", {
+          body: `Sepeda #${finished.kodeGadai} (${finished.merkSepeda}) telah selesai di-charge!`
+        });
+        setToast({
+          title: "Slot Charger Selesai!",
+          message: `Waktu pengisian untuk unit #${finished.kodeGadai} telah habis. Klik tombol Selesai untuk menaikkan antrian berikutnya.`,
+          type: "success"
+        });
+      } else if (!finished && finishedAlarmFired) {
         setFinishedAlarmFired(false);
       }
     }, 2000);

@@ -1,5 +1,7 @@
-export const MAX_QUEUE_LIMIT = 2;
 export const DEFAULT_CHARGE_DURATION_MS = 3 * 60 * 60 * 1000; // 3 Jam Standar (10.800.000 ms)
+export const DEFAULT_SLOTS_CAPACITY = 2; // Default 2 slot charger aktif (bisa ditambah/dikurangi)
+export const MIN_SLOTS_CAPACITY = 1;
+export const MAX_SLOTS_CAPACITY = 10;
 
 export const CHARGE_PRESETS = [
   { label: '1 Jam', ms: 1 * 60 * 60 * 1000, desc: 'Top-Up / Cek Arus' },
@@ -47,32 +49,69 @@ export const BATTERY_CONDITIONS = {
 };
 
 /**
- * Validasi kode gadai: Mendukung format angka unik maupun format sistem akad gadai (contoh: 26_0037861 atau 2026110045)
+ * Validasi kode gadai: Mendukung format alfanumerik / kode akad (contoh: 26_0037861)
  */
 export function isValidKodeGadai(code) {
   return typeof code === 'string' && /^[A-Za-z0-9_-]+$/.test(code.trim());
 }
 
 /**
- * Mengurutkan antrian dengan prioritas baterai paling rendah di paling atas (#1)
- * Jika persentase baterai sama persis, unit yang didaftarkan lebih dulu (queuedAt lebih awal) ditempatkan di atas.
+ * Hitung hari sejak terakhir di-charge
+ */
+export function getDaysSinceLastCharge(lastChargedAt, fallbackTimestamp) {
+  const ref = Number(lastChargedAt) || Number(fallbackTimestamp) || Date.now();
+  const diff = Math.max(0, Date.now() - ref);
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Prioritas Antrian Otomatis:
+ * 1. Unit yang sudah >= 15 hari belum di-charge SELALU di atas (#1).
+ * 2. Di antara yang >= 15 hari, yang terlama hari (paling darurat) paling atas.
+ * 3. Persentase baterai paling rendah.
+ * 4. Waktu masuk antrian lebih awal.
  */
 export function sortWaitingQueue(waitingUnits) {
   return [...waitingUnits].sort((a, b) => {
-    const batA = Number(a.batteryLevel ?? 0);
-    const batB = Number(b.batteryLevel ?? 0);
-    if (batA !== batB) {
-      return batA - batB; // Ascending: Baterai terendah di Urutan #1
+    const daysA = getDaysSinceLastCharge(a.lastChargedAt, a.jatuhTempoAt ? a.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null);
+    const daysB = getDaysSinceLastCharge(b.lastChargedAt, b.jatuhTempoAt ? b.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null);
+
+    const isOverdueA = daysA >= 15;
+    const isOverdueB = daysB >= 15;
+
+    // Prioritas 1: Kritis >= 15 hari di paling atas
+    if (isOverdueA && !isOverdueB) return -1;
+    if (!isOverdueA && isOverdueB) return 1;
+
+    // Jika sama-sama >= 15 hari: yang harinya lebih banyak (terlama belum charge) di atas
+    if (isOverdueA && isOverdueB) {
+      if (daysA !== daysB) {
+        return daysB - daysA; // Descending hari: 30 hari di atas 15 hari
+      }
     }
-    return (a.queuedAt || 0) - (b.queuedAt || 0); // Tie-breaker: waktu masuk antrian
+
+    // Prioritas 2: Baterai paling rendah
+    const batA = Number(a.batteryLevel ?? 100);
+    const batB = Number(b.batteryLevel ?? 100);
+    if (batA !== batB) {
+      return batA - batB; // Ascending: baterai 10% di atas 50%
+    }
+
+    // Prioritas 3: Hari terlama belum charge (untuk yang < 15 hari)
+    if (daysA !== daysB) {
+      return daysB - daysA;
+    }
+
+    // Tie-breaker: waktu antrian
+    return (a.queuedAt || 0) - (b.queuedAt || 0);
   });
 }
 
 /**
- * Validasi apakah unit baru boleh masuk ke antrian (Maksimal 2 unit)
+ * Validasi antrian: Tidak ada batasan jumlah antrian (Unlimited Queue)
  */
-export function canEnqueueUnit(waitingUnits) {
-  return waitingUnits.length < MAX_QUEUE_LIMIT;
+export function canEnqueueUnit() {
+  return true;
 }
 
 /**
@@ -109,12 +148,10 @@ export function getRemainingChargeTime(chargeEndAt, chargeDurationMs = DEFAULT_C
 }
 
 /**
- * Analisis Audit Waktu Terakhir Di-Charge (Smart Alert > 14/15 Hari)
+ * Analisis Audit Waktu Terakhir Di-Charge (Smart Alert >= 15 Hari)
  */
 export function getChargeAuditInfo(lastChargedAt, masukAt) {
-  const refTimestamp = Number(lastChargedAt) || Number(masukAt) || Date.now();
-  const diffMs = Math.max(0, Date.now() - refTimestamp);
-  const daysAgo = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const daysAgo = getDaysSinceLastCharge(lastChargedAt, masukAt);
 
   if (daysAgo < 7) {
     return {
@@ -127,7 +164,7 @@ export function getChargeAuditInfo(lastChargedAt, masukAt) {
     };
   }
 
-  if (daysAgo <= 14) {
+  if (daysAgo < 15) {
     return {
       daysAgo,
       tier: 'PERHATIAN',
@@ -138,7 +175,7 @@ export function getChargeAuditInfo(lastChargedAt, masukAt) {
     };
   }
 
-  // > 14 Hari (Kritis, risiko sel baterai drop/rusak total)
+  // >= 15 Hari (Kritis: Risiko BMS drop & baterai mati total)
   return {
     daysAgo,
     tier: 'KRITIS',

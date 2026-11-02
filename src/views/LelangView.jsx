@@ -15,7 +15,6 @@ import BatteryIndicator from '../components/BatteryIndicator';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import ChargeAuditBadge from '../components/ChargeAuditBadge';
 import { enqueueUnitForCharging, markLelangSold } from '../services/storage';
-import { MAX_QUEUE_LIMIT } from '../services/chargerQueue';
 
 export default function LelangView({ units, onNotify }) {
   const [selectedUnitForSale, setSelectedUnitForSale] = useState(null);
@@ -25,19 +24,8 @@ export default function LelangView({ units, onNotify }) {
 
   const lelangUnits = units.filter(u => u.statusBarang === 'LELANG');
   const soldUnits = units.filter(u => u.statusBarang === 'TERJUAL_LELANG');
-  const waitingCount = units.filter(u => u.statusCharger === 'WAITING').length;
-  const isQueueFull = waitingCount >= MAX_QUEUE_LIMIT;
 
   const handleChargeLelangUnit = (unit) => {
-    if (isQueueFull) {
-      onNotify({
-        title: "Antrian Penuh",
-        message: `Antrian saat ini sudah mencapai batas maksimal (${MAX_QUEUE_LIMIT} unit).`,
-        type: "warning"
-      });
-      return;
-    }
-
     const res = enqueueUnitForCharging(unit.id, unit.batteryLevel);
     if (res.success) {
       onNotify({

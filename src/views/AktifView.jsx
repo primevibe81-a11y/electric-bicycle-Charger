@@ -23,7 +23,7 @@ import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import ChargeAuditBadge from '../components/ChargeAuditBadge';
 import AuditBatteryModal from '../components/AuditBatteryModal';
 import { createGadaiUnit, enqueueUnitForCharging, moveToLelang } from '../services/storage';
-import { MAX_QUEUE_LIMIT, BATTERY_CONDITIONS, getChargeAuditInfo } from '../services/chargerQueue';
+import { BATTERY_CONDITIONS, getChargeAuditInfo } from '../services/chargerQueue';
 
 export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onNavigateToTebus }) {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -42,8 +42,6 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
   const [jatuhTempoDays, setJatuhTempoDays] = useState("30");
 
   const aktifUnits = units.filter(u => u.statusBarang === 'AKTIF');
-  const waitingCount = units.filter(u => u.statusCharger === 'WAITING').length;
-  const isQueueFull = waitingCount >= MAX_QUEUE_LIMIT;
 
   // Filter & Search
   let processedUnits = aktifUnits.filter(u => {
@@ -121,14 +119,6 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
   };
 
   const handleQuickEnqueue = (unit) => {
-    if (isQueueFull) {
-      onNotify({
-        title: "Antrian Penuh",
-        message: `Antrian saat ini sudah mencapai batas maksimal (${MAX_QUEUE_LIMIT} unit).`,
-        type: "warning"
-      });
-      return;
-    }
     const res = enqueueUnitForCharging(unit.id, unit.batteryLevel);
     if (res.success) {
       onNotify({

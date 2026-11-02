@@ -1,10 +1,38 @@
-import { DEFAULT_CHARGE_DURATION_MS, MAX_QUEUE_LIMIT, sortWaitingQueue } from "./chargerQueue";
+import {
+  DEFAULT_CHARGE_DURATION_MS,
+  DEFAULT_SLOTS_CAPACITY,
+  MIN_SLOTS_CAPACITY,
+  MAX_SLOTS_CAPACITY,
+  sortWaitingQueue,
+  getDaysSinceLastCharge
+} from "./chargerQueue";
 import { playChimeSound, playGentleBeep, sendNativeNotification } from "./soundNotification";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { REAL_EXCEL_UNITS } from "../data/realUnits";
 
-const STORAGE_KEY = "ebike_gadai_units_real_v2";
+const STORAGE_KEY = "ebike_gadai_units_real_v3";
+const SLOTS_CAPACITY_KEY = "ebike_charger_slots_capacity";
 const BROADCAST_CHANNEL_NAME = "ebike_gadai_sync_channel";
+
+/**
+ * Pengaturan Kapasitas Slot Charger Dinamis (Bisa ditambah/dikurangi sesuai colokan)
+ */
+export function getChargerSlotsCapacity() {
+  const raw = localStorage.getItem(SLOTS_CAPACITY_KEY);
+  if (!raw) return DEFAULT_SLOTS_CAPACITY;
+  const num = parseInt(raw, 10);
+  if (isNaN(num) || num < MIN_SLOTS_CAPACITY) return DEFAULT_SLOTS_CAPACITY;
+  return Math.min(MAX_SLOTS_CAPACITY, Math.max(MIN_SLOTS_CAPACITY, num));
+}
+
+export function setChargerSlotsCapacity(count) {
+  const valid = Math.min(MAX_SLOTS_CAPACITY, Math.max(MIN_SLOTS_CAPACITY, Number(count) || DEFAULT_SLOTS_CAPACITY));
+  localStorage.setItem(SLOTS_CAPACITY_KEY, String(valid));
+  if (channel) {
+    channel.postMessage({ type: "SLOTS_CAPACITY_CHANGED", capacity: valid });
+  }
+  return valid;
+}
 
 // Helper konversi CamelCase <-> Snake_Case untuk skema Supabase
 export function modelToDb(unit) {
@@ -201,7 +229,7 @@ export function createGadaiUnit(data) {
   return { success: true, unit: newUnit };
 }
 
-// 2. Masukkan unit ke Antrian Charger (Maksimal 2 unit)
+// 2. Masukkan unit ke Antrian Charger (Tanpa batasan jumlah / Unlimited Queue)
 export function enqueueUnitForCharging(unitId, batteryLevel) {
   const units = getStoredUnits();
   const unit = units.find(u => u.id === unitId);
@@ -214,15 +242,7 @@ export function enqueueUnitForCharging(unitId, batteryLevel) {
     return { success: false, message: "Unit ini sudah ada di dalam antrian." };
   }
 
-  const currentWaiting = units.filter(u => u.statusCharger === 'WAITING');
-  if (currentWaiting.length >= MAX_QUEUE_LIMIT) {
-    return {
-      success: false,
-      message: `Antrian penuh (Maksimal ${MAX_QUEUE_LIMIT} unit). Tunggu salah satu unit selesai di-charge.`
-    };
-  }
-
-  // Update unit status to WAITING
+  // Update unit status to WAITING (antrian tidak dibatasi)
   const updatedUnits = units.map(u => {
     if (u.id === unitId) {
       return {
@@ -238,7 +258,35 @@ export function enqueueUnitForCharging(unitId, batteryLevel) {
 
   saveStoredUnits(updatedUnits);
   playGentleBeep();
-  return { success: true, message: `Unit ${unit.kodeGadai} berhasil masuk antrian tunggu.` };
+  return { success: true, message: `Unit #${unit.kodeGadai} berhasil masuk antrian prioritas.` };
+}
+
+// 2b. Otomatis Masukkan Seluruh Unit >= 15 Hari Belum Di-charge ke Antrian
+export function autoEnqueueOverdueUnits() {
+  const units = getStoredUnits();
+  let newlyEnqueued = 0;
+
+  const updated = units.map(u => {
+    if ((u.statusBarang === 'AKTIF' || u.statusBarang === 'LELANG') && u.statusCharger === 'IDLE') {
+      const days = getDaysSinceLastCharge(u.lastChargedAt, u.jatuhTempoAt ? u.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null);
+      if (days >= 15) {
+        newlyEnqueued++;
+        return {
+          ...u,
+          statusCharger: 'WAITING',
+          queuedAt: u.queuedAt || Date.now(),
+          updatedAt: Date.now()
+        };
+      }
+    }
+    return u;
+  });
+
+  if (newlyEnqueued > 0) {
+    saveStoredUnits(updated);
+  }
+
+  return { newlyEnqueued, units: newlyEnqueued > 0 ? updated : units };
 }
 
 // 3. Batalkan antrian unit
@@ -259,17 +307,19 @@ export function cancelWaitingQueue(unitId) {
   return { success: true };
 }
 
-// 4. Mulai pengisian daya untuk sebuah unit (Durasi Dinamis: 1 Jam, 2 Jam, 3 Jam, Kustom)
+// 4. Mulai pengisian daya untuk sebuah unit (Slot Dinamis: Multi-slot charger)
 export function startChargingUnit(unitId, durationMs = DEFAULT_CHARGE_DURATION_MS) {
   const units = getStoredUnits();
   const unit = units.find(u => u.id === unitId);
   if (!unit) return { success: false, message: "Unit tidak ditemukan." };
 
-  const currentCharging = units.find(u => u.statusCharger === 'CHARGING');
-  if (currentCharging && currentCharging.id !== unitId) {
+  const capacity = getChargerSlotsCapacity();
+  const currentChargingUnits = units.filter(u => u.statusCharger === 'CHARGING');
+  
+  if (currentChargingUnits.length >= capacity && !currentChargingUnits.some(u => u.id === unitId)) {
     return {
       success: false,
-      message: `Charger sedang dipakai oleh unit ${currentCharging.kodeGadai}. Selesaikan sesi sebelumnya terlebih dahulu.`
+      message: `Seluruh ${capacity} slot charger sedang terisi. Selesaikan salah satu unit atau tambah jumlah slot charger.`
     };
   }
 
@@ -295,7 +345,7 @@ export function startChargingUnit(unitId, durationMs = DEFAULT_CHARGE_DURATION_M
 
   saveStoredUnits(updated);
   playGentleBeep();
-  return { success: true, message: `Pengisian daya (${hours} jam) untuk unit ${unit.kodeGadai} dimulai!` };
+  return { success: true, message: `Unit #${unit.kodeGadai} mulai di-charge (Durasi: ${hours} jam)!` };
 }
 
 // 5. Selesai / Cabut Charger & Otomatis naikkan Antrian #1
@@ -304,7 +354,7 @@ export function finishChargingUnit(unitId) {
   const finishedUnit = units.find(u => u.id === unitId);
   if (!finishedUnit) return { success: false, message: "Unit tidak ditemukan." };
 
-  // Dapatkan unit berikutnya dari antrian tunggu terurut (baterai terendah di #1)
+  // Dapatkan antrian tunggu terurut (Prioritas >= 15 hari di paling atas)
   const waitingUnits = sortWaitingQueue(units.filter(u => u.statusCharger === 'WAITING' && u.id !== unitId));
   const nextUnitToCharge = waitingUnits.length > 0 ? waitingUnits[0] : null;
 
@@ -323,7 +373,7 @@ export function finishChargingUnit(unitId) {
         updatedAt: now
       };
     }
-    // Jika ada antrian #1, naikkan langsung ke CHARGING dengan durasi unit atau default
+    // Jika ada antrian #1, naikkan langsung ke slot yang baru kosong
     if (nextUnitToCharge && u.id === nextUnitToCharge.id) {
       const duration = nextUnitToCharge.chargeDurationMs || defaultDuration;
       return {
@@ -347,16 +397,17 @@ export function finishChargingUnit(unitId) {
   });
 
   if (nextUnitToCharge) {
+    const days = getDaysSinceLastCharge(nextUnitToCharge.lastChargedAt);
     return {
       success: true,
-      message: `Unit ${finishedUnit.kodeGadai} selesai (Baterai 100%). Unit antrian ${nextUnitToCharge.kodeGadai} (Baterai ${nextUnitToCharge.batteryLevel}%) otomatis naik ke slot charger!`,
+      message: `Unit #${finishedUnit.kodeGadai} selesai (Baterai 100%). Antrian #${nextUnitToCharge.kodeGadai} (${days >= 15 ? 'Prioritas ' + days + ' hari' : 'Baterai ' + nextUnitToCharge.batteryLevel + '%'}) otomatis naik ke slot charger!`,
       promotedUnit: nextUnitToCharge
     };
   }
 
   return {
     success: true,
-    message: `Unit ${finishedUnit.kodeGadai} selesai di-charge (Baterai 100%). Slot charger kini kosong.`
+    message: `Unit #${finishedUnit.kodeGadai} selesai di-charge (Baterai 100%). 1 slot charger kini kosong.`
   };
 }
 
