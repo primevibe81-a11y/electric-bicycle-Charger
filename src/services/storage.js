@@ -448,9 +448,9 @@ export function extendGadaiUnit(unitId, newKodeGadai, newJatuhTempoAt) {
 
   const cleanNewCode = String(newKodeGadai).trim();
 
-  // Validasi kode baru harus deretan angka
-  if (!/^\d+$/.test(cleanNewCode)) {
-    return { success: false, message: "Nomor gadai baru wajib berupa deretan angka unik (contoh: 2026110999)." };
+  // Validasi kode baru (angka atau kode akad unik misal 26_0037861)
+  if (!/^[A-Za-z0-9_-]+$/.test(cleanNewCode)) {
+    return { success: false, message: "Nomor gadai baru wajib berupa karakter alfanumerik / kode akad (contoh: 26_0037861)." };
   }
 
   // Cek apakah kode baru sudah dipakai di unit aktif lain

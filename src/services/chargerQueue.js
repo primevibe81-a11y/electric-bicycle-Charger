@@ -2,10 +2,10 @@ export const MAX_QUEUE_LIMIT = 2;
 export const CHARGE_DURATION_MS = 3 * 60 * 60 * 1000; // 3 Jam (10.800.000 ms)
 
 /**
- * Validasi kode gadai: Hanya deretan angka unik (contoh: 2026110045)
+ * Validasi kode gadai: Mendukung format angka unik maupun format sistem akad gadai (contoh: 26_0037861 atau 2026110045)
  */
 export function isValidKodeGadai(code) {
-  return typeof code === 'string' && /^\d+$/.test(code.trim());
+  return typeof code === 'string' && /^[A-Za-z0-9_-]+$/.test(code.trim());
 }
 
 /**

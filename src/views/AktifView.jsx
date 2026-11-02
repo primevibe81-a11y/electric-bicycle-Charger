@@ -46,10 +46,10 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
   const handleCreateSubmit = (e) => {
     e.preventDefault();
-    if (!/^\d+$/.test(kodeGadai.trim())) {
+    if (!/^[A-Za-z0-9_-]+$/.test(kodeGadai.trim())) {
       onNotify({
         title: "Kode Gadai Tidak Valid",
-        message: "Nomor gadai wajib deretan angka murni (contoh: 2026110055).",
+        message: "Nomor gadai wajib berupa karakter unik (contoh: 26_0037861 atau 2026110055).",
         type: "warning"
       });
       return;
@@ -151,16 +151,14 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
           <form onSubmit={handleCreateSubmit} className="space-y-3">
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Nomor Bukti Gadai (Wajib Angka Unik)
+                Nomor Bukti Gadai (Kode Unik / Akad)
               </label>
               <input
                 type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
                 required
                 value={kodeGadai}
-                onChange={(e) => setKodeGadai(e.target.value.replace(/\D/g, ''))}
-                placeholder="Contoh: 2026110088"
+                onChange={(e) => setKodeGadai(e.target.value.replace(/[^\w-]/g, ''))}
+                placeholder="Contoh: 26_0037861"
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>

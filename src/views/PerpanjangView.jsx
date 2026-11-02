@@ -28,10 +28,10 @@ export default function PerpanjangView({ units, onNotify, preselectedUnitId, onS
       return;
     }
 
-    if (!/^\d+$/.test(newKodeGadai.trim())) {
+    if (!/^[A-Za-z0-9_-]+$/.test(newKodeGadai.trim())) {
       onNotify({
         title: "Nomor Baru Tidak Valid",
-        message: "Nomor gadai baru wajib berupa deretan angka murni (contoh: 2026110999).",
+        message: "Nomor gadai baru wajib berupa karakter alfanumerik (contoh: 26_0037861).",
         type: "warning"
       });
       return;
@@ -149,16 +149,14 @@ export default function PerpanjangView({ units, onNotify, preselectedUnitId, onS
 
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              Nomor Gadai Baru (Wajib Angka Unik)
+              Nomor Gadai Baru (Kode Unik / Akad)
             </label>
             <input
               type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
               required
               value={newKodeGadai}
-              onChange={(e) => setNewKodeGadai(e.target.value.replace(/\D/g, ''))}
-              placeholder="Contoh: 2026110999"
+              onChange={(e) => setNewKodeGadai(e.target.value.replace(/[^\w-]/g, ''))}
+              placeholder="Contoh: 26_0037899"
               className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
             <p className="text-[11px] text-slate-400 mt-1">
