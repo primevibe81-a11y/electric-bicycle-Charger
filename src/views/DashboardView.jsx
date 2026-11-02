@@ -16,7 +16,9 @@ import {
   AlertOctagon,
   Plus,
   Minus,
-  RefreshCw
+  RefreshCw,
+  Search,
+  X
 } from 'lucide-react';
 import {
   getRemainingChargeTime,
@@ -30,6 +32,7 @@ import {
 } from '../services/chargerQueue';
 import {
   finishChargingUnit,
+  cancelChargingUnit,
   startChargingUnit,
   cancelWaitingQueue,
   enqueueUnitForCharging,
@@ -52,6 +55,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
   const [isCustomDuration, setIsCustomDuration] = useState(false);
   const [showDirectStartModal, setShowDirectStartModal] = useState(false);
   const [targetStartUnitId, setTargetStartUnitId] = useState("");
+  const [queueSearchQuery, setQueueSearchQuery] = useState("");
 
   // Timer update interval (1 second)
   useEffect(() => {
@@ -67,6 +71,17 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
   // Filter dan urutkan antrian tunggu: Prioritas >= 15 HARI SELALU DI POSISI TERATAS (#1)
   const rawWaiting = units.filter(u => u.statusCharger === 'WAITING');
   const sortedWaiting = sortWaitingQueue(rawWaiting);
+
+  // Filter pencarian di dalam antrian prioritas
+  const displayedWaiting = sortedWaiting.filter(u => {
+    const q = queueSearchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      u.kodeGadai.toLowerCase().includes(q) ||
+      u.merkSepeda.toLowerCase().includes(q) ||
+      u.namaNasabah.toLowerCase().includes(q)
+    );
+  });
 
   // Unit yang memenuhi syarat untuk dimasukkan ke antrian (AKTIF atau LELANG yang IDLE)
   const eligibleUnits = units.filter(
@@ -118,6 +133,20 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         message: result.message,
         type: "success"
       });
+    }
+  };
+
+  // Batalkan sesi charger aktif (antisipasi salah input unit/slot)
+  const handleCancelActiveCharging = (unit) => {
+    if (window.confirm(`Salah input unit? Batalkan proses charger untuk unit #${unit.kodeGadai} dan kembalikan ke antrian tunggu?`)) {
+      const res = cancelChargingUnit(unit.id, true);
+      if (res.success) {
+        onNotify({
+          title: "Charger Dibatalkan",
+          message: res.message,
+          type: "info"
+        });
+      }
     }
   };
 
@@ -239,7 +268,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         </div>
       </section>
 
-      {/* 2. DAFTAR SLOT CHARGER AKTIF (MULTI-SLOT) */}
+      {/* 2. DAFTAR SLOT CHARGER AKTIF (MULTI-SLOT DENGAN FITUR BATALKAN) */}
       <section className="space-y-3">
         {slotIndices.map((slotIndex) => {
           const unit = chargingUnits[slotIndex];
@@ -271,7 +300,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                       )}
                     </div>
 
-                    <h3 className="text-xl font-black tracking-tight mt-1">
+                    <h3 className="text-xl font-black tracking-tight mt-1 font-mono">
                       #{unit.kodeGadai}
                     </h3>
                     <p className="text-xs text-sky-100 font-medium">
@@ -303,14 +332,25 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                   </div>
                 </div>
 
-                {/* Selesai / Cabut */}
-                <button
-                  onClick={() => handleFinishCharging(unit.id)}
-                  className="w-full h-10 bg-white text-sky-700 font-bold text-xs rounded-xl shadow-sm hover:bg-sky-50 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
-                >
-                  <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  <span>Selesai Slot #{slotNumber} (Baterai 100%)</span>
-                </button>
+                {/* Aksi: Selesai Penuh (100%) vs Batalkan Charger (Salah Input) */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleFinishCharging(unit.id)}
+                    className="flex-1 h-10 bg-white text-sky-700 font-bold text-xs rounded-xl shadow-sm hover:bg-sky-50 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <span>Selesai (Baterai 100%)</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleCancelActiveCharging(unit)}
+                    className="h-10 px-3.5 bg-rose-500/25 hover:bg-rose-600 text-white font-bold text-xs rounded-xl border border-white/20 active:scale-[0.98] transition-all flex items-center justify-center gap-1 shadow-2xs"
+                    title="Batalkan proses charger untuk unit ini jika terjadi salah input"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>Batalkan</span>
+                  </button>
+                </div>
               </div>
             );
           } else {
@@ -358,7 +398,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         })}
       </section>
 
-      {/* 3. ANTRIAN PRIORITAS (OTOMATIS UNIT >= 15 HARI & TANPA BATASAN JUMLAH) */}
+      {/* 3. ANTRIAN PRIORITAS (DENGAN FITUR PENCARIAN NOMOR GADAI) */}
       <section className="mt-5">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
@@ -380,23 +420,51 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
           </button>
         </div>
 
-        {/* Info Box Prioritas Baru */}
-        <div className="p-2.5 rounded-2xl bg-gradient-to-r from-amber-50 to-sky-50 border border-amber-200 mb-3 flex items-start gap-2">
+        {/* Info Box Prioritas */}
+        <div className="p-2.5 rounded-2xl bg-gradient-to-r from-amber-50 to-sky-50 border border-amber-200 mb-2.5 flex items-start gap-2">
           <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-[11px] text-slate-700 leading-snug">
-            <strong>Aturan Antrian Baru:</strong> Unit yang sudah <strong>15 hari atau lebih</strong> belum di-charge otomatis masuk dan diprioritaskan di urutan teratas (tanpa batasan jumlah antrian).
+            Unit yang sudah <strong>15 hari atau lebih</strong> belum di-charge otomatis diprioritaskan di antrian teratas.
           </p>
         </div>
 
+        {/* FITUR PENCARIAN NOMOR GADAI DI ANTRIAN */}
+        <div className="relative mb-3">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={queueSearchQuery}
+            onChange={(e) => setQueueSearchQuery(e.target.value)}
+            placeholder="Cari nomor gadai di antrian (contoh: 26_0037...)..."
+            className="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+          />
+          {queueSearchQuery && (
+            <button
+              onClick={() => setQueueSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {queueSearchQuery && (
+          <p className="text-[11px] text-slate-500 font-semibold mb-2 px-1">
+            Menampilkan {displayedWaiting.length} dari {sortedWaiting.length} unit di antrian
+          </p>
+        )}
+
         {/* List Antrian */}
         <div className="space-y-2.5">
-          {sortedWaiting.length === 0 ? (
+          {displayedWaiting.length === 0 ? (
             <div className="bg-white/80 rounded-2xl p-5 border border-sky-100 text-center text-xs text-slate-500">
-              Antrian tunggu saat ini kosong.
+              {queueSearchQuery ? `Nomor gadai "${queueSearchQuery}" tidak ditemukan di dalam antrian.` : 'Antrian tunggu saat ini kosong.'}
             </div>
           ) : (
-            sortedWaiting.map((unit, index) => {
-              const isFirstPriority = index === 0;
+            displayedWaiting.map((unit) => {
+              // Temukan urutan asli di sortedWaiting
+              const originalIndex = sortedWaiting.findIndex(u => u.id === unit.id);
+              const isFirstPriority = originalIndex === 0;
               const daysAgo = getDaysSinceLastCharge(unit.lastChargedAt, unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null);
               const isOverdue = daysAgo >= 15;
 
@@ -413,7 +481,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-2.5">
-                      {/* Urutan Badge */}
+                      {/* Urutan Asli Badge */}
                       <div
                         className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
                           isOverdue
@@ -423,7 +491,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                               : "bg-slate-200 text-slate-700"
                         }`}
                       >
-                        #{index + 1}
+                        #{originalIndex + 1}
                       </div>
 
                       <div>

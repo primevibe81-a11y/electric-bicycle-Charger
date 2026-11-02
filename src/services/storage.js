@@ -411,6 +411,36 @@ export function finishChargingUnit(unitId) {
   };
 }
 
+// 5c. Batalkan Proses Charger Aktif (Antisipasi salah input unit/slot)
+export function cancelChargingUnit(unitId, returnToQueue = true) {
+  const units = getStoredUnits();
+  const unit = units.find(u => u.id === unitId);
+  if (!unit) return { success: false, message: "Unit tidak ditemukan." };
+
+  const updated = units.map(u => {
+    if (u.id === unitId) {
+      return {
+        ...u,
+        statusCharger: returnToQueue ? 'WAITING' : 'IDLE',
+        chargeStartAt: null,
+        chargeEndAt: null,
+        chargeDurationMs: null,
+        queuedAt: returnToQueue ? (u.queuedAt || Date.now()) : null,
+        updatedAt: Date.now()
+        // PENTING: Baterai TIDAK dinaikkan ke 100% karena proses dibatalkan!
+      };
+    }
+    return u;
+  });
+
+  saveStoredUnits(updated);
+  playGentleBeep();
+  return {
+    success: true,
+    message: `Proses charger unit #${unit.kodeGadai} dibatalkan${returnToQueue ? ' (kembali ke antrian)' : ' (status IDLE)'}. Slot charger kini kosong.`
+  };
+}
+
 // 5b. Update Kondisi Kesehatan Baterai & Catatan Audit Lapangan
 export function updateBatteryAudit(unitId, kondisiBaterai, catatanBaterai) {
   const units = getStoredUnits();
