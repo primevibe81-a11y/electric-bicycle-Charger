@@ -275,3 +275,26 @@ Saat Anda memberikan file `plan.md` ini ke Agent di Antigravity, Agent harus men
    * Pastikan menu **Perpanjang** mengganti nomor gadai lama dengan nomor gadai angka baru, menyimpan nomor lama ke riwayat, dan langsung memperbarui nomor gadai di kartu antrian charger.
 4. **Verifikasi Build & Preview**:
    * Jalankan *development server* dan pastikan tidak ada error kompilasi maupun *layout overflow* pada layar ukuran `390 × 844 px`.
+
+---
+
+## 9. Fitur Lock Screen Live Monitor untuk iPhone 13 (MediaSession & Service Worker)
+
+Fitur inovatif ini memungkinkan petugas gudang memantau langsung status **Slot #1** dan **Slot #2** beserta sisa waktu pengisian detik demi detik langsung dari **Lock Screen iPhone 13**, **Dynamic Island**, maupun **Apple Watch** tanpa perlu membuka kunci ponsel (*hands-free monitoring*).
+
+### Arsitektur Teknis Lock Screen Live Monitor:
+1. **Silent Audio Loop Background Engine (`navigator.mediaSession`)**:
+   * Mengenerate file audio hening berformat WAV PCM secara *in-memory* tanpa dependensi file eksternal (`data:audio/wav;base64,...`).
+   * Memanfaatkan kebijakan *background audio playback* iOS Safari agar aplikasi tetap aktif mengeksekusi *countdown timer* saat layar iPhone 13 mati atau terkunci.
+   * Memperbarui `navigator.mediaSession.metadata` secara reaktif:
+     * **Title**: `⚡ Slot #1: #[NoGadai] ([Sisa Waktu JJ:MM:DD])`
+     * **Artist**: `⚡ Slot #2: #[NoGadai] ([Sisa Waktu JJ:MM:DD]) • E-Bike Gadai`
+     * **Album**: `Live Monitor Antrean Charger ([X] Slot Aktif)`
+2. **Persistent Lock Screen Notification via Service Worker (`tag: 'active-charger-slots'`)**:
+   * Menggunakan Service Worker PWA (`sw.js`) dengan memanggil `registration.showNotification(...)`.
+   * Memasang properti unik `tag: 'active-charger-slots'` dan `renotify: false`, sehingga notifikasi diperbarui di tempat (*in-place update*) di Lock Screen iPhone 13 tanpa memicu getaran atau bunyi berulang.
+   * Menampilkan ringkasan Slot #1 dan Slot #2 secara elegan di Notification Center iOS.
+3. **Dashboard Live Control Widget**:
+   * Kartu kontrol khusus di bagian atas Dashboard dengan toggle aktif/nonaktif.
+   * Simulator *preview visual* Lock Screen iPhone 13 yang merefleksikan tampilan kartu Now Playing dan Notifikasi.
+

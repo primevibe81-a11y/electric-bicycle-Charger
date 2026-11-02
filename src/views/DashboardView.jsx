@@ -18,7 +18,12 @@ import {
   Minus,
   RefreshCw,
   Search,
-  X
+  X,
+  Smartphone,
+  Radio,
+  Play,
+  Square,
+  Volume2
 } from 'lucide-react';
 import {
   getRemainingChargeTime,
@@ -40,6 +45,13 @@ import {
   setChargerSlotsCapacity,
   autoEnqueueOverdueUnits
 } from '../services/storage';
+import {
+  startLockScreenMonitor,
+  stopLockScreenMonitor,
+  updateLockScreenMonitor,
+  getIsLockScreenMonitorActive,
+  formatLockScreenSummary
+} from '../services/lockScreenMonitor';
 import BatteryIndicator from '../components/BatteryIndicator';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import ChargeAuditBadge from '../components/ChargeAuditBadge';
@@ -56,6 +68,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
   const [showDirectStartModal, setShowDirectStartModal] = useState(false);
   const [targetStartUnitId, setTargetStartUnitId] = useState("");
   const [queueSearchQuery, setQueueSearchQuery] = useState("");
+  const [isLiveMonitorOn, setIsLiveMonitorOn] = useState(() => getIsLockScreenMonitorActive());
 
   // Timer update interval (1 second)
   useEffect(() => {
@@ -64,6 +77,13 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Sinkronisasi pembaruan Lock Screen Live Monitor (MediaSession + Notification active-charger-slots)
+  useEffect(() => {
+    if (isLiveMonitorOn) {
+      updateLockScreenMonitor(chargingUnits);
+    }
+  }, [nowTick, isLiveMonitorOn, chargingUnits]);
 
   // Filter unit yang sedang di-charge (Bisa lebih dari 1 unit sesuai kapasitas slot)
   const chargingUnits = units.filter(u => u.statusCharger === 'CHARGING');
@@ -122,6 +142,35 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         message: "Seluruh unit yang sudah ≥15 hari sudah berada di dalam antrian.",
         type: "info"
       });
+    }
+  };
+
+  // Toggle aktivasi Lock Screen Live Monitor iPhone 13
+  const handleToggleLiveMonitor = async () => {
+    if (isLiveMonitorOn) {
+      const res = await stopLockScreenMonitor();
+      setIsLiveMonitorOn(false);
+      onNotify({
+        title: "Lock Screen Monitor Dimatikan",
+        message: "Monitoring latar belakang di Lock Screen iPhone 13 telah dinonaktifkan.",
+        type: "info"
+      });
+    } else {
+      const res = await startLockScreenMonitor(chargingUnits);
+      if (res.success) {
+        setIsLiveMonitorOn(true);
+        onNotify({
+          title: "Lock Screen Monitor Aktif! ⚡",
+          message: "Status Slot #1 & #2 beserta hitung mundur sisa waktu kini tampil langsung di Lock Screen iPhone 13.",
+          type: "success"
+        });
+      } else {
+        onNotify({
+          title: "Gagal Mengaktifkan",
+          message: res.error || "Izin audio atau notifikasi tidak dapat diaktifkan pada browser ini.",
+          type: "warning"
+        });
+      }
     }
   };
 
@@ -268,7 +317,149 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         </div>
       </section>
 
-      {/* 2. DAFTAR SLOT CHARGER AKTIF (MULTI-SLOT DENGAN FITUR BATALKAN) */}
+      {/* 2. LOCK SCREEN LIVE MONITOR UNTUK IPHONE 13 (MEDIASESSION + SERVICE WORKER NOTIFICATION) */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-850 to-sky-950 p-4 text-white border border-slate-750 shadow-md">
+        {/* Glow Ambient Effect */}
+        <div className="absolute -top-10 -right-10 w-28 h-28 bg-sky-500/15 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="flex items-center justify-between mb-3 relative z-10">
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+              isLiveMonitorOn
+                ? 'bg-emerald-500/20 text-emerald-400 ring-2 ring-emerald-500/30 shadow-xs shadow-emerald-500/20'
+                : 'bg-slate-800 text-slate-400'
+            }`}>
+              <Smartphone className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h2 className="text-xs font-black uppercase tracking-wider text-white">
+                  Lock Screen Live Monitor
+                </h2>
+                {isLiveMonitorOn ? (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black tracking-wide uppercase border border-emerald-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    Live
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                    Standby
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-300">
+                iPhone 13 • Now Playing & Notification
+              </p>
+            </div>
+          </div>
+
+          {/* Tombol Toggle Aktifkan / Matikan */}
+          <button
+            onClick={handleToggleLiveMonitor}
+            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm ${
+              isLiveMonitorOn
+                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
+                : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-500/20 hover:from-emerald-600 hover:to-teal-700'
+            }`}
+          >
+            {isLiveMonitorOn ? (
+              <>
+                <Square className="w-3.5 h-3.5 fill-current" />
+                <span>Matikan</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Aktifkan</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Simulator / Visual Mock Tampilan Lock Screen iPhone 13 */}
+        <div className="bg-black/40 backdrop-blur-md rounded-2xl p-3 border border-white/10 relative z-10 space-y-2">
+          <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pb-1.5 border-b border-white/10">
+            <span className="flex items-center gap-1 text-sky-300">
+              <Radio className={`w-3 h-3 ${isLiveMonitorOn ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
+              <span>Apple Lock Screen • Now Playing</span>
+            </span>
+            <span className="text-[9px] bg-sky-950/80 px-1.5 py-0.5 rounded text-sky-200 border border-sky-800 font-mono">
+              tag: active-charger-slots
+            </span>
+          </div>
+
+          {/* Status Slot #1 di Lock Screen */}
+          <div className="flex items-center justify-between bg-white/5 hover:bg-white/10 px-2.5 py-2 rounded-xl border border-white/5 transition-colors">
+            <div className="flex items-center gap-2 min-w-0 pr-2">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${chargingUnits[0] ? 'bg-amber-400 ring-2 ring-amber-400/30 animate-pulse' : 'bg-slate-500'}`} />
+              <div className="min-w-0">
+                <div className="text-xs font-black text-amber-200 truncate">
+                  Slot #1: {chargingUnits[0] ? `#${chargingUnits[0].kodeGadai}` : 'Kosong / Tersedia'}
+                </div>
+                <div className="text-[10px] text-slate-300 truncate">
+                  {chargingUnits[0]
+                    ? `${chargingUnits[0].merkSepeda} (${chargingUnits[0].batteryLevel}%)`
+                    : 'Colokan #1 siap dihubungkan ke unit'}
+                </div>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="font-mono text-xs font-black tracking-wider text-sky-300 block">
+                {chargingUnits[0]
+                  ? getRemainingChargeTime(chargingUnits[0].chargeEndAt, chargingUnits[0].chargeDurationMs).formatted
+                  : '--:--:--'}
+              </span>
+              <span className="text-[9px] text-slate-400 block">Sisa Waktu</span>
+            </div>
+          </div>
+
+          {/* Status Slot #2 di Lock Screen */}
+          <div className="flex items-center justify-between bg-white/5 hover:bg-white/10 px-2.5 py-2 rounded-xl border border-white/5 transition-colors">
+            <div className="flex items-center gap-2 min-w-0 pr-2">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${chargingUnits[1] ? 'bg-sky-400 ring-2 ring-sky-400/30 animate-pulse' : 'bg-slate-500'}`} />
+              <div className="min-w-0">
+                <div className="text-xs font-black text-sky-200 truncate">
+                  Slot #2: {chargingUnits[1] ? `#${chargingUnits[1].kodeGadai}` : 'Kosong / Tersedia'}
+                </div>
+                <div className="text-[10px] text-slate-300 truncate">
+                  {chargingUnits[1]
+                    ? `${chargingUnits[1].merkSepeda} (${chargingUnits[1].batteryLevel}%)`
+                    : 'Colokan #2 siap dihubungkan ke unit'}
+                </div>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="font-mono text-xs font-black tracking-wider text-sky-300 block">
+                {chargingUnits[1]
+                  ? getRemainingChargeTime(chargingUnits[1].chargeEndAt, chargingUnits[1].chargeDurationMs).formatted
+                  : '--:--:--'}
+              </span>
+              <span className="text-[9px] text-slate-400 block">Sisa Waktu</span>
+            </div>
+          </div>
+
+          {/* Info Status / Petunjuk Petugas */}
+          <div className="pt-1">
+            {isLiveMonitorOn ? (
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-300 leading-tight">
+                <Volume2 className="w-3.5 h-3.5 shrink-0 animate-pulse" />
+                <span>
+                  Audio hening aktif. Anda dapat langsung mengunci iPhone 13; timer Slot #1 & #2 akan terus berjalan di Lock Screen.
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 leading-tight">
+                <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-300" />
+                <span>
+                  Ketuk <strong>Aktifkan</strong> agar petugas gudang dapat melihat sisa waktu charger langsung di layar terkunci tanpa membuka kunci HP.
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. DAFTAR SLOT CHARGER AKTIF (MULTI-SLOT DENGAN FITUR BATALKAN) */}
       <section className="space-y-3">
         {slotIndices.map((slotIndex) => {
           const unit = chargingUnits[slotIndex];
