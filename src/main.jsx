@@ -4,9 +4,11 @@ import App from './App.jsx'
 import './index.css'
 import { initLockScreenServiceWorker } from './services/lockScreenMonitor.js'
 
-// Pre-initialize service worker for iPhone 13 Lock Screen notifications
-if (typeof window !== 'undefined') {
-  initLockScreenServiceWorker();
+// Pre-initialize service worker for iPhone 13 Lock Screen notifications on window load
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    initLockScreenServiceWorker();
+  });
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

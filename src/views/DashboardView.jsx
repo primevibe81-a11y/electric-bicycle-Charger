@@ -78,15 +78,15 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
     return () => clearInterval(timer);
   }, []);
 
+  // Filter unit yang sedang di-charge (Bisa lebih dari 1 unit sesuai kapasitas slot)
+  const chargingUnits = units.filter(u => u.statusCharger === 'CHARGING');
+
   // Sinkronisasi pembaruan Lock Screen Live Monitor (MediaSession + Notification active-charger-slots)
   useEffect(() => {
     if (isLiveMonitorOn) {
       updateLockScreenMonitor(chargingUnits);
     }
   }, [nowTick, isLiveMonitorOn, chargingUnits]);
-
-  // Filter unit yang sedang di-charge (Bisa lebih dari 1 unit sesuai kapasitas slot)
-  const chargingUnits = units.filter(u => u.statusCharger === 'CHARGING');
 
   // Filter dan urutkan antrian tunggu: Prioritas >= 15 HARI SELALU DI POSISI TERATAS (#1)
   const rawWaiting = units.filter(u => u.statusCharger === 'WAITING');
