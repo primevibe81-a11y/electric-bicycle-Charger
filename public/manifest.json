@@ -1,0 +1,22 @@
+{
+  "name": "Antrean Charger Sepeda Listrik & Gadai",
+  "short_name": "E-Bike Gadai",
+  "description": "Sistem Manajemen Antrean Charger Sepeda Listrik & Gadai Mobile-First iPhone 13",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F0F9FF",
+  "theme_color": "#E0F2FE",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/vite.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
