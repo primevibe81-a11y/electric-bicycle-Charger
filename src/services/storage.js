@@ -1,8 +1,50 @@
 import { CHARGE_DURATION_MS, MAX_QUEUE_LIMIT, sortWaitingQueue } from "./chargerQueue";
 import { playChimeSound, playGentleBeep, sendNativeNotification } from "./soundNotification";
+import { supabase, isSupabaseConfigured } from "./supabase";
 
 const STORAGE_KEY = "ebike_gadai_units_v1";
 const BROADCAST_CHANNEL_NAME = "ebike_gadai_sync_channel";
+
+// Helper konversi CamelCase <-> Snake_Case untuk skema Supabase
+export function modelToDb(unit) {
+  return {
+    id: unit.id,
+    kode_gadai: unit.kodeGadai,
+    riwayat_kode_gadai: unit.riwayatKodeGadai || [],
+    merk_sepeda: unit.merkSepeda,
+    nama_nasabah: unit.namaNasabah,
+    battery_level: Number(unit.batteryLevel) || 0,
+    status_barang: unit.statusBarang || 'AKTIF',
+    status_charger: unit.statusCharger || 'IDLE',
+    charge_start_at: unit.chargeStartAt || null,
+    charge_end_at: unit.chargeEndAt || null,
+    queued_at: unit.queuedAt || null,
+    last_charged_at: unit.lastChargedAt || null,
+    jatuh_tempo_at: unit.jatuhTempoAt || null,
+    harga_lelang: unit.hargaLelang || 0,
+    updated_at: unit.updatedAt || Date.now()
+  };
+}
+
+export function dbToModel(row) {
+  return {
+    id: row.id,
+    kodeGadai: row.kode_gadai,
+    riwayatKodeGadai: Array.isArray(row.riwayat_kode_gadai) ? row.riwayat_kode_gadai : [],
+    merkSepeda: row.merk_sepeda,
+    namaNasabah: row.nama_nasabah,
+    batteryLevel: Number(row.battery_level) || 0,
+    statusBarang: row.status_barang,
+    statusCharger: row.status_charger,
+    chargeStartAt: row.charge_start_at ? Number(row.charge_start_at) : null,
+    chargeEndAt: row.charge_end_at ? Number(row.charge_end_at) : null,
+    queuedAt: row.queued_at ? Number(row.queued_at) : null,
+    lastChargedAt: row.last_charged_at ? Number(row.last_charged_at) : null,
+    jatuhTempoAt: row.jatuh_tempo_at ? Number(row.jatuh_tempo_at) : null,
+    hargaLelang: Number(row.harga_lelang) || 0,
+    updatedAt: Number(row.updated_at) || Date.now()
+  };
+}
 
 // Broadcast Channel untuk sinkronisasi antar-tab iPhone / Safari
 const channel = typeof window !== "undefined" && "BroadcastChannel" in window
@@ -145,6 +187,14 @@ export function saveStoredUnits(units, notifyBroadcast = true) {
   if (notifyBroadcast && channel) {
     channel.postMessage({ type: "UNITS_UPDATED", timestamp: Date.now() });
   }
+
+  // Sinkronisasi otomatis ke Supabase jika environment variable diisi
+  if (isSupabaseConfigured && supabase) {
+    const dbPayload = units.map(modelToDb);
+    supabase.from('gadai_units').upsert(dbPayload).then(({ error }) => {
+      if (error) console.warn("Supabase upsert warning:", error);
+    });
+  }
 }
 
 export function subscribeToStoreUpdates(callback) {
@@ -164,10 +214,38 @@ export function subscribeToStoreUpdates(callback) {
     channel.addEventListener("message", handleMessage);
   }
 
+  // Sinkronisasi Realtime Supabase WebSockets jika Vercel Env diisi
+  let supabaseChannel = null;
+  if (isSupabaseConfigured && supabase) {
+    supabase.from('gadai_units').select('*').then(({ data, error }) => {
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const mapped = data.map(dbToModel);
+        saveStoredUnits(mapped, false);
+        callback(mapped);
+      }
+    });
+
+    supabaseChannel = supabase
+      .channel('public:gadai_units')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'gadai_units' }, () => {
+        supabase.from('gadai_units').select('*').then(({ data }) => {
+          if (data && Array.isArray(data)) {
+            const mapped = data.map(dbToModel);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+            callback(mapped);
+          }
+        });
+      })
+      .subscribe();
+  }
+
   return () => {
     window.removeEventListener("storage", handleStorage);
     if (channel) {
       channel.removeEventListener("message", handleMessage);
+    }
+    if (supabaseChannel) {
+      supabase.removeChannel(supabaseChannel);
     }
   };
 }
