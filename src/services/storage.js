@@ -1,4 +1,4 @@
-import { CHARGE_DURATION_MS, MAX_QUEUE_LIMIT, sortWaitingQueue } from "./chargerQueue";
+import { DEFAULT_CHARGE_DURATION_MS, MAX_QUEUE_LIMIT, sortWaitingQueue } from "./chargerQueue";
 import { playChimeSound, playGentleBeep, sendNativeNotification } from "./soundNotification";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { REAL_EXCEL_UNITS } from "../data/realUnits";
@@ -19,6 +19,9 @@ export function modelToDb(unit) {
     status_charger: unit.statusCharger || 'IDLE',
     charge_start_at: unit.chargeStartAt || null,
     charge_end_at: unit.chargeEndAt || null,
+    charge_duration_ms: unit.chargeDurationMs || DEFAULT_CHARGE_DURATION_MS,
+    kondisi_baterai: unit.kondisiBaterai || 'PRIMA',
+    catatan_baterai: unit.catatanBaterai || '',
     queued_at: unit.queuedAt || null,
     last_charged_at: unit.lastChargedAt || null,
     jatuh_tempo_at: unit.jatuhTempoAt || null,
@@ -39,6 +42,9 @@ export function dbToModel(row) {
     statusCharger: row.status_charger,
     chargeStartAt: row.charge_start_at ? Number(row.charge_start_at) : null,
     chargeEndAt: row.charge_end_at ? Number(row.charge_end_at) : null,
+    chargeDurationMs: row.charge_duration_ms ? Number(row.charge_duration_ms) : DEFAULT_CHARGE_DURATION_MS,
+    kondisiBaterai: row.kondisi_baterai || 'PRIMA',
+    catatanBaterai: row.catatan_baterai || '',
     queuedAt: row.queued_at ? Number(row.queued_at) : null,
     lastChargedAt: row.last_charged_at ? Number(row.last_charged_at) : null,
     jatuhTempoAt: row.jatuh_tempo_at ? Number(row.jatuh_tempo_at) : null,
@@ -88,7 +94,15 @@ export function saveStoredUnits(units, notifyBroadcast = true) {
   if (isSupabaseConfigured && supabase) {
     const dbPayload = units.map(modelToDb);
     supabase.from('gadai_units').upsert(dbPayload).then(({ error }) => {
-      if (error) console.warn("Supabase upsert warning:", error);
+      if (error) {
+        // Jika kolom baru belum ada di Supabase, fallback aman dengan menghapus kolom baru sementara
+        if (error.code === '42703' || String(error.message).includes('column')) {
+          const stripped = dbPayload.map(({ charge_duration_ms, kondisi_baterai, catatan_baterai, ...rest }) => rest);
+          supabase.from('gadai_units').upsert(stripped);
+        } else {
+          console.warn("Supabase upsert warning:", error);
+        }
+      }
     });
   }
 }
@@ -167,13 +181,16 @@ export function createGadaiUnit(data) {
     riwayatKodeGadai: [],
     merkSepeda: data.merkSepeda.trim(),
     namaNasabah: data.namaNasabah.trim(),
-    batteryLevel: Math.max(0, Math.min(100, Number(data.batteryLevel) || 0)),
+    batteryLevel: Math.max(0, Math.min(100, Number(data.batteryLevel) || 100)),
+    kondisiBaterai: data.kondisiBaterai || 'PRIMA',
+    catatanBaterai: data.catatanBaterai || '',
+    chargeDurationMs: DEFAULT_CHARGE_DURATION_MS,
     statusBarang: "AKTIF",
     statusCharger: "IDLE",
     chargeStartAt: null,
     chargeEndAt: null,
     queuedAt: null,
-    lastChargedAt: null,
+    lastChargedAt: Date.now(),
     jatuhTempoAt: Number(data.jatuhTempoAt) || (Date.now() + 30 * 24 * 60 * 60 * 1000),
     hargaLelang: 0,
     updatedAt: Date.now(),
@@ -242,8 +259,8 @@ export function cancelWaitingQueue(unitId) {
   return { success: true };
 }
 
-// 4. Mulai pengisian daya untuk sebuah unit (Slot tunggal)
-export function startChargingUnit(unitId) {
+// 4. Mulai pengisian daya untuk sebuah unit (Durasi Dinamis: 1 Jam, 2 Jam, 3 Jam, Kustom)
+export function startChargingUnit(unitId, durationMs = DEFAULT_CHARGE_DURATION_MS) {
   const units = getStoredUnits();
   const unit = units.find(u => u.id === unitId);
   if (!unit) return { success: false, message: "Unit tidak ditemukan." };
@@ -256,8 +273,10 @@ export function startChargingUnit(unitId) {
     };
   }
 
+  const duration = Number(durationMs) || DEFAULT_CHARGE_DURATION_MS;
   const now = Date.now();
-  const chargeEndAt = now + CHARGE_DURATION_MS;
+  const chargeEndAt = now + duration;
+  const hours = Math.round((duration / (1000 * 60 * 60)) * 10) / 10;
 
   const updated = units.map(u => {
     if (u.id === unitId) {
@@ -266,6 +285,7 @@ export function startChargingUnit(unitId) {
         statusCharger: 'CHARGING',
         chargeStartAt: now,
         chargeEndAt: chargeEndAt,
+        chargeDurationMs: duration,
         queuedAt: null,
         updatedAt: now
       };
@@ -275,7 +295,7 @@ export function startChargingUnit(unitId) {
 
   saveStoredUnits(updated);
   playGentleBeep();
-  return { success: true, message: `Pengisian daya 3 jam untuk unit ${unit.kodeGadai} dimulai!` };
+  return { success: true, message: `Pengisian daya (${hours} jam) untuk unit ${unit.kodeGadai} dimulai!` };
 }
 
 // 5. Selesai / Cabut Charger & Otomatis naikkan Antrian #1
@@ -289,25 +309,29 @@ export function finishChargingUnit(unitId) {
   const nextUnitToCharge = waitingUnits.length > 0 ? waitingUnits[0] : null;
 
   const now = Date.now();
+  const defaultDuration = DEFAULT_CHARGE_DURATION_MS;
+
   const updated = units.map(u => {
     if (u.id === unitId) {
       return {
         ...u,
         statusCharger: 'IDLE',
-        batteryLevel: 100, // Pengisian daya 3 jam penuh -> 100%
+        batteryLevel: 100, // Pengisian daya selesai penuh -> 100%
         chargeStartAt: null,
         chargeEndAt: null,
         lastChargedAt: now,
         updatedAt: now
       };
     }
-    // Jika ada antrian #1, naikkan langsung ke CHARGING
+    // Jika ada antrian #1, naikkan langsung ke CHARGING dengan durasi unit atau default
     if (nextUnitToCharge && u.id === nextUnitToCharge.id) {
+      const duration = nextUnitToCharge.chargeDurationMs || defaultDuration;
       return {
         ...u,
         statusCharger: 'CHARGING',
         chargeStartAt: now,
-        chargeEndAt: now + CHARGE_DURATION_MS,
+        chargeEndAt: now + duration,
+        chargeDurationMs: duration,
         queuedAt: null,
         updatedAt: now
       };
@@ -333,6 +357,32 @@ export function finishChargingUnit(unitId) {
   return {
     success: true,
     message: `Unit ${finishedUnit.kodeGadai} selesai di-charge (Baterai 100%). Slot charger kini kosong.`
+  };
+}
+
+// 5b. Update Kondisi Kesehatan Baterai & Catatan Audit Lapangan
+export function updateBatteryAudit(unitId, kondisiBaterai, catatanBaterai) {
+  const units = getStoredUnits();
+  const unit = units.find(u => u.id === unitId);
+  if (!unit) return { success: false, message: "Unit tidak ditemukan." };
+
+  const updated = units.map(u => {
+    if (u.id === unitId) {
+      return {
+        ...u,
+        kondisiBaterai: kondisiBaterai || u.kondisiBaterai || 'PRIMA',
+        catatanBaterai: catatanBaterai !== undefined ? catatanBaterai : (u.catatanBaterai || ''),
+        updatedAt: Date.now()
+      };
+    }
+    return u;
+  });
+
+  saveStoredUnits(updated);
+  playGentleBeep();
+  return {
+    success: true,
+    message: `Audit baterai unit #${unit.kodeGadai} berhasil diperbarui.`
   };
 }
 

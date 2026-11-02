@@ -11,18 +11,39 @@ import {
   Bike,
   Sparkles,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Sliders,
+  AlertOctagon,
+  Calendar
 } from 'lucide-react';
-import { getRemainingChargeTime, sortWaitingQueue, MAX_QUEUE_LIMIT } from '../services/chargerQueue';
-import { finishChargingUnit, startChargingUnit, cancelWaitingQueue, enqueueUnitForCharging } from '../services/storage';
+import {
+  getRemainingChargeTime,
+  sortWaitingQueue,
+  MAX_QUEUE_LIMIT,
+  DEFAULT_CHARGE_DURATION_MS,
+  CHARGE_PRESETS,
+  getChargeAuditInfo
+} from '../services/chargerQueue';
+import {
+  finishChargingUnit,
+  startChargingUnit,
+  cancelWaitingQueue,
+  enqueueUnitForCharging
+} from '../services/storage';
 import BatteryIndicator from '../components/BatteryIndicator';
-import { playChimeSound } from '../services/soundNotification';
+import BatteryConditionBadge from '../components/BatteryConditionBadge';
+import ChargeAuditBadge from '../components/ChargeAuditBadge';
 
 export default function DashboardView({ units, onNotify, onSelectTab }) {
   const [nowTick, setNowTick] = useState(Date.now());
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState("");
-  const [inputBattery, setInputBattery] = useState("20");
+  const [inputBattery, setInputBattery] = useState("100");
+  const [selectedDurationMs, setSelectedDurationMs] = useState(DEFAULT_CHARGE_DURATION_MS);
+  const [customHours, setCustomHours] = useState("3");
+  const [isCustomDuration, setIsCustomDuration] = useState(false);
+  const [showDirectStartModal, setShowDirectStartModal] = useState(false);
+  const [targetStartUnitId, setTargetStartUnitId] = useState("");
 
   // Timer update interval (1 second)
   useEffect(() => {
@@ -45,10 +66,21 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
          u.statusCharger === 'IDLE'
   );
 
-  // Periksa apakah timer charging sudah habis
+  // Hitung unit dengan status audit kritis (>14 hari belum di-charge)
+  const criticalUnits = units.filter(u => {
+    if (u.statusBarang !== 'AKTIF' && u.statusBarang !== 'LELANG') return false;
+    const audit = getChargeAuditInfo(u.lastChargedAt, u.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000);
+    return audit.isCritical;
+  });
+
+  // Periksa sisa waktu charger dengan durasi dinamis
   const chargeTimeInfo = chargingUnit
-    ? getRemainingChargeTime(chargingUnit.chargeEndAt)
+    ? getRemainingChargeTime(chargingUnit.chargeEndAt, chargingUnit.chargeDurationMs)
     : null;
+
+  const currentDurationHours = chargingUnit
+    ? Math.round((Number(chargingUnit.chargeDurationMs || DEFAULT_CHARGE_DURATION_MS) / (1000 * 60 * 60)) * 10) / 10
+    : 3;
 
   const handleFinishCharging = (unitId) => {
     const result = finishChargingUnit(unitId);
@@ -72,21 +104,36 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
     }
   };
 
-  const handlePromoteToCharge = (unitId) => {
-    if (chargingUnit) {
-      onNotify({
-        title: "Slot Masih Terisi",
-        message: "Selesaikan atau cabut unit yang sedang di-charge terlebih dahulu.",
-        type: "warning"
-      });
-      return;
+  const openDurationPickerForStart = (unitId) => {
+    setTargetStartUnitId(unitId);
+    setShowDirectStartModal(true);
+  };
+
+  const handleConfirmStartCharging = () => {
+    const unitId = targetStartUnitId;
+    if (!unitId) return;
+
+    let finalDuration = selectedDurationMs;
+    if (isCustomDuration) {
+      const h = Math.max(0.5, Math.min(12, Number(customHours) || 3));
+      finalDuration = Math.round(h * 60 * 60 * 1000);
     }
-    const result = startChargingUnit(unitId);
+
+    const result = startChargingUnit(unitId, finalDuration);
+    setShowDirectStartModal(false);
+    setTargetStartUnitId("");
+
     if (result.success) {
       onNotify({
         title: "Mulai Di-Charge",
         message: result.message,
         type: "success"
+      });
+    } else {
+      onNotify({
+        title: "Gagal Memulai",
+        message: result.message,
+        type: "warning"
       });
     }
   };
@@ -120,7 +167,30 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
 
   return (
     <div className="space-y-4 pb-6">
-      {/* 1. SLOT CHARGER AKTIF (1 SLOT UTAMA, 3 JAM) */}
+      {/* BANNER AUDIT SMART ALERT (>14 HARI) */}
+      {criticalUnits.length > 0 && (
+        <div
+          onClick={() => onSelectTab('aktif')}
+          className="p-3 rounded-2xl bg-gradient-to-r from-rose-50 to-amber-50 border border-rose-200 shadow-xs flex items-center justify-between cursor-pointer active:scale-[0.99] transition-transform"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-xs animate-bounce">
+              <AlertOctagon className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-rose-900 leading-tight">
+                ⚠️ {criticalUnits.length} Sepeda Perlu Segera Di-Charge!
+              </p>
+              <p className="text-[10px] text-rose-700 mt-0.5">
+                Sudah &gt;14 hari tanpa pengisian daya (risiko baterai drop/rusak total).
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-rose-500 shrink-0" />
+        </div>
+      )}
+
+      {/* 1. SLOT CHARGER AKTIF (1 SLOT UTAMA DENGAN DURASI DINAMIS) */}
       <section>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
@@ -129,8 +199,9 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
               Slot Charger Aktif (1 Unit)
             </h2>
           </div>
-          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">
-            Durasi Tetap: 3 Jam
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 flex items-center gap-1">
+            <Sliders className="w-3 h-3 text-sky-600" />
+            Durasi: {chargingUnit ? `${currentDurationHours} Jam` : 'Dinamis (1-4 Jam)'}
           </span>
         </div>
 
@@ -139,16 +210,30 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
             {/* Header Card */}
             <div className="flex items-start justify-between">
               <div>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-extrabold tracking-wide uppercase">
-                  <BatteryCharging className="w-3.5 h-3.5 text-amber-300 animate-bounce" />
-                  Sedang Mengisi Daya
-                </span>
-                <h3 className="text-2xl font-black tracking-tight mt-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-extrabold tracking-wide uppercase">
+                    <BatteryCharging className="w-3 h-3 text-amber-300 animate-bounce" />
+                    Sedang Mengisi Daya
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-900/40 text-sky-100">
+                    Durasi: {currentDurationHours} Jam
+                  </span>
+                  {chargingUnit.kondisiBaterai && chargingUnit.kondisiBaterai !== 'PRIMA' && (
+                    <BatteryConditionBadge condition={chargingUnit.kondisiBaterai} size="xs" />
+                  )}
+                </div>
+
+                <h3 className="text-2xl font-black tracking-tight mt-1.5">
                   #{chargingUnit.kodeGadai}
                 </h3>
                 <p className="text-xs text-sky-100 font-medium mt-0.5">
                   {chargingUnit.merkSepeda} • {chargingUnit.namaNasabah}
                 </p>
+                {chargingUnit.catatanBaterai && (
+                  <p className="text-[10px] text-amber-200 mt-1 italic max-w-[280px]">
+                    Catatan: {chargingUnit.catatanBaterai}
+                  </p>
+                )}
               </div>
 
               <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-2xl text-right">
@@ -158,7 +243,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
             </div>
 
             {/* Countdown Timer Digital & Progress Bar */}
-            <div className="my-5 bg-sky-950/25 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-center">
+            <div className="my-4 bg-sky-950/25 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-center">
               <span className="text-[11px] uppercase tracking-widest text-sky-200 font-semibold flex items-center justify-center gap-1">
                 <Clock className="w-3.5 h-3.5" /> Sisa Waktu Pengisian
               </span>
@@ -176,7 +261,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
 
               <div className="flex justify-between items-center text-[10px] text-sky-200 font-medium mt-1.5 px-0.5">
                 <span>Progress: {chargeTimeInfo?.progressPercent}%</span>
-                <span>{chargeTimeInfo?.isFinished ? "Pengisian 100% Selesai" : "Maks 3 Jam"}</span>
+                <span>{chargeTimeInfo?.isFinished ? "Pengisian Selesai" : `Total ${currentDurationHours} Jam`}</span>
               </div>
             </div>
 
@@ -206,11 +291,11 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
 
             {sortedWaiting.length > 0 ? (
               <button
-                onClick={() => handlePromoteToCharge(sortedWaiting[0].id)}
+                onClick={() => openDurationPickerForStart(sortedWaiting[0].id)}
                 className="h-11 px-5 bg-gradient-to-r from-sky-500 to-sky-600 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-200 hover:from-sky-600 hover:to-sky-700 active:scale-95 transition-all inline-flex items-center gap-2"
               >
                 <ArrowUpRight className="w-4 h-4" />
-                <span>Naikkan Antrian #1 (#{sortedWaiting[0].kodeGadai})</span>
+                <span>Atur Durasi & Naikkan Antrian #1 (#{sortedWaiting[0].kodeGadai})</span>
               </button>
             ) : (
               <button
@@ -290,7 +375,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                       </div>
 
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-base font-extrabold text-slate-900">
                             #{unit.kodeGadai}
                           </span>
@@ -301,13 +386,19 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                           )}
                           {isFirstPriority && (
                             <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded-md bg-rose-100 text-rose-700 animate-pulse">
-                              Prioritas Utama
+                              Prioritas #1
                             </span>
                           )}
                         </div>
                         <p className="text-xs text-slate-500">
                           {unit.merkSepeda} • {unit.namaNasabah}
                         </p>
+
+                        {/* Audit & Condition badges */}
+                        <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                          <BatteryConditionBadge condition={unit.kondisiBaterai || 'PRIMA'} size="xs" />
+                          <ChargeAuditBadge lastChargedAt={unit.lastChargedAt} />
+                        </div>
                       </div>
                     </div>
 
@@ -331,7 +422,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
 
                       {!chargingUnit && isFirstPriority && (
                         <button
-                          onClick={() => handlePromoteToCharge(unit.id)}
+                          onClick={() => openDurationPickerForStart(unit.id)}
                           className="text-[11px] font-bold bg-sky-500 text-white px-2.5 py-1 rounded-lg shadow-xs hover:bg-sky-600 active:scale-95 transition-all"
                         >
                           Naikkan Sekarang
@@ -366,10 +457,114 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         </div>
       </section>
 
-      {/* 3. MODAL TAMBAH KE ANTRIAN CHARGER */}
+      {/* 3. MODAL PILIH DURASI CHARGER SEBELUM MULAI (FITUR DURASI DINAMIS) */}
+      {showDirectStartModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-[390px] bg-white rounded-3xl p-5 shadow-2xl border border-sky-100 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center">
+                  <Sliders className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-800">Tentukan Durasi Charger</h3>
+                  <p className="text-[11px] text-slate-400">Pilih durasi pengisian sesuai kebutuhan unit</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDirectStartModal(false)}
+                className="p-1 rounded-full text-slate-400 hover:bg-slate-100"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 mb-4">
+              {CHARGE_PRESETS.map((preset) => {
+                const isSelected = !isCustomDuration && selectedDurationMs === preset.ms;
+                return (
+                  <button
+                    key={preset.ms}
+                    type="button"
+                    onClick={() => {
+                      setIsCustomDuration(false);
+                      setSelectedDurationMs(preset.ms);
+                    }}
+                    className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
+                      isSelected
+                        ? "border-sky-500 bg-sky-50 text-sky-800 ring-1 ring-sky-400"
+                        : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <div>
+                      <span className="text-xs font-bold block">{preset.label}</span>
+                      <span className="text-[10px] text-slate-400">{preset.desc}</span>
+                    </div>
+                    {isSelected && <CheckCircle className="w-4 h-4 text-sky-600 shrink-0" />}
+                  </button>
+                );
+              })}
+
+              {/* Kustom Durasi */}
+              <button
+                type="button"
+                onClick={() => setIsCustomDuration(true)}
+                className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
+                  isCustomDuration
+                    ? "border-sky-500 bg-sky-50 text-sky-800 ring-1 ring-sky-400"
+                    : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                }`}
+              >
+                <div>
+                  <span className="text-xs font-bold block">Durasi Kustom</span>
+                  <span className="text-[10px] text-slate-400">Tentukan jam manual (0.5 – 12 Jam)</span>
+                </div>
+                {isCustomDuration && <CheckCircle className="w-4 h-4 text-sky-600 shrink-0" />}
+              </button>
+
+              {isCustomDuration && (
+                <div className="p-3 bg-sky-50/50 rounded-xl border border-sky-200 mt-2">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Masukkan Jumlah Jam:
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    max="12"
+                    value={customHours}
+                    onChange={(e) => setCustomHours(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-center text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDirectStartModal(false)}
+                className="flex-1 h-11 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmStartCharging}
+                className="flex-1 h-11 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-200 flex items-center justify-center gap-1.5"
+              >
+                <Zap className="w-4 h-4" />
+                <span>Mulai Pengisian Daya</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. MODAL TAMBAH KE ANTRIAN CHARGER */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-[430px] bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-sky-100 animate-in slide-in-from-bottom duration-200">
+          <div className="w-full max-w-[430px] bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-sky-100 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center">
@@ -400,7 +595,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                   }}
                   className="px-4 py-2 bg-sky-50 text-sky-700 rounded-xl text-xs font-bold border border-sky-200"
                 >
-                  Tambah Unit Gadai Baru di Tab Aktif
+                  Lihat Daftar Unit di Tab Aktif
                 </button>
               </div>
             ) : (
@@ -417,7 +612,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                       if (unit) setInputBattery(String(unit.batteryLevel));
                     }}
                     required
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   >
                     <option value="">-- Pilih Nomor Gadai --</option>
                     {eligibleUnits.map(u => (

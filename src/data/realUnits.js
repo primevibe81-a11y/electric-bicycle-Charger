@@ -15,7 +15,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1793341020000,
     "jatuhTempoAt": 1795971600000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037845",
@@ -32,7 +35,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1793330700000,
     "jatuhTempoAt": 1795971600000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037834",
@@ -49,7 +55,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1793323440000,
     "jatuhTempoAt": 1795971600000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037803",
@@ -66,7 +75,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1793260920000,
     "jatuhTempoAt": 1795885200000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037753",
@@ -83,7 +95,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1793185920000,
     "jatuhTempoAt": 1795798800000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037634",
@@ -100,7 +115,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1793017440000,
     "jatuhTempoAt": 1795626000000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037627",
@@ -117,7 +135,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1793014560000,
     "jatuhTempoAt": 1795626000000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037536",
@@ -134,7 +155,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792923780000,
     "jatuhTempoAt": 1795539600000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037516",
@@ -151,7 +175,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792844760000,
     "jatuhTempoAt": 1795453200000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037513",
@@ -168,7 +195,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792843500000,
     "jatuhTempoAt": 1795453200000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037345",
@@ -185,7 +215,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792571400000,
     "jatuhTempoAt": 1795194000000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037339",
@@ -202,7 +235,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792567980000,
     "jatuhTempoAt": 1795194000000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037161",
@@ -219,7 +255,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792373160000,
     "jatuhTempoAt": 1795021200000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037143",
@@ -236,7 +275,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792305480000,
     "jatuhTempoAt": 1794934800000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037130",
@@ -253,7 +295,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792296480000,
     "jatuhTempoAt": 1794934800000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037111",
@@ -270,7 +315,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792239180000,
     "jatuhTempoAt": 1794848400000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037087",
@@ -287,7 +335,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792215660000,
     "jatuhTempoAt": 1794848400000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037068",
@@ -304,7 +355,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792200660000,
     "jatuhTempoAt": 1794848400000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037063",
@@ -321,7 +375,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792154340000,
     "jatuhTempoAt": 1794762000000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037056",
@@ -338,7 +395,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792151160000,
     "jatuhTempoAt": 1794762000000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0037017",
@@ -355,7 +415,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792069260000,
     "jatuhTempoAt": 1794675600000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698154
+    "updatedAt": 1793603698154,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036973",
@@ -372,7 +435,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1792029840000,
     "jatuhTempoAt": 1794675600000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036926",
@@ -389,7 +455,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791950100000,
     "jatuhTempoAt": 1794589200000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036920",
@@ -406,7 +475,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791947220000,
     "jatuhTempoAt": 1794589200000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036900",
@@ -423,7 +495,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791892440000,
     "jatuhTempoAt": 1794502800000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036829",
@@ -440,7 +515,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791807960000,
     "jatuhTempoAt": 1794416400000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036825",
@@ -457,7 +535,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791806160000,
     "jatuhTempoAt": 1794416400000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036805",
@@ -474,7 +555,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791799860000,
     "jatuhTempoAt": 1794416400000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036727",
@@ -491,7 +575,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791632760000,
     "jatuhTempoAt": 1794243600000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036669",
@@ -508,7 +595,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791545880000,
     "jatuhTempoAt": 1794157200000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036636",
@@ -525,7 +615,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791509760000,
     "jatuhTempoAt": 1794157200000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036576",
@@ -542,7 +635,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791374820000,
     "jatuhTempoAt": 1793984400000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036550",
@@ -559,7 +655,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791341400000,
     "jatuhTempoAt": 1793984400000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036535",
@@ -576,7 +675,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791289320000,
     "jatuhTempoAt": 1793898000000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036533",
@@ -593,7 +695,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791288240000,
     "jatuhTempoAt": 1793898000000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036531",
@@ -610,7 +715,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791287100000,
     "jatuhTempoAt": 1793898000000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036494",
@@ -627,7 +735,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791247380000,
     "jatuhTempoAt": 1793898000000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036416",
@@ -644,7 +755,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791169020000,
     "jatuhTempoAt": 1793811600000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036396",
@@ -661,7 +775,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1791032400000,
     "jatuhTempoAt": 1793638800000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036346",
@@ -678,7 +795,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1790990940000,
     "jatuhTempoAt": 1793638800000,
     "hargaLelang": 0,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036262",
@@ -695,7 +815,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1790853120000,
     "jatuhTempoAt": 1793466000000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0036148",
@@ -712,7 +835,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1790740860000,
     "jatuhTempoAt": 1793379600000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0035787",
@@ -729,7 +855,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1790162700000,
     "jatuhTempoAt": 1792774800000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0035583",
@@ -746,7 +875,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1789877700000,
     "jatuhTempoAt": 1792515600000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0035555",
@@ -763,7 +895,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1789789680000,
     "jatuhTempoAt": 1792429200000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0035538",
@@ -780,7 +915,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1789737000000,
     "jatuhTempoAt": 1792342800000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0035386",
@@ -797,7 +935,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1789537860000,
     "jatuhTempoAt": 1792170000000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0035332",
@@ -814,7 +955,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1789467780000,
     "jatuhTempoAt": 1792083600000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0035242",
@@ -831,7 +975,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1789359480000,
     "jatuhTempoAt": 1791997200000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0034702",
@@ -848,7 +995,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1788352320000,
     "jatuhTempoAt": 1790960400000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0034571",
@@ -865,7 +1015,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1788177960000,
     "jatuhTempoAt": 1790787600000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0034490",
@@ -882,7 +1035,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1788073320000,
     "jatuhTempoAt": 1790701200000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0033874",
@@ -899,7 +1055,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1787031540000,
     "jatuhTempoAt": 1789664400000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0033742",
@@ -916,7 +1075,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1786693560000,
     "jatuhTempoAt": 1789318800000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0033387",
@@ -933,7 +1095,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1786102980000,
     "jatuhTempoAt": 1788714000000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0033223",
@@ -950,7 +1115,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1785839940000,
     "jatuhTempoAt": 1788454800000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0033185",
@@ -967,7 +1135,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1785761220000,
     "jatuhTempoAt": 1788368400000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0032851",
@@ -984,7 +1155,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1785312660000,
     "jatuhTempoAt": 1787936400000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0032412",
@@ -1001,7 +1175,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1784601300000,
     "jatuhTempoAt": 1787245200000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0032148",
@@ -1018,7 +1195,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1784180820000,
     "jatuhTempoAt": 1786813200000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0031808",
@@ -1035,7 +1215,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1783688100000,
     "jatuhTempoAt": 1786294800000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0030780",
@@ -1052,7 +1235,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1782104940000,
     "jatuhTempoAt": 1784739600000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0030649",
@@ -1069,7 +1255,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1781918340000,
     "jatuhTempoAt": 1784566800000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0030567",
@@ -1086,7 +1275,10 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1781778060000,
     "jatuhTempoAt": 1784394000000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   },
   {
     "id": "unit-26_0030405",
@@ -1103,6 +1295,9 @@ export const REAL_EXCEL_UNITS = [
     "lastChargedAt": 1781582820000,
     "jatuhTempoAt": 1784221200000,
     "hargaLelang": 2500000,
-    "updatedAt": 1793603698155
+    "updatedAt": 1793603698155,
+    "kondisiBaterai": "PRIMA",
+    "catatanBaterai": "",
+    "chargeDurationMs": 10800000
   }
 ];

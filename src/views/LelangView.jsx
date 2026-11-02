@@ -12,6 +12,8 @@ import {
   Calendar
 } from 'lucide-react';
 import BatteryIndicator from '../components/BatteryIndicator';
+import BatteryConditionBadge from '../components/BatteryConditionBadge';
+import ChargeAuditBadge from '../components/ChargeAuditBadge';
 import { enqueueUnitForCharging, markLelangSold } from '../services/storage';
 import { MAX_QUEUE_LIMIT } from '../services/chargerQueue';
 
@@ -155,9 +157,19 @@ export default function LelangView({ units, onNotify }) {
                       </div>
                       <h4 className="text-xs font-bold text-slate-800 mt-1">{unit.merkSepeda}</h4>
                       <p className="text-[11px] text-slate-500">Nasabah asal: {unit.namaNasabah}</p>
+                      
+                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                        <BatteryConditionBadge condition={unit.kondisiBaterai || 'PRIMA'} />
+                        <ChargeAuditBadge lastChargedAt={unit.lastChargedAt} />
+                      </div>
                     </div>
 
                     <BatteryIndicator level={unit.batteryLevel} isCharging={isCharging} size="sm" />
+                  </div>
+
+                  {/* Banner Peringatan Kritis Jika > 14 Hari Belum Di-charge */}
+                  <div className="mt-2.5">
+                    <ChargeAuditBadge lastChargedAt={unit.lastChargedAt} showFullAlert={true} />
                   </div>
 
                   {/* Estimasi Harga */}

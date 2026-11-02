@@ -13,36 +13,68 @@ import {
   Gavel,
   RefreshCw,
   CheckCircle2,
-  X
+  X,
+  AlertOctagon,
+  Clock,
+  ArrowDownUp
 } from 'lucide-react';
 import BatteryIndicator from '../components/BatteryIndicator';
+import BatteryConditionBadge from '../components/BatteryConditionBadge';
+import ChargeAuditBadge from '../components/ChargeAuditBadge';
+import AuditBatteryModal from '../components/AuditBatteryModal';
 import { createGadaiUnit, enqueueUnitForCharging, moveToLelang } from '../services/storage';
-import { MAX_QUEUE_LIMIT } from '../services/chargerQueue';
+import { MAX_QUEUE_LIMIT, BATTERY_CONDITIONS, getChargeAuditInfo } from '../services/chargerQueue';
 
 export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onNavigateToTebus }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("ALL"); // 'ALL' | 'CRITICAL' | 'DEFECT'
+  const [sortBy, setSortBy] = useState("DEFAULT"); // 'DEFAULT' | 'OLDEST_CHARGED'
+  const [auditingUnit, setAuditingUnit] = useState(null);
 
   // Form states
   const [kodeGadai, setKodeGadai] = useState("");
   const [merkSepeda, setMerkSepeda] = useState("");
   const [namaNasabah, setNamaNasabah] = useState("");
-  const [batteryLevel, setBatteryLevel] = useState("30");
+  const [batteryLevel, setBatteryLevel] = useState("100");
+  const [kondisiBaterai, setKondisiBaterai] = useState("PRIMA");
+  const [catatanBaterai, setCatatanBaterai] = useState("");
   const [jatuhTempoDays, setJatuhTempoDays] = useState("30");
 
   const aktifUnits = units.filter(u => u.statusBarang === 'AKTIF');
   const waitingCount = units.filter(u => u.statusCharger === 'WAITING').length;
   const isQueueFull = waitingCount >= MAX_QUEUE_LIMIT;
 
-  const filteredUnits = aktifUnits.filter(u => {
+  // Filter & Search
+  let processedUnits = aktifUnits.filter(u => {
+    // 1. Text Search
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
-    return (
+    const matchText = !q || (
       u.kodeGadai.toLowerCase().includes(q) ||
       u.namaNasabah.toLowerCase().includes(q) ||
       u.merkSepeda.toLowerCase().includes(q)
     );
+    if (!matchText) return false;
+
+    // 2. Chip Filter
+    if (filterType === 'CRITICAL') {
+      const audit = getChargeAuditInfo(u.lastChargedAt, u.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000);
+      return audit.isCritical;
+    }
+    if (filterType === 'DEFECT') {
+      return u.kondisiBaterai && u.kondisiBaterai !== 'PRIMA';
+    }
+    return true;
   });
+
+  // Sorting
+  if (sortBy === 'OLDEST_CHARGED') {
+    processedUnits.sort((a, b) => {
+      const timeA = Number(a.lastChargedAt) || 0;
+      const timeB = Number(b.lastChargedAt) || 0;
+      return timeA - timeB; // Ascending: waktu terkecil (terlama belum di-charge) di posisi paling atas
+    });
+  }
 
   const handleCreateSubmit = (e) => {
     e.preventDefault();
@@ -61,6 +93,8 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
       merkSepeda,
       namaNasabah,
       batteryLevel,
+      kondisiBaterai,
+      catatanBaterai,
       jatuhTempoAt
     });
 
@@ -69,7 +103,9 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
       setKodeGadai("");
       setMerkSepeda("");
       setNamaNasabah("");
-      setBatteryLevel("30");
+      setBatteryLevel("100");
+      setKondisiBaterai("PRIMA");
+      setCatatanBaterai("");
       onNotify({
         title: "Unit Berhasil Didaftarkan",
         message: `Nomor gadai #${res.unit.kodeGadai} aktif terdaftar di sistem.`,
@@ -138,7 +174,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
         </button>
       </div>
 
-      {/* FORM INPUT UNIT GADAI BARU */}
+      {/* FORM INPUT UNIT GADAI BARU (DENGAN AUDIT BATERAI) */}
       {showAddForm && (
         <div className="bg-white rounded-3xl p-4 shadow-lg border border-sky-100 animate-in slide-in-from-top-3 duration-200">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-3">
@@ -173,7 +209,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   required
                   value={merkSepeda}
                   onChange={(e) => setMerkSepeda(e.target.value)}
-                  placeholder="Contoh: U-Winfly D8"
+                  placeholder="Contoh: U-WINFLY D65 HITAM"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
               </div>
@@ -192,10 +228,25 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               </div>
             </div>
 
+            {/* Audit Kondisi Baterai Saat Masuk */}
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Baterai Saat Masuk (%)
+                  Kondisi Awal Baterai
+                </label>
+                <select
+                  value={kondisiBaterai}
+                  onChange={(e) => setKondisiBaterai(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                >
+                  {Object.values(BATTERY_CONDITIONS).map(c => (
+                    <option key={c.id} value={c.id}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Persentase Baterai (%)
                 </label>
                 <input
                   type="number"
@@ -208,6 +259,9 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-center text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
                   Masa Gadai
@@ -223,6 +277,18 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   <option value="90">90 Hari (3 Bulan)</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Catatan Fisik Baterai
+                </label>
+                <input
+                  type="text"
+                  value={catatanBaterai}
+                  onChange={(e) => setCatatanBaterai(e.target.value)}
+                  placeholder="Misal: Baterai 48V, soket baik"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
             </div>
 
             <div className="pt-1">
@@ -237,34 +303,89 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
         </div>
       )}
 
-      {/* SEARCH / NUMPAD FILTER BAR */}
-      <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Cari nomor kode gadai / nasabah..."
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-900 shadow-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
-        />
-        {searchQuery && (
+      {/* FILTER & SORT BAR */}
+      <div className="space-y-2">
+        {/* Search */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Cari kode akad / nasabah / merk sepeda..."
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-900 shadow-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Filter Pills & Sort Selector */}
+        <div className="flex items-center justify-between gap-1 overflow-x-auto pb-1 text-xs">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              onClick={() => setFilterType('ALL')}
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                filterType === 'ALL'
+                  ? 'bg-sky-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              Semua ({aktifUnits.length})
+            </button>
+            <button
+              onClick={() => setFilterType('CRITICAL')}
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all flex items-center gap-1 ${
+                filterType === 'CRITICAL'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+              }`}
+            >
+              <AlertOctagon className="w-3 h-3" />
+              <span>&gt;14 Hari Belum Charge</span>
+            </button>
+            <button
+              onClick={() => setFilterType('DEFECT')}
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                filterType === 'DEFECT'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+              }`}
+            >
+              Baterai Bermasalah
+            </button>
+          </div>
+
           <button
-            onClick={() => setSearchQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            onClick={() => setSortBy(sortBy === 'DEFAULT' ? 'OLDEST_CHARGED' : 'DEFAULT')}
+            className={`p-1.5 rounded-xl border text-[11px] font-bold shrink-0 flex items-center gap-1 transition-all ${
+              sortBy === 'OLDEST_CHARGED'
+                ? 'bg-purple-50 text-purple-700 border-purple-200 shadow-xs'
+                : 'bg-white text-slate-500 border-slate-200'
+            }`}
+            title="Urutkan dari yang paling lama belum di-charge"
           >
-            <X className="w-4 h-4" />
+            <ArrowDownUp className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Urut: Terlama Charge</span>
           </button>
-        )}
+        </div>
       </div>
 
       {/* LIST KARTU UNIT GADAI AKTIF */}
       <div className="space-y-3">
-        {filteredUnits.length === 0 ? (
+        {processedUnits.length === 0 ? (
           <div className="bg-white/80 rounded-2xl p-6 text-center text-xs text-slate-400 border border-slate-200">
-            {searchQuery ? "Tidak ditemukan unit dengan kata kunci tersebut." : "Belum ada unit sepeda aktif."}
+            {searchQuery || filterType !== 'ALL'
+              ? "Tidak ada unit dengan kriteria filter tersebut."
+              : "Belum ada unit sepeda aktif."}
           </div>
         ) : (
-          filteredUnits.map((unit) => {
+          processedUnits.map((unit) => {
             const isCharging = unit.statusCharger === 'CHARGING';
             const isWaiting = unit.statusCharger === 'WAITING';
             const jatuhTempoDate = new Date(unit.jatuhTempoAt).toLocaleDateString('id-ID', {
@@ -276,24 +397,24 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
             return (
               <div
                 key={unit.id}
-                className="bg-white/90 backdrop-blur-md rounded-2xl p-4 border border-sky-100 shadow-xs hover:border-sky-200 transition-all"
+                className="bg-white/95 backdrop-blur-md rounded-2xl p-4 border border-sky-100 shadow-xs hover:border-sky-200 transition-all"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-base font-black text-slate-900">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-base font-black text-slate-900 font-mono">
                         #{unit.kodeGadai}
                       </span>
 
                       {/* Status Charger Badge */}
                       {isCharging && (
                         <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 animate-pulse flex items-center gap-1">
-                          <Zap className="w-3 h-3 fill-sky-600" /> Sedang Di-Charge
+                          <Zap className="w-3 h-3 fill-sky-600" /> Di-Charge
                         </span>
                       )}
                       {isWaiting && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                          Mengantri
+                          Antrian
                         </span>
                       )}
                     </div>
@@ -305,9 +426,29 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                       <User className="w-3 h-3 text-slate-400" />
                       <span>{unit.namaNasabah}</span>
                     </p>
+
+                    {/* Badge Kondisi & Audit Siklus Baterai */}
+                    <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                      <BatteryConditionBadge
+                        condition={unit.kondisiBaterai || 'PRIMA'}
+                        onClick={() => setAuditingUnit(unit)}
+                      />
+                      <ChargeAuditBadge lastChargedAt={unit.lastChargedAt} />
+                    </div>
+
+                    {unit.catatanBaterai && (
+                      <p className="text-[10px] text-slate-500 italic mt-1 bg-slate-50 p-1.5 rounded-lg border border-slate-100 max-w-[320px]">
+                        📝 {unit.catatanBaterai}
+                      </p>
+                    )}
                   </div>
 
                   <BatteryIndicator level={unit.batteryLevel} isCharging={isCharging} size="sm" />
+                </div>
+
+                {/* Banner Peringatan Kritis Jika > 14 Hari Belum Di-charge */}
+                <div className="mt-2.5">
+                  <ChargeAuditBadge lastChargedAt={unit.lastChargedAt} showFullAlert={true} />
                 </div>
 
                 {/* Info Riwayat & Jatuh Tempo */}
@@ -317,15 +458,16 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                     <span>Jatuh Tempo: <strong>{jatuhTempoDate}</strong></span>
                   </div>
 
-                  {Array.isArray(unit.riwayatKodeGadai) && unit.riwayatKodeGadai.length > 0 && (
-                    <span className="text-[10px] text-sky-600 font-semibold bg-sky-50 px-1.5 py-0.5 rounded-md" title={`Riwayat kode: ${unit.riwayatKodeGadai.join(', ')}`}>
-                      Diperpanjang {unit.riwayatKodeGadai.length}x
-                    </span>
-                  )}
+                  <button
+                    onClick={() => setAuditingUnit(unit)}
+                    className="text-[11px] font-bold text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded-lg border border-sky-100 active:scale-95 transition-all"
+                  >
+                    ✏️ Audit Baterai
+                  </button>
                 </div>
 
-                {/* 4 Quick Action Buttons */}
-                <div className="mt-3 pt-2 border-t border-slate-100 grid grid-cols-4 gap-1.5">
+                {/* Quick Action Buttons */}
+                <div className="mt-2.5 pt-2 border-t border-slate-100 grid grid-cols-4 gap-1.5">
                   <button
                     onClick={() => handleQuickEnqueue(unit)}
                     disabled={isCharging || isWaiting}
@@ -372,6 +514,15 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
           })
         )}
       </div>
+
+      {/* MODAL AUDIT BATERAI */}
+      {auditingUnit && (
+        <AuditBatteryModal
+          unit={auditingUnit}
+          onClose={() => setAuditingUnit(null)}
+          onNotify={onNotify}
+        />
+      )}
     </div>
   );
 }
