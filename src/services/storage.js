@@ -1,8 +1,9 @@
 import { CHARGE_DURATION_MS, MAX_QUEUE_LIMIT, sortWaitingQueue } from "./chargerQueue";
 import { playChimeSound, playGentleBeep, sendNativeNotification } from "./soundNotification";
 import { supabase, isSupabaseConfigured } from "./supabase";
+import { REAL_EXCEL_UNITS } from "../data/realUnits";
 
-const STORAGE_KEY = "ebike_gadai_units_v1";
+const STORAGE_KEY = "ebike_gadai_units_real_v2";
 const BROADCAST_CHANNEL_NAME = "ebike_gadai_sync_channel";
 
 // Helper konversi CamelCase <-> Snake_Case untuk skema Supabase
@@ -13,7 +14,7 @@ export function modelToDb(unit) {
     riwayat_kode_gadai: unit.riwayatKodeGadai || [],
     merk_sepeda: unit.merkSepeda,
     nama_nasabah: unit.namaNasabah,
-    battery_level: Number(unit.batteryLevel) || 0,
+    battery_level: Number(unit.batteryLevel) || 100,
     status_barang: unit.statusBarang || 'AKTIF',
     status_charger: unit.statusCharger || 'IDLE',
     charge_start_at: unit.chargeStartAt || null,
@@ -33,7 +34,7 @@ export function dbToModel(row) {
     riwayatKodeGadai: Array.isArray(row.riwayat_kode_gadai) ? row.riwayat_kode_gadai : [],
     merkSepeda: row.merk_sepeda,
     namaNasabah: row.nama_nasabah,
-    batteryLevel: Number(row.battery_level) || 0,
+    batteryLevel: Number(row.battery_level) ?? 100,
     statusBarang: row.status_barang,
     statusCharger: row.status_charger,
     chargeStartAt: row.charge_start_at ? Number(row.charge_start_at) : null,
@@ -52,116 +53,9 @@ const channel = typeof window !== "undefined" && "BroadcastChannel" in window
   : null;
 
 /**
- * Data awal (Seed Data) lengkap untuk langsung mendemonstrasikan seluruh fitur:
- * 1 unit CHARGING (dengan timer aktif berjalan)
- * 2 unit WAITING (dengan baterai 12% dan 35% untuk mendemonstrasikan auto-sort)
- * Beberapa unit AKTIF dan LELANG
+ * Data awal: 100% Data Real dari file Excel Transaksi (65 unit, baterai 100%)
  */
-export const SEED_UNITS = [
-  {
-    id: "unit-101",
-    kodeGadai: "202611001",
-    riwayatKodeGadai: [],
-    merkSepeda: "U-Winfly D7S",
-    namaNasabah: "Budi Santoso",
-    batteryLevel: 25,
-    statusBarang: "AKTIF", // 'AKTIF' | 'DITEBUS' | 'LELANG' | 'TERJUAL_LELANG'
-    statusCharger: "CHARGING", // 'IDLE' | 'WAITING' | 'CHARGING'
-    chargeStartAt: Date.now() - 42 * 60 * 1000, // Dimulai 42 menit lalu
-    chargeEndAt: Date.now() + (3 * 60 - 42) * 60 * 1000, // Sisa ~2 jam 18 menit
-    queuedAt: null,
-    lastChargedAt: null,
-    jatuhTempoAt: Date.now() + 14 * 24 * 60 * 60 * 1000,
-    hargaLelang: 0,
-    updatedAt: Date.now(),
-  },
-  {
-    id: "unit-102",
-    kodeGadai: "202611002",
-    riwayatKodeGadai: ["202610889"],
-    merkSepeda: "Exotic Cooltech 2.0",
-    namaNasabah: "Siti Rahma",
-    batteryLevel: 12, // Baterai sangat rendah -> Harus jadi Urutan #1
-    statusBarang: "AKTIF",
-    statusCharger: "WAITING",
-    chargeStartAt: null,
-    chargeEndAt: null,
-    queuedAt: Date.now() - 15 * 60 * 1000,
-    lastChargedAt: null,
-    jatuhTempoAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
-    hargaLelang: 0,
-    updatedAt: Date.now(),
-  },
-  {
-    id: "unit-103",
-    kodeGadai: "202611003",
-    riwayatKodeGadai: [],
-    merkSepeda: "Godwin G5 New",
-    namaNasabah: "Ahmad Fauzi",
-    batteryLevel: 38, // Baterai 38% -> Berada di Urutan #2
-    statusBarang: "AKTIF",
-    statusCharger: "WAITING",
-    chargeStartAt: null,
-    chargeEndAt: null,
-    queuedAt: Date.now() - 30 * 60 * 1000,
-    lastChargedAt: null,
-    jatuhTempoAt: Date.now() + 21 * 24 * 60 * 60 * 1000,
-    hargaLelang: 0,
-    updatedAt: Date.now(),
-  },
-  {
-    id: "unit-104",
-    kodeGadai: "202611004",
-    riwayatKodeGadai: [],
-    merkSepeda: "Selis Butterfly Trike",
-    namaNasabah: "Hendra Wijaya",
-    batteryLevel: 65,
-    statusBarang: "AKTIF",
-    statusCharger: "IDLE",
-    chargeStartAt: null,
-    chargeEndAt: null,
-    queuedAt: null,
-    lastChargedAt: Date.now() - 2 * 24 * 60 * 60 * 1000,
-    jatuhTempoAt: Date.now() + 18 * 24 * 60 * 60 * 1000,
-    hargaLelang: 0,
-    updatedAt: Date.now(),
-  },
-  {
-    id: "unit-105",
-    kodeGadai: "202611005",
-    riwayatKodeGadai: [],
-    merkSepeda: "Pacific Nuri",
-    namaNasabah: "Dewi Lestari",
-    batteryLevel: 15,
-    statusBarang: "LELANG", // Masuk lelang karena lewat jatuh tempo
-    statusCharger: "IDLE",
-    chargeStartAt: null,
-    chargeEndAt: null,
-    queuedAt: null,
-    lastChargedAt: null,
-    jatuhTempoAt: Date.now() - 5 * 24 * 60 * 60 * 1000,
-    hargaLelang: 2850000,
-    updatedAt: Date.now(),
-  },
-  {
-    id: "unit-106",
-    kodeGadai: "202611006",
-    riwayatKodeGadai: ["202609012"],
-    merkSepeda: "Viar Uno 2",
-    namaNasabah: "Agus Pratama",
-    batteryLevel: 100,
-    statusBarang: "DITEBUS",
-    statusCharger: "IDLE",
-    chargeStartAt: null,
-    chargeEndAt: null,
-    queuedAt: null,
-    lastChargedAt: Date.now() - 10 * 24 * 60 * 60 * 1000,
-    jatuhTempoAt: Date.now() - 1 * 24 * 60 * 60 * 1000,
-    hargaLelang: 0,
-    redeemedAt: Date.now() - 1 * 24 * 60 * 60 * 1000,
-    updatedAt: Date.now(),
-  }
-];
+export const SEED_UNITS = REAL_EXCEL_UNITS;
 
 export function getStoredUnits() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -171,7 +65,9 @@ export function getStoredUnits() {
   }
   try {
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
+    // Jika data lama masih mengandung dummy unit-101, perbarui langsung ke data real
+    const hasDummy = Array.isArray(parsed) && parsed.some(u => u.id === 'unit-101' || u.kodeGadai === '202611001');
+    if (!Array.isArray(parsed) || parsed.length === 0 || hasDummy) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_UNITS));
       return SEED_UNITS;
     }
