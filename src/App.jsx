@@ -3,6 +3,7 @@ import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import Toast from './components/Toast';
 import LoginModal from './components/LoginModal';
+import PwaUpdateNotification from './components/PwaUpdateNotification';
 
 import DashboardView from './views/DashboardView';
 import AktifView from './views/AktifView';
@@ -13,6 +14,7 @@ import LelangView from './views/LelangView';
 import { getActiveSession, logoutSession } from './config/auth';
 import { getStoredUnits, subscribeToStoreUpdates, finishChargingUnit, autoEnqueueOverdueUnits } from './services/storage';
 import { playChimeSound, sendNativeNotification } from './services/soundNotification';
+import { initPwaUpdateChecker } from './services/pwaUpdate';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => getActiveSession());
@@ -25,6 +27,29 @@ export default function App() {
 
   // Track if completion sound was already played for current charging session
   const [finishedAlarmFired, setFinishedAlarmFired] = useState(false);
+
+  // Status deteksi pembaruan aplikasi PWA
+  const [pwaUpdateInfo, setPwaUpdateInfo] = useState(null);
+
+  // Listener deteksi pembaruan aplikasi PWA (Service Worker & Version Check)
+  useEffect(() => {
+    let cleanup = () => {};
+    initPwaUpdateChecker((update) => {
+      setPwaUpdateInfo(update);
+      sendNativeNotification("Pembaruan Aplikasi Siap! ⚡", {
+        body: "Versi baru aplikasi telah siap. Silakan restart / muat ulang aplikasi."
+      });
+      setToast({
+        title: "Pembaruan Tersedia 🚀",
+        message: "Versi baru aplikasi terdeteksi di server. Silakan restart halaman.",
+        type: "info"
+      });
+    }).then((unsub) => {
+      if (typeof unsub === 'function') cleanup = unsub;
+    });
+
+    return () => cleanup();
+  }, []);
 
   // Otomatis masukkan unit yang >= 15 hari belum di-charge saat aplikasi dibuka
   useEffect(() => {
@@ -107,6 +132,12 @@ export default function App() {
 
         {/* Global In-App Toast */}
         <Toast toast={toast} onClose={() => setToast(null)} />
+
+        {/* PWA Application Update Notification Banner */}
+        <PwaUpdateNotification
+          updateInfo={pwaUpdateInfo}
+          onClose={() => setPwaUpdateInfo(null)}
+        />
 
         {/* Auth Check */}
         {!currentUser ? (

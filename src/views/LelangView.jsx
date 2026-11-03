@@ -9,7 +9,9 @@ import {
   AlertCircle,
   History,
   XCircle,
-  Calendar
+  Calendar,
+  Search,
+  X
 } from 'lucide-react';
 import BatteryIndicator from '../components/BatteryIndicator';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
@@ -21,9 +23,34 @@ export default function LelangView({ units, onNotify }) {
   const [soldPrice, setSoldPrice] = useState("");
   const [buyerInfo, setBuyerInfo] = useState("");
   const [activeSubTab, setActiveSubTab] = useState("available"); // 'available' | 'sold'
+  const [searchQuery, setSearchQuery] = useState("");
 
   const lelangUnits = units.filter(u => u.statusBarang === 'LELANG');
   const soldUnits = units.filter(u => u.statusBarang === 'TERJUAL_LELANG');
+
+  const q = searchQuery.toLowerCase().trim();
+
+  // Filter pencarian untuk tab Siap Lelang
+  const filteredLelangUnits = lelangUnits.filter(u => {
+    if (!q) return true;
+    return (
+      (u.kodeGadai && u.kodeGadai.toLowerCase().includes(q)) ||
+      (u.merkSepeda && u.merkSepeda.toLowerCase().includes(q)) ||
+      (u.namaNasabah && u.namaNasabah.toLowerCase().includes(q)) ||
+      (u.catatanBaterai && u.catatanBaterai.toLowerCase().includes(q))
+    );
+  });
+
+  // Filter pencarian untuk tab Riwayat Terjual
+  const filteredSoldUnits = soldUnits.filter(u => {
+    if (!q) return true;
+    return (
+      (u.kodeGadai && u.kodeGadai.toLowerCase().includes(q)) ||
+      (u.merkSepeda && u.merkSepeda.toLowerCase().includes(q)) ||
+      (u.namaNasabah && u.namaNasabah.toLowerCase().includes(q)) ||
+      (u.buyerInfo && u.buyerInfo.toLowerCase().includes(q))
+    );
+  });
 
   const handleChargeLelangUnit = (unit) => {
     const res = enqueueUnitForCharging(unit.id, unit.batteryLevel);
@@ -107,14 +134,67 @@ export default function LelangView({ units, onNotify }) {
         </button>
       </div>
 
+      {/* Input Pencarian Menu Lelang */}
+      <div className="relative">
+        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={
+            activeSubTab === "available"
+              ? "Cari nomor gadai / merk / nasabah lelang..."
+              : "Cari nomor gadai / pembeli / keterangan..."
+          }
+          className="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-900 shadow-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+            title="Hapus pencarian"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Info status filter pencarian */}
+      {searchQuery && (
+        <div className="flex items-center justify-between px-1 text-[11px] text-slate-500">
+          <span>
+            Hasil pencarian "<strong>{searchQuery}</strong>":{" "}
+            <strong className="text-purple-700 font-bold">
+              {activeSubTab === "available" ? filteredLelangUnits.length : filteredSoldUnits.length} unit
+            </strong>
+          </span>
+          <button
+            onClick={() => setSearchQuery("")}
+            className="text-purple-600 hover:text-purple-800 font-bold text-xs"
+          >
+            Reset
+          </button>
+        </div>
+      )}
+
       {activeSubTab === "available" ? (
         <div className="space-y-3">
           {lelangUnits.length === 0 ? (
             <div className="bg-white/80 rounded-2xl p-6 text-center text-xs text-slate-400 border border-slate-200">
               Tidak ada unit sepeda listrik yang berada dalam daftar lelang.
             </div>
+          ) : filteredLelangUnits.length === 0 ? (
+            <div className="bg-white/80 rounded-2xl p-6 text-center text-xs text-slate-500 border border-slate-200 space-y-2">
+              <p>Tidak ditemukan unit lelang dengan kata kunci "<strong>{searchQuery}</strong>".</p>
+              <button
+                onClick={() => setSearchQuery("")}
+                className="px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-xl font-bold text-xs hover:bg-purple-100"
+              >
+                Tampilkan Semua ({lelangUnits.length} Unit)
+              </button>
+            </div>
           ) : (
-            lelangUnits.map((unit) => {
+            filteredLelangUnits.map((unit) => {
               const isCharging = unit.statusCharger === 'CHARGING';
               const isWaiting = unit.statusCharger === 'WAITING';
 
@@ -207,8 +287,18 @@ export default function LelangView({ units, onNotify }) {
             <div className="bg-white/80 rounded-2xl p-6 text-center text-xs text-slate-400 border border-slate-200">
               Belum ada unit lelang yang terjual.
             </div>
+          ) : filteredSoldUnits.length === 0 ? (
+            <div className="bg-white/80 rounded-2xl p-6 text-center text-xs text-slate-500 border border-slate-200 space-y-2">
+              <p>Tidak ditemukan riwayat lelang dengan kata kunci "<strong>{searchQuery}</strong>".</p>
+              <button
+                onClick={() => setSearchQuery("")}
+                className="px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-xl font-bold text-xs hover:bg-purple-100"
+              >
+                Tampilkan Semua ({soldUnits.length} Unit)
+              </button>
+            </div>
           ) : (
-            soldUnits.map((unit) => {
+            filteredSoldUnits.map((unit) => {
               const soldDate = unit.soldAt
                 ? new Date(unit.soldAt).toLocaleDateString('id-ID', {
                     day: 'numeric',
