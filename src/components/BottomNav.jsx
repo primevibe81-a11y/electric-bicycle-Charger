@@ -1,18 +1,17 @@
 import React from 'react';
-import { LayoutDashboard, Bike, CheckCircle2, RefreshCw, Gavel } from 'lucide-react';
+import { LayoutDashboard, Bike, Gavel, FileSpreadsheet } from 'lucide-react';
 
 export default function BottomNav({ activeTab, onChangeTab, queueCount = 0 }) {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, badge: queueCount > 0 ? queueCount : null },
     { id: 'aktif', label: 'Aktif', icon: Bike },
-    { id: 'tebus', label: 'Tebus', icon: CheckCircle2 },
-    { id: 'perpanjang', label: 'Perpanjang', icon: RefreshCw },
     { id: 'lelang', label: 'Lelang', icon: Gavel },
+    { id: 'laporan', label: 'Laporan', icon: FileSpreadsheet },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto z-40 bg-white/95 backdrop-blur-lg border-t border-sky-100 safe-nav-bottom shadow-lg shadow-sky-900/10">
-      <div className="grid grid-cols-5 h-16 items-center px-1">
+      <div className="grid grid-cols-4 h-16 items-center px-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -27,7 +26,7 @@ export default function BottomNav({ activeTab, onChangeTab, queueCount = 0 }) {
             >
               <div className="relative">
                 <div
-                  className={`p-1 rounded-xl transition-all ${
+                  className={`p-1.5 rounded-xl transition-all ${
                     isActive ? "bg-sky-100 text-sky-700 shadow-xs" : ""
                   }`}
                 >

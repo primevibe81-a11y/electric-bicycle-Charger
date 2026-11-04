@@ -7,9 +7,8 @@ import PwaUpdateNotification from './components/PwaUpdateNotification';
 
 import DashboardView from './views/DashboardView';
 import AktifView from './views/AktifView';
-import TebusView from './views/TebusView';
-import PerpanjangView from './views/PerpanjangView';
 import LelangView from './views/LelangView';
+import LaporanView from './views/LaporanView';
 
 import { getActiveSession, logoutSession } from './config/auth';
 import { getStoredUnits, subscribeToStoreUpdates, finishChargingUnit, autoEnqueueOverdueUnits } from './services/storage';
@@ -22,8 +21,8 @@ export default function App() {
   const [units, setUnits] = useState(() => getStoredUnits());
   const [toast, setToast] = useState(null);
 
-  // Cross-view selection helper (e.g., from Aktif to Perpanjang / Tebus)
-  const [preselectedUnitId, setPreselectedUnitId] = useState("");
+  // Helper aksi awal saat navigasi ke tab Laporan (misal dari tombol Cepat di Aktif)
+  const [laporanInitialAction, setLaporanInitialAction] = useState(null);
 
   // Track if completion sound was already played for current charging session
   const [finishedAlarmFired, setFinishedAlarmFired] = useState(false);
@@ -111,13 +110,13 @@ export default function App() {
   };
 
   const handleNavigateToPerpanjang = (unitId) => {
-    setPreselectedUnitId(unitId);
-    setActiveTab("perpanjang");
+    setLaporanInitialAction({ type: 'perpanjang', unitId });
+    setActiveTab("laporan");
   };
 
   const handleNavigateToTebus = (unitId) => {
-    setPreselectedUnitId(unitId);
-    setActiveTab("tebus");
+    setLaporanInitialAction({ type: 'tebus', unitId });
+    setActiveTab("laporan");
   };
 
   const waitingQueueCount = units.filter(u => u.statusCharger === 'WAITING').length;
@@ -179,36 +178,27 @@ export default function App() {
                 />
               )}
 
-              {activeTab === 'tebus' && (
-                <TebusView
-                  units={units}
-                  onNotify={handleNotify}
-                  preselectedUnitId={preselectedUnitId}
-                />
-              )}
-
-              {activeTab === 'perpanjang' && (
-                <PerpanjangView
-                  units={units}
-                  onNotify={handleNotify}
-                  preselectedUnitId={preselectedUnitId}
-                  onSelectTab={setActiveTab}
-                />
-              )}
-
               {activeTab === 'lelang' && (
                 <LelangView
                   units={units}
                   onNotify={handleNotify}
                 />
               )}
+
+              {activeTab === 'laporan' && (
+                <LaporanView
+                  units={units}
+                  onNotify={handleNotify}
+                  initialAction={laporanInitialAction}
+                />
+              )}
             </main>
 
-            {/* Fixed Bottom Navigation (5 Tab Bar) */}
+            {/* Fixed Bottom Navigation (4 Tab Bar) */}
             <BottomNav
               activeTab={activeTab}
               onChangeTab={(tabId) => {
-                setPreselectedUnitId("");
+                setLaporanInitialAction(null);
                 setActiveTab(tabId);
               }}
               queueCount={waitingQueueCount}
