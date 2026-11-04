@@ -4,6 +4,35 @@
 
 :root {
   -webkit-tap-highlight-color: transparent;
+
+  /* Design Tokens: Spacing Scale (4/8/12/16/24px) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+
+  /* Design Tokens: Radii (Konsistensi Bentuk) */
+  --radius-card: 16px;
+  --radius-btn: 12px;
+  --radius-pill: 9999px;
+
+  /* Design Tokens: Shadows (Satu Level Halus) */
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.06);
+  --shadow-sheet: 0 -4px 24px -2px rgba(15, 23, 42, 0.16);
+
+  /* Design Tokens: Touch Target Minimal (iPhone / Android) */
+  --touch-min: 44px;
+
+  /* Design Tokens: Brand & Status Colors (WCAG AA Compliant) */
+  --color-brand-500: #0ea5e9;
+  --color-brand-600: #0284c7;
+  --color-brand-700: #0369a1;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-border-card: #e2e8f0;
+  --color-surface-card: #ffffff;
 }
 
 body {

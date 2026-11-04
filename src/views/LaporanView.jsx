@@ -322,8 +322,8 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
         </button>
       </div>
 
-      {/* 3. STICKY CONTROLS (Search Bar + Tombol Ekspor Ringkas + Tab Filter dengan Fade) */}
-      <div className="sticky top-0 z-20 bg-[#F0F9FF]/95 backdrop-blur-md pt-1 pb-2 space-y-2">
+      {/* 3. STICKY CONTROLS (Collapsing Header Effect: Search Bar + Tombol Ekspor + Tab Filter dengan Fade) */}
+      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-[#F0F9FF]/95 backdrop-blur-md border-b border-sky-100/70 shadow-xs space-y-2">
         {/* Row 1: Search Bar + Single "Ekspor" Button */}
         <div className="flex items-center gap-2">
           {/* Kolom Pencarian (radius 12px, shadow-none, border jelas) */}
@@ -548,14 +548,15 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                   </div>
                 )}
 
-                {/* Quick Action Footer Buttons (hanya untuk unit aktif/lelang, radius 12px) */}
+                {/* Quick Action Footer Buttons (hanya untuk unit aktif/lelang, radius 12px, Touch Target >= 44px) */}
                 {!isDitebus && (
                   <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
                     <button
                       onClick={() => setAuditUnit(unit)}
-                      className="h-9 min-h-[36px] px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95"
+                      className="h-10 min-h-[44px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                      title="Audit kondisi baterai"
                     >
-                      <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+                      <ShieldCheck className="w-4 h-4 text-slate-500" />
                       <span>Audit</span>
                     </button>
 
@@ -565,9 +566,10 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                         setNewKodeGadai('');
                         setCatatanPerpanjang(unit.catatanBaterai || '');
                       }}
-                      className="h-9 min-h-[36px] px-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95"
+                      className="h-10 min-h-[44px] px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                      title="Perpanjang gadai unit"
                     >
-                      <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
+                      <RefreshCw className="w-4 h-4 text-amber-600" />
                       <span>Perpanjang</span>
                     </button>
 
@@ -576,9 +578,10 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                         setTebusUnit(unit);
                         setCatatanTebus('');
                       }}
-                      className="h-9 min-h-[36px] px-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95"
+                      className="h-10 min-h-[44px] px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                      title="Pelunasan & tebus unit"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       <span>Tebus</span>
                     </button>
                   </div>
