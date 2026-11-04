@@ -180,8 +180,8 @@ export function getChargeAuditInfo(lastChargedAt, masukAt) {
     daysAgo,
     tier: 'KRITIS',
     badgeClass: 'bg-rose-100 text-rose-800 border-rose-300 animate-pulse font-extrabold',
-    label: `⚠️ ${daysAgo} hari lalu!`,
-    alertMessage: `⚠️ Terakhir di-charge ${daysAgo} hari yang lalu! Segera periksa kondisi baterai / jadwalkan charger perawatan.`,
+    label: `${daysAgo} hari lalu (Kritis)`,
+    alertMessage: `Terakhir di-charge ${daysAgo} hari yang lalu! Segera periksa kondisi baterai / jadwalkan charger perawatan.`,
     isCritical: true
   };
 }

@@ -1,5 +1,5 @@
 {
-  "version": "1.5.1",
-  "buildTime": 1730731500000,
-  "description": "Refined Mobile-First UI: De-cluttered Header, Sticky Filter Bar, Compact Stats, Bottom Sheet Export, and Priority Unit List Area"
+  "version": "1.5.2",
+  "buildTime": 1730733600000,
+  "description": "Mobile-First Unit Card Revision: 4-Row Compact Layout, Action Bottom Sheet, Deduplicated Charge Meta, Single Critical Indicator, and Sticky Search & Filter"
 }

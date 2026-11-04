@@ -16,10 +16,10 @@ export default function BatteryConditionBadge({ condition = 'PRIMA', size = 'sm'
   return (
     <span
       onClick={onClick}
-      className={`inline-flex items-center gap-1 font-bold rounded-lg border shadow-xs transition-all ${
+      className={`inline-flex items-center gap-1 font-bold rounded-full border shadow-xs transition-all ${
         conf.badgeClass
       } ${
-        size === 'xs' ? 'text-[9px] px-1.5 py-0.2' : 'text-[10px] px-2 py-0.5'
+        size === 'xs' ? 'text-[9px] px-2 py-0.5' : 'text-[10px] px-2.5 py-0.5'
       } ${
         isInteractive ? 'cursor-pointer hover:opacity-80 active:scale-95' : ''
       }`}
