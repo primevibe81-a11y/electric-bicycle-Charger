@@ -5,14 +5,13 @@ import {
   BatteryCharging,
   PlusCircle,
   AlertCircle,
-  CheckCircle,
+  CheckCircle2,
   ArrowUpRight,
   XCircle,
   Bike,
   Sparkles,
   ChevronRight,
-  ShieldAlert,
-  Sliders,
+  SlidersHorizontal,
   AlertOctagon,
   Plus,
   Minus,
@@ -20,17 +19,17 @@ import {
   Search,
   X,
   Smartphone,
-  Radio,
   Play,
   Square,
-  Volume2
+  Volume2,
+  Info,
+  Settings
 } from 'lucide-react';
 import {
   getRemainingChargeTime,
   sortWaitingQueue,
   DEFAULT_CHARGE_DURATION_MS,
   CHARGE_PRESETS,
-  getChargeAuditInfo,
   getDaysSinceLastCharge,
   MIN_SLOTS_CAPACITY,
   MAX_SLOTS_CAPACITY
@@ -49,16 +48,16 @@ import {
   startLockScreenMonitor,
   stopLockScreenMonitor,
   updateLockScreenMonitor,
-  getIsLockScreenMonitorActive,
-  formatLockScreenSummary
+  getIsLockScreenMonitorActive
 } from '../services/lockScreenMonitor';
 import BatteryIndicator from '../components/BatteryIndicator';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
-import ChargeAuditBadge from '../components/ChargeAuditBadge';
 
 export default function DashboardView({ units, onNotify, onSelectTab }) {
   const [nowTick, setNowTick] = useState(Date.now());
   const [slotsCapacity, setSlotsCapacity] = useState(() => getChargerSlotsCapacity());
+  const [showSlotSettings, setShowSlotSettings] = useState(false);
+  const [showLiveMonitorDetail, setShowLiveMonitorDetail] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState("");
   const [inputBattery, setInputBattery] = useState("100");
@@ -78,17 +77,17 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
     return () => clearInterval(timer);
   }, []);
 
-  // Filter unit yang sedang di-charge (Bisa lebih dari 1 unit sesuai kapasitas slot)
+  // Filter unit yang sedang di-charge
   const chargingUnits = units.filter(u => u.statusCharger === 'CHARGING');
 
-  // Sinkronisasi pembaruan Lock Screen Live Monitor (MediaSession + Notification active-charger-slots)
+  // Sinkronisasi pembaruan Lock Screen Live Monitor
   useEffect(() => {
     if (isLiveMonitorOn) {
       updateLockScreenMonitor(chargingUnits);
     }
   }, [nowTick, isLiveMonitorOn, chargingUnits]);
 
-  // Filter dan urutkan antrian tunggu: Prioritas >= 15 HARI SELALU DI POSISI TERATAS (#1)
+  // Antrian tunggu: Unit >= 15 hari otomatis paling atas
   const rawWaiting = units.filter(u => u.statusCharger === 'WAITING');
   const sortedWaiting = sortWaitingQueue(rawWaiting);
 
@@ -109,21 +108,40 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
          u.statusCharger === 'IDLE'
   );
 
-  // Hitung unit dengan status audit kritis (>=15 hari belum di-charge)
+  // Unit kritis (>= 15 hari belum di-charge)
   const overdueUnits = units.filter(u => {
     if (u.statusBarang !== 'AKTIF' && u.statusBarang !== 'LELANG') return false;
     const days = getDaysSinceLastCharge(u.lastChargedAt, u.jatuhTempoAt ? u.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null);
     return days >= 15;
   });
 
+  // Unit butuh charge (idle dan battery < 60% atau >= 7 hari)
+  const needChargeUnits = units.filter(u => {
+    if (u.statusBarang !== 'AKTIF' && u.statusBarang !== 'LELANG') return false;
+    if (u.statusCharger !== 'IDLE') return false;
+    const days = getDaysSinceLastCharge(u.lastChargedAt, u.jatuhTempoAt ? u.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null);
+    return Number(u.batteryLevel) < 60 || days >= 7;
+  });
+
   const handleAdjustSlots = (delta) => {
     const current = getChargerSlotsCapacity();
-    const nextVal = Math.min(MAX_SLOTS_CAPACITY, Math.max(MIN_SLOTS_CAPACITY, current + delta));
-    setChargerSlotsCapacity(nextVal);
-    setSlotsCapacity(nextVal);
+    const nextVal = current + delta;
+
+    if (delta < 0 && nextVal < chargingUnits.length) {
+      onNotify({
+        title: "Slot Sedang Terisi",
+        message: `Tidak dapat mengurangi slot di bawah ${chargingUnits.length} karena unit sedang aktif diisi daya.`,
+        type: "warning"
+      });
+      return;
+    }
+
+    const clamped = Math.min(MAX_SLOTS_CAPACITY, Math.max(MIN_SLOTS_CAPACITY, nextVal));
+    setChargerSlotsCapacity(clamped);
+    setSlotsCapacity(clamped);
     onNotify({
       title: "Kapasitas Slot Diperbarui",
-      message: `Jumlah slot charger aktif disetel menjadi ${nextVal} slot.`,
+      message: `Jumlah slot charger disetel menjadi ${clamped} colokan.`,
       type: "info"
     });
   };
@@ -145,14 +163,13 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
     }
   };
 
-  // Toggle aktivasi Lock Screen Live Monitor iPhone 13
   const handleToggleLiveMonitor = async () => {
     if (isLiveMonitorOn) {
-      const res = await stopLockScreenMonitor();
+      await stopLockScreenMonitor();
       setIsLiveMonitorOn(false);
       onNotify({
         title: "Lock Screen Monitor Dimatikan",
-        message: "Monitoring latar belakang di Lock Screen iPhone 13 telah dinonaktifkan.",
+        message: "Monitoring di layar kunci telah dinonaktifkan.",
         type: "info"
       });
     } else {
@@ -160,8 +177,8 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
       if (res.success) {
         setIsLiveMonitorOn(true);
         onNotify({
-          title: "Lock Screen Monitor Aktif! ⚡",
-          message: "Status Slot #1 & #2 beserta hitung mundur sisa waktu kini tampil langsung di Lock Screen iPhone 13.",
+          title: "Lock Screen Monitor Aktif",
+          message: "Sisa waktu pengisian kini tampil langsung di layar kunci ponsel Anda.",
           type: "success"
         });
       } else {
@@ -185,7 +202,6 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
     }
   };
 
-  // Batalkan sesi charger aktif (antisipasi salah input unit/slot)
   const handleCancelActiveCharging = (unit) => {
     if (window.confirm(`Salah input unit? Batalkan proses charger untuk unit #${unit.kodeGadai} dan kembalikan ke antrian tunggu?`)) {
       const res = cancelChargingUnit(unit.id, true);
@@ -269,477 +285,372 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
     }
   };
 
-  // Bangun array slot: dari index 0 sampai slotsCapacity - 1
   const slotIndices = Array.from({ length: slotsCapacity }, (_, i) => i);
   const emptySlotsCount = Math.max(0, slotsCapacity - chargingUnits.length);
 
   return (
-    <div className="space-y-4 pb-6">
-      {/* 1. HEADER PENGATURAN SLOT CHARGER DINAMIS */}
-      <section className="bg-white/90 backdrop-blur-md rounded-3xl p-4 border border-sky-100 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-sky-600 text-white flex items-center justify-center shadow-xs">
-              <Zap className="w-4 h-4 fill-white" />
-            </div>
-            <div>
-              <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                Slot Charger Dinamis
-              </h2>
-              <p className="text-[11px] text-slate-500">
-                Terisi: <strong className="text-sky-700">{chargingUnits.length}</strong> dari <strong>{slotsCapacity} Colokan</strong>
-              </p>
-            </div>
+    <div className="space-y-3 pb-8">
+      {/* 1. RINGKASAN ANGKA PALING ATAS (TINGGI MAKSIMAL 72PX, PADDING 12PX) */}
+      <section className="grid grid-cols-3 gap-2">
+        {/* Card 1: Butuh Charge */}
+        <div
+          onClick={() => onSelectTab && onSelectTab('aktif')}
+          className="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-xs hover:border-sky-300 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between"
+          title="Lihat unit yang butuh di-charge"
+        >
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-[11px] font-semibold truncate">Butuh Charge</span>
+            <BatteryCharging className="w-3.5 h-3.5 text-sky-600 shrink-0" />
           </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-lg font-bold text-slate-900 leading-none">{needChargeUnits.length}</span>
+            <span className="text-[10px] text-slate-400">unit</span>
+          </div>
+        </div>
 
-          {/* Stepper Tambah / Kurangi Slot Charger */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200">
-            <button
-              onClick={() => handleAdjustSlots(-1)}
-              disabled={slotsCapacity <= MIN_SLOTS_CAPACITY}
-              className="w-7 h-7 rounded-xl bg-white text-slate-700 flex items-center justify-center font-bold text-sm shadow-xs hover:bg-slate-50 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-              title="Kurangi 1 Slot Charger"
-            >
-              <Minus className="w-3.5 h-3.5" />
-            </button>
-            <span className="text-xs font-black text-slate-800 px-2 min-w-[20px] text-center">
-              {slotsCapacity}
-            </span>
-            <button
-              onClick={() => handleAdjustSlots(1)}
-              disabled={slotsCapacity >= MAX_SLOTS_CAPACITY}
-              className="w-7 h-7 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold text-sm shadow-xs hover:bg-sky-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-              title="Tambah 1 Slot Charger"
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </button>
+        {/* Card 2: Kritis */}
+        <div
+          onClick={() => onSelectTab && onSelectTab('aktif')}
+          className="bg-rose-50/70 rounded-2xl p-2.5 border border-rose-200 shadow-xs hover:border-rose-400 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between"
+          title="Unit kritis belum di-charge ≥15 hari"
+        >
+          <div className="flex items-center justify-between text-rose-700">
+            <span className="text-[11px] font-semibold truncate">Kritis ≥15 Hari</span>
+            <AlertOctagon className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-lg font-bold text-rose-700 leading-none">{overdueUnits.length}</span>
+            <span className="text-[10px] text-rose-500">unit</span>
+          </div>
+        </div>
+
+        {/* Card 3: Antrian */}
+        <div
+          onClick={() => {
+            const el = document.getElementById('antrian-prioritas-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="bg-amber-50/70 rounded-2xl p-2.5 border border-amber-200 shadow-xs hover:border-amber-400 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between"
+          title="Unit dalam antrian charger"
+        >
+          <div className="flex items-center justify-between text-amber-800">
+            <span className="text-[11px] font-semibold truncate">Antrian</span>
+            <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-lg font-bold text-amber-800 leading-none">{sortedWaiting.length}</span>
+            <span className="text-[10px] text-amber-600">unit</span>
           </div>
         </div>
       </section>
 
-      {/* 2. LOCK SCREEN LIVE MONITOR UNTUK IPHONE 13 (MEDIASESSION + SERVICE WORKER NOTIFICATION) */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-850 to-sky-950 p-4 text-white border border-slate-750 shadow-md">
-        {/* Glow Ambient Effect */}
-        <div className="absolute -top-10 -right-10 w-28 h-28 bg-sky-500/15 rounded-full blur-2xl pointer-events-none" />
+      {/* 2. SATU PANEL RINGKAS "PANTAU DI LAYAR KUNCI" (DEFAULT TERTUTUP, SENTENCE CASE) */}
+      <section className="bg-white rounded-2xl p-3 border border-slate-200/90 shadow-xs flex items-center justify-between gap-3">
+        <div
+          className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+          onClick={() => setShowLiveMonitorDetail(true)}
+          title="Ketuk untuk melihat informasi dan simulator layar kunci"
+        >
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+            isLiveMonitorOn
+              ? 'bg-emerald-50 text-emerald-600 ring-2 ring-emerald-200'
+              : 'bg-slate-100 text-slate-500'
+          }`}>
+            <Smartphone className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-bold text-slate-900 truncate">
+                Pantau di layar kunci
+              </span>
+              <span className={`text-[10px] font-semibold px-2 py-0.2 rounded-full border ${
+                isLiveMonitorOn
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-slate-100 text-slate-500 border-slate-200'
+              }`}>
+                {isLiveMonitorOn ? 'Aktif' : 'Standby'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 truncate">
+              Sisa waktu charger tampil langsung tanpa membuka HP
+            </p>
+          </div>
+        </div>
 
-        <div className="flex items-center justify-between mb-3 relative z-10">
+        <button
+          onClick={handleToggleLiveMonitor}
+          className={`h-11 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shrink-0 ${
+            isLiveMonitorOn
+              ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+              : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
+          }`}
+        >
+          {isLiveMonitorOn ? (
+            <>
+              <Square className="w-3.5 h-3.5 fill-current" />
+              <span>Matikan</span>
+            </>
+          ) : (
+            <>
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>Aktifkan</span>
+            </>
+          )}
+        </button>
+      </section>
+
+      {/* 3. KOMPONEN SATU "SLOT CHARGER" (DISATUKAN, TIAP SLOT 1 BARIS RINGKAS 56-64PX) */}
+      <section className="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-xs space-y-2.5">
+        {/* Header Komponen Slot Charger: Sentence Case & Gear Button */}
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
-              isLiveMonitorOn
-                ? 'bg-emerald-500/20 text-emerald-400 ring-2 ring-emerald-500/30 shadow-xs shadow-emerald-500/20'
-                : 'bg-slate-800 text-slate-400'
-            }`}>
-              <Smartphone className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4" />
             </div>
             <div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h2 className="text-xs font-black uppercase tracking-wider text-white">
-                  Lock Screen Live Monitor
-                </h2>
-                {isLiveMonitorOn ? (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black tracking-wide uppercase border border-emerald-500/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                    Live
-                  </span>
-                ) : (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
-                    Standby
-                  </span>
-                )}
-              </div>
-              <p className="text-[10px] text-slate-300">
-                iPhone 13 • Now Playing & Notification
+              <h2 className="text-sm font-bold text-slate-900 leading-tight">Slot Charger</h2>
+              <p className="text-xs text-slate-500">
+                Terisi {chargingUnits.length} dari {slotsCapacity} colokan
               </p>
             </div>
           </div>
 
-          {/* Tombol Toggle Aktifkan / Matikan */}
           <button
-            onClick={handleToggleLiveMonitor}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm ${
-              isLiveMonitorOn
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
-                : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-500/20 hover:from-emerald-600 hover:to-teal-700'
-            }`}
+            onClick={() => setShowSlotSettings(true)}
+            className="h-9 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95"
+            title="Pengaturan Kapasitas Slot Charger"
+            aria-label="Pengaturan Slot"
           >
-            {isLiveMonitorOn ? (
-              <>
-                <Square className="w-3.5 h-3.5 fill-current" />
-                <span>Matikan</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Aktifkan</span>
-              </>
-            )}
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Atur ({slotsCapacity})</span>
           </button>
         </div>
 
-        {/* Simulator / Visual Mock Tampilan Lock Screen iPhone 13 */}
-        <div className="bg-black/40 backdrop-blur-md rounded-2xl p-3 border border-white/10 relative z-10 space-y-2">
-          <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pb-1.5 border-b border-white/10">
-            <span className="flex items-center gap-1 text-sky-300">
-              <Radio className={`w-3 h-3 ${isLiveMonitorOn ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
-              <span>Apple Lock Screen • Now Playing</span>
-            </span>
-            <span className="text-[9px] bg-sky-950/80 px-1.5 py-0.5 rounded text-sky-200 border border-sky-800 font-mono">
-              tag: active-charger-slots
-            </span>
-          </div>
+        {/* Daftar Slot: Tiap Slot Tampil Tepat 1 Baris (Tinggi ~58px) */}
+        <div className="space-y-2">
+          {slotIndices.map((slotIndex) => {
+            const unit = chargingUnits[slotIndex];
+            const slotNumber = slotIndex + 1;
 
-          {/* Status Slot #1 di Lock Screen */}
-          <div className="flex items-center justify-between bg-white/5 hover:bg-white/10 px-2.5 py-2 rounded-xl border border-white/5 transition-colors">
-            <div className="flex items-center gap-2 min-w-0 pr-2">
-              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${chargingUnits[0] ? 'bg-amber-400 ring-2 ring-amber-400/30 animate-pulse' : 'bg-slate-500'}`} />
-              <div className="min-w-0">
-                <div className="text-xs font-black text-amber-200 truncate">
-                  Slot #1: {chargingUnits[0] ? `#${chargingUnits[0].kodeGadai}` : 'Kosong / Tersedia'}
-                </div>
-                <div className="text-[10px] text-slate-300 truncate">
-                  {chargingUnits[0]
-                    ? `${chargingUnits[0].merkSepeda} (${chargingUnits[0].batteryLevel}%)`
-                    : 'Colokan #1 siap dihubungkan ke unit'}
-                </div>
-              </div>
-            </div>
-            <div className="text-right shrink-0">
-              <span className="font-mono text-xs font-black tracking-wider text-sky-300 block">
-                {chargingUnits[0]
-                  ? getRemainingChargeTime(chargingUnits[0].chargeEndAt, chargingUnits[0].chargeDurationMs).formatted
-                  : '--:--:--'}
-              </span>
-              <span className="text-[9px] text-slate-400 block">Sisa Waktu</span>
-            </div>
-          </div>
+            if (unit) {
+              // SLOT TERISI: 1 Baris Ringkas
+              const timeInfo = getRemainingChargeTime(unit.chargeEndAt, unit.chargeDurationMs);
+              return (
+                <div
+                  key={unit.id}
+                  className="bg-sky-50/70 border border-sky-200 rounded-xl p-2.5 flex items-center justify-between gap-2 min-h-[58px]"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300 animate-pulse shrink-0" />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs font-bold text-sky-950">Slot #{slotNumber}</span>
+                        <span className="text-xs font-mono font-bold text-slate-900">#{unit.kodeGadai}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 truncate">
+                        {unit.merkSepeda} ({unit.batteryLevel}%)
+                      </p>
+                    </div>
+                  </div>
 
-          {/* Status Slot #2 di Lock Screen */}
-          <div className="flex items-center justify-between bg-white/5 hover:bg-white/10 px-2.5 py-2 rounded-xl border border-white/5 transition-colors">
-            <div className="flex items-center gap-2 min-w-0 pr-2">
-              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${chargingUnits[1] ? 'bg-sky-400 ring-2 ring-sky-400/30 animate-pulse' : 'bg-slate-500'}`} />
-              <div className="min-w-0">
-                <div className="text-xs font-black text-sky-200 truncate">
-                  Slot #2: {chargingUnits[1] ? `#${chargingUnits[1].kodeGadai}` : 'Kosong / Tersedia'}
-                </div>
-                <div className="text-[10px] text-slate-300 truncate">
-                  {chargingUnits[1]
-                    ? `${chargingUnits[1].merkSepeda} (${chargingUnits[1].batteryLevel}%)`
-                    : 'Colokan #2 siap dihubungkan ke unit'}
-                </div>
-              </div>
-            </div>
-            <div className="text-right shrink-0">
-              <span className="font-mono text-xs font-black tracking-wider text-sky-300 block">
-                {chargingUnits[1]
-                  ? getRemainingChargeTime(chargingUnits[1].chargeEndAt, chargingUnits[1].chargeDurationMs).formatted
-                  : '--:--:--'}
-              </span>
-              <span className="text-[9px] text-slate-400 block">Sisa Waktu</span>
-            </div>
-          </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="text-right pr-1">
+                      <span className="font-mono text-xs font-bold tabular-nums text-sky-700 block">
+                        {timeInfo.formatted}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block">sisa waktu</span>
+                    </div>
 
-          {/* Info Status / Petunjuk Petugas */}
-          <div className="pt-1">
-            {isLiveMonitorOn ? (
-              <div className="flex items-center gap-1.5 text-[10px] text-emerald-300 leading-tight">
-                <Volume2 className="w-3.5 h-3.5 shrink-0 animate-pulse" />
-                <span>
-                  Audio hening aktif. Anda dapat langsung mengunci iPhone 13; timer Slot #1 & #2 akan terus berjalan di Lock Screen.
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 leading-tight">
-                <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-300" />
-                <span>
-                  Ketuk <strong>Aktifkan</strong> agar petugas gudang dapat melihat sisa waktu charger langsung di layar terkunci tanpa membuka kunci HP.
-                </span>
-              </div>
-            )}
-          </div>
+                    <button
+                      onClick={() => handleFinishCharging(unit.id)}
+                      className="w-8 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition-all active:scale-95 shadow-2xs"
+                      title="Selesai Di-charge (Baterai Penuh)"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleCancelActiveCharging(unit)}
+                      className="w-8 h-8 rounded-lg bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 flex items-center justify-center transition-all active:scale-95"
+                      title="Batalkan (salah input)"
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            } else {
+              // SLOT KOSONG: 1 Baris Ringkas (Bukan kartu putus-putus besar)
+              const nextInQueue = sortedWaiting[slotIndex - chargingUnits.length] || sortedWaiting[0];
+              return (
+                <div
+                  key={`empty-slot-${slotIndex}`}
+                  className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between gap-2 min-h-[58px]"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold text-slate-700 block">Slot #{slotNumber}</span>
+                      <span className="text-[11px] text-slate-500 block">Tersedia (Kosong)</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    {nextInQueue ? (
+                      <button
+                        onClick={() => openDurationPickerForStart(nextInQueue.id)}
+                        className="h-9 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs active:scale-95 transition-all"
+                      >
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                        <span>Pasang #{nextInQueue.kodeGadai}</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowAddModal(true)}
+                        className="h-9 px-3 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs flex items-center gap-1.5 transition-all active:scale-95"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5 text-sky-600" />
+                        <span>Pilih Unit</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+          })}
         </div>
       </section>
 
-      {/* 3. DAFTAR SLOT CHARGER AKTIF (MULTI-SLOT DENGAN FITUR BATALKAN) */}
-      <section className="space-y-3">
-        {slotIndices.map((slotIndex) => {
-          const unit = chargingUnits[slotIndex];
-          const slotNumber = slotIndex + 1;
-
-          if (unit) {
-            // SLOT TERISI UNIT
-            const durationHours = Math.round((Number(unit.chargeDurationMs || DEFAULT_CHARGE_DURATION_MS) / (1000 * 60 * 60)) * 10) / 10;
-            const timeInfo = getRemainingChargeTime(unit.chargeEndAt, unit.chargeDurationMs);
-
-            return (
-              <div
-                key={unit.id}
-                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-500 via-sky-600 to-sky-700 text-white p-4 shadow-md shadow-sky-500/20"
-              >
-                {/* Header Slot */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black tracking-wide uppercase">
-                        <BatteryCharging className="w-3 h-3 text-amber-300 animate-bounce" />
-                        Slot #{slotNumber} Sedang Di-Charge
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-900/40 text-sky-100">
-                        Durasi: {durationHours} Jam
-                      </span>
-                      {unit.kondisiBaterai && unit.kondisiBaterai !== 'PRIMA' && (
-                        <BatteryConditionBadge condition={unit.kondisiBaterai} size="xs" />
-                      )}
-                    </div>
-
-                    <h3 className="text-xl font-black tracking-tight mt-1 font-mono">
-                      #{unit.kodeGadai}
-                    </h3>
-                    <p className="text-xs text-sky-100 font-medium">
-                      {unit.merkSepeda} • {unit.namaNasabah}
-                    </p>
-                  </div>
-
-                  <div className="bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-xl text-right">
-                    <span className="text-[9px] block text-sky-100 font-medium">Baterai Awal</span>
-                    <span className="text-xs font-black text-white">{unit.batteryLevel}%</span>
-                  </div>
-                </div>
-
-                {/* Timer & Progress Bar */}
-                <div className="my-3 bg-sky-950/25 backdrop-blur-md rounded-2xl p-3 border border-white/10 text-center">
-                  <span className="text-[10px] uppercase tracking-widest text-sky-200 font-semibold flex items-center justify-center gap-1">
-                    <Clock className="w-3 h-3" /> Sisa Waktu Pengisian
-                  </span>
-                  <div className="text-2xl font-black tracking-widest font-mono my-0.5 text-white">
-                    {timeInfo.formatted}
-                  </div>
-
-                  {/* Dynamic Progress Bar */}
-                  <div className="w-full bg-sky-900/50 rounded-full h-2 overflow-hidden mt-2 p-0.5 border border-white/10">
-                    <div
-                      className="bg-gradient-to-r from-amber-300 via-sky-200 to-emerald-300 h-full rounded-full transition-all duration-1000"
-                      style={{ width: `${timeInfo.progressPercent}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Aksi: Selesai Penuh (100%) vs Batalkan Charger (Salah Input) */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleFinishCharging(unit.id)}
-                    className="flex-1 h-10 bg-white text-sky-700 font-bold text-xs rounded-xl shadow-sm hover:bg-sky-50 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <CheckCircle className="w-4 h-4 text-emerald-600" />
-                    <span>Selesai (Baterai 100%)</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleCancelActiveCharging(unit)}
-                    className="h-10 px-3.5 bg-rose-500/25 hover:bg-rose-600 text-white font-bold text-xs rounded-xl border border-white/20 active:scale-[0.98] transition-all flex items-center justify-center gap-1 shadow-2xs"
-                    title="Batalkan proses charger untuk unit ini jika terjadi salah input"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    <span>Batalkan</span>
-                  </button>
-                </div>
-              </div>
-            );
-          } else {
-            // SLOT KOSONG
-            const nextInQueue = sortedWaiting[slotIndex - chargingUnits.length] || sortedWaiting[0];
-
-            return (
-              <div
-                key={`empty-slot-${slotIndex}`}
-                className="rounded-3xl border-2 border-dashed border-sky-200 bg-sky-50/50 p-4 text-center"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-sky-700 flex items-center gap-1">
-                    <Zap className="w-3.5 h-3.5 text-sky-500" />
-                    Slot Charger #{slotNumber} Kosong
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                    Siap Digunakan
-                  </span>
-                </div>
-
-                {sortedWaiting.length > 0 ? (
-                  <button
-                    onClick={() => openDurationPickerForStart(nextInQueue.id)}
-                    className="w-full h-11 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs rounded-2xl shadow-sm shadow-sky-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                  >
-                    <ArrowUpRight className="w-4 h-4" />
-                    <span>
-                      Naikkan #{nextInQueue.kodeGadai} ke Slot #{slotNumber}
-                      {getDaysSinceLastCharge(nextInQueue.lastChargedAt) >= 15 ? ' (⚡ Prioritas ≥15 Hari)' : ''}
-                    </span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setShowAddModal(true)}
-                    className="w-full h-11 bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 font-bold text-xs rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                  >
-                    <PlusCircle className="w-4 h-4 text-sky-500" />
-                    <span>Pilih Unit untuk Slot #{slotNumber}</span>
-                  </button>
-                )}
-              </div>
-            );
-          }
-        })}
-      </section>
-
-      {/* 3. ANTRIAN PRIORITAS (DENGAN FITUR PENCARIAN NOMOR GADAI) */}
-      <section className="mt-5">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
-            <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">
+      {/* 4. ANTRIAN PRIORITAS (DENGAN KARTU PRIORITAS RINGKAS & PENCARIAN) */}
+      <section id="antrian-prioritas-section" className="space-y-2.5 pt-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold text-slate-900 leading-tight">
               Antrian Prioritas
             </h2>
-            <span className="text-xs font-black px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200">
+            <span className="text-xs font-semibold px-2 py-0.2 rounded-full bg-sky-100 text-sky-800">
               {sortedWaiting.length} Unit
             </span>
           </div>
 
           <button
             onClick={handleTriggerAutoQueue}
-            className="text-[11px] text-sky-700 hover:text-sky-900 font-bold flex items-center gap-1 active:scale-95 transition-transform"
+            className="text-xs text-sky-700 hover:text-sky-900 font-bold flex items-center gap-1 active:scale-95 transition-transform"
             title="Sinkronkan unit yang sudah ≥15 hari belum di-charge ke antrian"
           >
-            <RefreshCw className="w-3 h-3 text-sky-600" />
+            <RefreshCw className="w-3.5 h-3.5 text-sky-600" />
             <span>Cek Otomatis (≥15 Hari)</span>
           </button>
         </div>
 
-        {/* Info Box Prioritas */}
-        <div className="p-2.5 rounded-2xl bg-gradient-to-r from-amber-50 to-sky-50 border border-amber-200 mb-2.5 flex items-start gap-2">
-          <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-[11px] text-slate-700 leading-snug">
-            Unit yang sudah <strong>15 hari atau lebih</strong> belum di-charge otomatis diprioritaskan di antrian teratas.
-          </p>
-        </div>
-
-        {/* FITUR PENCARIAN NOMOR GADAI DI ANTRIAN */}
-        <div className="relative mb-3">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        {/* Input Pencarian di Antrian */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={queueSearchQuery}
             onChange={(e) => setQueueSearchQuery(e.target.value)}
-            placeholder="Cari nomor gadai di antrian (contoh: 26_0037...)..."
-            className="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+            placeholder="Cari akad / merk di antrian"
+            className="w-full h-11 pl-10 pr-9 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400"
           />
           {queueSearchQuery && (
             <button
               onClick={() => setQueueSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+              className="w-8 h-8 absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 flex items-center justify-center rounded-lg"
+              title="Hapus pencarian"
+              aria-label="Hapus pencarian"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        {queueSearchQuery && (
-          <p className="text-[11px] text-slate-500 font-semibold mb-2 px-1">
-            Menampilkan {displayedWaiting.length} dari {sortedWaiting.length} unit di antrian
-          </p>
-        )}
-
-        {/* List Antrian */}
+        {/* Daftar Kartu Antrian Prioritas */}
         <div className="space-y-2.5">
           {displayedWaiting.length === 0 ? (
-            <div className="bg-white/80 rounded-2xl p-5 border border-sky-100 text-center text-xs text-slate-500">
-              {queueSearchQuery ? `Nomor gadai "${queueSearchQuery}" tidak ditemukan di dalam antrian.` : 'Antrian tunggu saat ini kosong.'}
+            <div className="bg-white rounded-2xl p-6 text-center text-xs text-slate-500 border border-slate-200">
+              {queueSearchQuery
+                ? `Nomor akad "${queueSearchQuery}" tidak ditemukan di dalam antrian.`
+                : 'Antrian tunggu saat ini kosong.'}
             </div>
           ) : (
-            displayedWaiting.map((unit) => {
-              // Temukan urutan asli di sortedWaiting
+            displayedWaiting.map((unit, index) => {
               const originalIndex = sortedWaiting.findIndex(u => u.id === unit.id);
-              const isFirstPriority = originalIndex === 0;
-              const daysAgo = getDaysSinceLastCharge(unit.lastChargedAt, unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null);
+              const fallbackMasuk = unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
+              const daysAgo = getDaysSinceLastCharge(unit.lastChargedAt, fallbackMasuk);
               const isOverdue = daysAgo >= 15;
 
               return (
                 <div
                   key={unit.id}
-                  className={`p-3.5 rounded-2xl border transition-all ${
+                  className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs ${
                     isOverdue
-                      ? "bg-rose-50/70 border-rose-300 shadow-sm ring-1 ring-rose-200"
-                      : isFirstPriority
-                        ? "bg-white border-sky-300 shadow-sm ring-1 ring-sky-200"
-                        : "bg-white/90 border-slate-200 shadow-xs"
+                      ? 'border-slate-200 border-l-4 border-l-rose-500'
+                      : 'border-slate-200/90'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-2.5">
-                      {/* Urutan Asli Badge */}
-                      <div
-                        className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
-                          isOverdue
-                            ? "bg-rose-600 text-white shadow-xs animate-pulse"
-                            : isFirstPriority
-                              ? "bg-sky-600 text-white shadow-xs"
-                              : "bg-slate-200 text-slate-700"
-                        }`}
-                      >
+                  {/* Baris 1: Nomor Akad + Badge Baterai % */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-bold text-slate-400">
                         #{originalIndex + 1}
-                      </div>
-
-                      <div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-base font-extrabold text-slate-900 font-mono">
-                            #{unit.kodeGadai}
-                          </span>
-                          {isOverdue && (
-                            <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-rose-600 text-white animate-pulse flex items-center gap-0.5">
-                              ⚠️ Prioritas {daysAgo} Hari
-                            </span>
-                          )}
-                          {unit.statusBarang === 'LELANG' && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-purple-100 text-purple-700">
-                              Lelang
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500">
-                          {unit.merkSepeda} • {unit.namaNasabah}
-                        </p>
-
-                        {/* Audit & Condition badges */}
-                        <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                          <BatteryConditionBadge condition={unit.kondisiBaterai || 'PRIMA'} size="xs" />
-                          <ChargeAuditBadge lastChargedAt={unit.lastChargedAt} />
-                        </div>
-                      </div>
+                      </span>
+                      <span className="text-base font-bold text-slate-900 font-mono tracking-tight">
+                        #{unit.kodeGadai}
+                      </span>
+                      {isOverdue && (
+                        <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                          Prioritas ≥15 hari
+                        </span>
+                      )}
                     </div>
-
-                    {/* Indikator Baterai */}
                     <BatteryIndicator level={unit.batteryLevel} size="sm" />
                   </div>
 
-                  {/* Action buttons on card */}
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[11px] text-slate-400">
-                      Tunggu: {Math.max(1, Math.round((Date.now() - (unit.queuedAt || Date.now())) / 60000))} mnt lalu
-                    </span>
+                  {/* Baris 2: Nama Unit & Nasabah */}
+                  <div className="pt-1 min-w-0">
+                    <h4 className="text-[14px] font-semibold text-slate-900 truncate leading-snug">
+                      {unit.merkSepeda}
+                    </h4>
+                    <p className="text-[12px] text-slate-500 truncate leading-tight mt-0.5">
+                      {unit.namaNasabah}
+                    </p>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleCancelQueue(unit.id, unit.kodeGadai)}
-                        className="text-[11px] font-bold text-slate-400 hover:text-rose-600 px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors"
-                      >
-                        Batalkan
-                      </button>
-
-                      {emptySlotsCount > 0 && (
-                        <button
-                          onClick={() => openDurationPickerForStart(unit.id)}
-                          className="text-[11px] font-bold bg-sky-500 text-white px-2.5 py-1 rounded-lg shadow-xs hover:bg-sky-600 active:scale-95 transition-all"
-                        >
-                          Naikkan ke Slot Kosong
-                        </button>
-                      )}
+                  {/* Baris 3: Meta & Status */}
+                  <div className="pt-1.5 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 mt-2">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className={`w-3.5 h-3.5 shrink-0 ${isOverdue ? 'text-rose-600' : 'text-slate-400'}`} />
+                      <span className={isOverdue ? 'text-rose-600 font-semibold' : 'text-slate-600'}>
+                        Charge {daysAgo} hari lalu
+                      </span>
                     </div>
+
+                    <BatteryConditionBadge condition={unit.kondisiBaterai || 'PRIMA'} size="xs" />
+                  </div>
+
+                  {/* Baris 4: Aksi Pendek (Pasang ke Slot 44px atau Batalkan) */}
+                  <div className="pt-2.5 flex items-center gap-2">
+                    {emptySlotsCount > 0 ? (
+                      <button
+                        onClick={() => openDurationPickerForStart(unit.id)}
+                        className="h-11 flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <ArrowUpRight className="w-4 h-4" />
+                        <span>Pasang ke Slot Kosong</span>
+                      </button>
+                    ) : (
+                      <div className="h-11 flex-1 bg-slate-50 text-slate-500 text-xs font-medium rounded-xl border border-slate-200 flex items-center justify-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Menunggu Slot Kosong</span>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => handleCancelQueue(unit.id, unit.kodeGadai)}
+                      className="h-11 px-3 bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 text-xs font-semibold rounded-xl transition-all active:scale-95"
+                    >
+                      Batalkan
+                    </button>
                   </div>
                 </div>
               );
@@ -747,11 +658,11 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
           )}
         </div>
 
-        {/* Tombol Tambah ke Antrian Manual (Tanpa Batasan Kuota) */}
-        <div className="mt-4">
+        {/* Tombol Tambah ke Antrian Manual */}
+        <div className="pt-1">
           <button
             onClick={() => setShowAddModal(true)}
-            className="w-full h-12 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm bg-sky-600 hover:bg-sky-700 active:scale-[0.98] text-white shadow-sky-200"
+            className="w-full h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs bg-sky-600 hover:bg-sky-700 active:scale-[0.98] text-white"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Tambah Unit Lain ke Antrian</span>
@@ -759,29 +670,224 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         </div>
       </section>
 
-      {/* 4. MODAL PILIH DURASI CHARGER SEBELUM MULAI */}
-      {showDirectStartModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-[390px] bg-white rounded-3xl p-5 shadow-2xl border border-sky-100 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center">
-                  <Sliders className="w-4 h-4" />
+      {/* 5. BOTTOM SHEET PENGATURAN SLOT CHARGER */}
+      {showSlotSettings && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200">
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <Settings className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-800">Tentukan Durasi Charger</h3>
-                  <p className="text-[11px] text-slate-400">Pilih durasi pengisian sesuai kondisi baterai</p>
+                  <h3 className="text-sm font-bold text-slate-900">Pengaturan Slot Charger</h3>
+                  <p className="text-xs text-slate-500">Sesuaikan jumlah colokan fisik di gudang</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSlotSettings(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                aria-label="Tutup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Stepper Jumlah Colokan */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center space-y-3">
+              <span className="text-xs text-slate-600 font-medium">Kapasitas Colokan Aktif:</span>
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  onClick={() => handleAdjustSlots(-1)}
+                  disabled={slotsCapacity <= MIN_SLOTS_CAPACITY || slotsCapacity <= chargingUnits.length}
+                  className="w-12 h-12 rounded-xl bg-white text-slate-700 flex items-center justify-center font-bold text-base shadow-xs hover:bg-slate-100 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-200"
+                  title="Kurangi 1 Slot"
+                >
+                  <Minus className="w-5 h-5" />
+                </button>
+                <div className="min-w-[80px]">
+                  <span className="text-2xl font-black text-slate-900 block font-mono">
+                    {slotsCapacity}
+                  </span>
+                  <span className="text-[11px] text-slate-500">Colokan</span>
+                </div>
+                <button
+                  onClick={() => handleAdjustSlots(1)}
+                  disabled={slotsCapacity >= MAX_SLOTS_CAPACITY}
+                  className="w-12 h-12 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold text-base shadow-xs hover:bg-sky-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Tambah 1 Slot"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Peringatan jika pengurangan diblokir saat unit sedang charge */}
+              {chargingUnits.length > 0 && slotsCapacity <= chargingUnits.length && (
+                <div className="p-2.5 rounded-xl bg-amber-50 text-amber-900 text-xs text-left border border-amber-200 flex items-start gap-2">
+                  <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-[11px] leading-snug">
+                    Jumlah slot tidak dapat dikurangi di bawah <strong>{chargingUnits.length}</strong> karena unit sedang aktif diisi daya.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Tombol Preset Cepat */}
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              {[2, 4, 6].map(num => (
+                <button
+                  key={num}
+                  onClick={() => {
+                    if (num < chargingUnits.length) {
+                      onNotify({
+                        title: "Slot Sedang Terisi",
+                        message: `Tidak dapat mengatur ke ${num} slot karena ada ${chargingUnits.length} unit yang sedang aktif diisi.`,
+                        type: "warning"
+                      });
+                      return;
+                    }
+                    setChargerSlotsCapacity(num);
+                    setSlotsCapacity(num);
+                  }}
+                  className={`h-10 rounded-xl text-xs font-bold border transition-all ${
+                    slotsCapacity === num
+                      ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {num} Colokan
+                </button>
+              ))}
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => setShowSlotSettings(false)}
+                className="w-full h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
+              >
+                Selesai
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. MODAL DETAIL / PREVIEW "PANTAU DI LAYAR KUNCI" (LIGHT THEME, FRIENDLY COPY) */}
+      {showLiveMonitorDetail && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Pantau di Layar Kunci</h3>
+                  <p className="text-xs text-slate-500">Informasi pengisian daya tanpa membuka ponsel</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowLiveMonitorDetail(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                aria-label="Tutup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 leading-relaxed text-slate-700">
+                Sisa waktu charger tampil langsung di layar kunci tanpa membuka HP. Petugas gudang cukup menyalakan layar ponsel untuk melihat status dan sisa waktu pengisian.
+              </div>
+
+              {/* Status Colokan Aktif Saat Ini */}
+              <div className="space-y-2">
+                <span className="text-slate-500 text-[11px] font-semibold block">Pratinjau Status Slot:</span>
+                {chargingUnits.length === 0 ? (
+                  <div className="p-3 bg-slate-50 rounded-xl text-center text-slate-400">
+                    Tidak ada unit yang sedang di-charge saat ini.
+                  </div>
+                ) : (
+                  chargingUnits.map((u, idx) => {
+                    const timeInfo = getRemainingChargeTime(u.chargeEndAt, u.chargeDurationMs);
+                    return (
+                      <div
+                        key={u.id}
+                        className="p-2.5 rounded-xl bg-sky-50/70 border border-sky-100 flex items-center justify-between"
+                      >
+                        <div>
+                          <span className="font-bold text-slate-900 block">Slot #{idx + 1}: #{u.kodeGadai}</span>
+                          <span className="text-[11px] text-slate-600">{u.merkSepeda} ({u.batteryLevel}%)</span>
+                        </div>
+                        <span className="font-mono font-bold text-sky-700 text-sm">
+                          {timeInfo.formatted}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-sky-50 text-sky-900 border border-sky-100 flex items-start gap-2">
+                <Volume2 className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+                <p className="text-[11px] leading-snug">
+                  Fitur ini menggunakan integrasi pemutar sistem audio hening untuk mempertahankan tampilan hitung mundur pada layar kunci iPhone dan Android.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex gap-2">
+              <button
+                onClick={handleToggleLiveMonitor}
+                className={`flex-1 h-11 font-bold text-xs rounded-xl shadow-xs transition-all ${
+                  isLiveMonitorOn
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                    : 'bg-sky-600 hover:bg-sky-700 text-white'
+                }`}
+              >
+                {isLiveMonitorOn ? 'Matikan Monitor' : 'Aktifkan Monitor'}
+              </button>
+              <button
+                onClick={() => setShowLiveMonitorDetail(false)}
+                className="h-11 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. MODAL PILIH DURASI CHARGER SEBELUM MULAI */}
+      {showDirectStartModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200">
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Tentukan Durasi Pengisian</h3>
+                  <p className="text-xs text-slate-500">Pilih durasi sesuai kondisi dan kapasitas baterai</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowDirectStartModal(false)}
-                className="p-1 rounded-full text-slate-400 hover:bg-slate-100"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                aria-label="Tutup"
               >
-                <XCircle className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-2 mb-4">
+            <div className="space-y-2">
               {CHARGE_PRESETS.map((preset) => {
                 const isSelected = !isCustomDuration && selectedDurationMs === preset.ms;
                 return (
@@ -794,15 +900,15 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                     }}
                     className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
                       isSelected
-                        ? "border-sky-500 bg-sky-50 text-sky-800 ring-1 ring-sky-400"
+                        ? "border-sky-500 bg-sky-50 text-sky-900 ring-1 ring-sky-400"
                         : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
                     }`}
                   >
                     <div>
                       <span className="text-xs font-bold block">{preset.label}</span>
-                      <span className="text-[10px] text-slate-400">{preset.desc}</span>
+                      <span className="text-[11px] text-slate-500">{preset.desc}</span>
                     </div>
-                    {isSelected && <CheckCircle className="w-4 h-4 text-sky-600 shrink-0" />}
+                    {isSelected && <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0" />}
                   </button>
                 );
               })}
@@ -813,15 +919,15 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                 onClick={() => setIsCustomDuration(true)}
                 className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
                   isCustomDuration
-                    ? "border-sky-500 bg-sky-50 text-sky-800 ring-1 ring-sky-400"
+                    ? "border-sky-500 bg-sky-50 text-sky-900 ring-1 ring-sky-400"
                     : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
                 }`}
               >
                 <div>
                   <span className="text-xs font-bold block">Durasi Kustom</span>
-                  <span className="text-[10px] text-slate-400">Tentukan jam manual (0.5 – 12 Jam)</span>
+                  <span className="text-[11px] text-slate-500">Tentukan jam manual (0.5 – 12 Jam)</span>
                 </div>
-                {isCustomDuration && <CheckCircle className="w-4 h-4 text-sky-600 shrink-0" />}
+                {isCustomDuration && <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0" />}
               </button>
 
               {isCustomDuration && (
@@ -836,7 +942,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                     max="12"
                     value={customHours}
                     onChange={(e) => setCustomHours(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-center text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-center text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
               )}
@@ -846,14 +952,14 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
               <button
                 type="button"
                 onClick={() => setShowDirectStartModal(false)}
-                className="flex-1 h-11 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200"
+                className="flex-1 h-11 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200 transition-all"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleConfirmStartCharging}
-                className="flex-1 h-11 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-200 flex items-center justify-center gap-1.5"
+                className="flex-1 h-11 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
               >
                 <Zap className="w-4 h-4" />
                 <span>Mulai Pengisian</span>
@@ -863,25 +969,28 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         </div>
       )}
 
-      {/* 5. MODAL TAMBAH KE ANTRIAN CHARGER */}
+      {/* 8. MODAL TAMBAH KE ANTRIAN CHARGER */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-[430px] bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-sky-100 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center">
-                  <Zap className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <Zap className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800">Tambah ke Antrian Charger</h3>
-                  <p className="text-[11px] text-slate-400">Unit ≥15 hari otomatis menjadi prioritas teratas</p>
+                  <h3 className="text-sm font-bold text-slate-900">Tambah ke Antrian Charger</h3>
+                  <p className="text-xs text-slate-500">Unit ≥15 hari otomatis menjadi prioritas teratas</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="p-1 rounded-full text-slate-400 hover:bg-slate-100"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                aria-label="Tutup"
               >
-                <XCircle className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -893,15 +1002,15 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                 <button
                   onClick={() => {
                     setShowAddModal(false);
-                    onSelectTab('aktif');
+                    if (onSelectTab) onSelectTab('aktif');
                   }}
-                  className="px-4 py-2 bg-sky-50 text-sky-700 rounded-xl text-xs font-bold border border-sky-200"
+                  className="h-11 px-4 bg-sky-50 text-sky-700 rounded-xl text-xs font-bold border border-sky-200 hover:bg-sky-100 transition-all"
                 >
                   Lihat Daftar Unit di Tab Aktif
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleEnqueueSubmit} className="space-y-4">
+              <form onSubmit={handleEnqueueSubmit} className="space-y-3 pt-1">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Pilih Sepeda Listrik
@@ -914,14 +1023,15 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                       if (unit) setInputBattery(String(unit.batteryLevel));
                     }}
                     required
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   >
                     <option value="">-- Pilih Nomor Gadai --</option>
                     {eligibleUnits.map(u => {
-                      const days = getDaysSinceLastCharge(u.lastChargedAt, u.jatuhTempoAt ? u.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null);
+                      const fallback = u.jatuhTempoAt ? u.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
+                      const days = getDaysSinceLastCharge(u.lastChargedAt, fallback);
                       return (
                         <option key={u.id} value={u.id}>
-                          #{u.kodeGadai} - {u.merkSepeda} ({u.namaNasabah}) [{days >= 15 ? `⚠️ ${days} Hari!` : `Baterai ${u.batteryLevel}%`}]
+                          #{u.kodeGadai} - {u.merkSepeda} ({u.namaNasabah}) [{days >= 15 ? `Prioritas ${days} Hari!` : `Baterai ${u.batteryLevel}%`}]
                         </option>
                       );
                     })}
@@ -940,24 +1050,25 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                     value={inputBattery}
                     onChange={(e) => setInputBattery(e.target.value)}
                     required
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
-                  <p className="text-[11px] text-sky-700 mt-1 font-medium">
-                    💡 Sistem otomatis menempatkan unit yang sudah ≥15 hari di posisi teratas (#1).
-                  </p>
+                  <div className="flex items-center gap-1.5 text-[11px] text-sky-700 mt-1.5 font-medium">
+                    <Info className="w-3.5 h-3.5 shrink-0" />
+                    <span>Unit yang sudah ≥15 hari otomatis ditempatkan di posisi teratas (#1).</span>
+                  </div>
                 </div>
 
                 <div className="pt-2 flex gap-2">
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="flex-1 h-11 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200"
+                    className="flex-1 h-11 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200 transition-all"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 h-11 bg-sky-600 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-200 hover:bg-sky-700"
+                    className="flex-1 h-11 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-[0.98]"
                   >
                     Masukkan Antrian
                   </button>
