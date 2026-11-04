@@ -407,6 +407,18 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                           Antrian
                         </span>
                       )}
+
+                      {/* Badge Riwayat Perpanjangan jika pernah mutasi kode */}
+                      {Array.isArray(unit.riwayatKodeGadai) && unit.riwayatKodeGadai.length > 0 && (
+                        <span
+                          onClick={() => onNavigateToPerpanjang(unit.id)}
+                          className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 cursor-pointer hover:bg-amber-100 flex items-center gap-1 transition-colors"
+                          title="Klik untuk melihat riwayat mutasi perpanjangan unit ini"
+                        >
+                          <History className="w-3 h-3 text-amber-600" />
+                          <span>Pernah Diperpanjang</span>
+                        </span>
+                      )}
                     </div>
 
                     <h4 className="text-xs font-bold text-slate-800 mt-1">

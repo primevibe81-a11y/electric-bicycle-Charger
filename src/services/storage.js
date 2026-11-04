@@ -10,7 +10,7 @@ import { playChimeSound, playGentleBeep, sendNativeNotification } from "./soundN
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { REAL_EXCEL_UNITS } from "../data/realUnits";
 
-const STORAGE_KEY = "ebike_gadai_units_real_v3";
+const STORAGE_KEY = "ebike_gadai_units_real_v4";
 const SLOTS_CAPACITY_KEY = "ebike_charger_slots_capacity";
 const BROADCAST_CHANNEL_NAME = "ebike_gadai_sync_channel";
 
@@ -467,8 +467,30 @@ export function updateBatteryAudit(unitId, kondisiBaterai, catatanBaterai) {
   };
 }
 
+/**
+ * Helper standarisasi item riwayat perpanjangan (objek maupun legacy string)
+ */
+export function normalizeHistoryEntry(entry, defaultKodeLama = '') {
+  if (typeof entry === 'string') {
+    return {
+      kodeGadaiLama: entry,
+      tglPerpanjang: null,
+      catatanLama: 'Tidak ada catatan khusus di akad sebelumnya.',
+      kondisiBateraiLama: 'PRIMA',
+      catatanPerpanjangan: ''
+    };
+  }
+  return {
+    kodeGadaiLama: entry?.kodeGadaiLama || defaultKodeLama || '-',
+    tglPerpanjang: entry?.tglPerpanjang || null,
+    catatanLama: entry?.catatanLama || 'Kondisi normal pada akad sebelumnya.',
+    kondisiBateraiLama: entry?.kondisiBateraiLama || 'PRIMA',
+    catatanPerpanjangan: entry?.catatanPerpanjangan || ''
+  };
+}
+
 // 6. Perpanjang Gadai (Mutasi Kode Gadai Baru & Sinkronisasi Real-Time)
-export function extendGadaiUnit(unitId, newKodeGadai, newJatuhTempoAt) {
+export function extendGadaiUnit(unitId, newKodeGadai, newJatuhTempoAt, catatanPerpanjangan = '') {
   const units = getStoredUnits();
   const unit = units.find(u => u.id === unitId);
   if (!unit) return { success: false, message: "Unit tidak ditemukan." };
@@ -489,14 +511,24 @@ export function extendGadaiUnit(unitId, newKodeGadai, newJatuhTempoAt) {
   const oldCode = unit.kodeGadai;
   const oldHistory = Array.isArray(unit.riwayatKodeGadai) ? unit.riwayatKodeGadai : [];
 
+  // Rekam riwayat perpanjangan berstruktur lengkap (kondisi fisik, baterai, & catatan)
+  const historyEntry = {
+    kodeGadaiLama: oldCode,
+    tglPerpanjang: Date.now(),
+    catatanLama: unit.catatanBaterai || 'Kondisi awal normal/prima saat masuk.',
+    kondisiBateraiLama: unit.kondisiBaterai || 'PRIMA',
+    catatanPerpanjangan: catatanPerpanjangan ? String(catatanPerpanjangan).trim() : ''
+  };
+
   const updated = units.map(u => {
     if (u.id === unitId) {
       return {
         ...u,
         kodeGadai: cleanNewCode,
-        riwayatKodeGadai: [oldCode, ...oldHistory],
+        riwayatKodeGadai: [historyEntry, ...oldHistory],
         jatuhTempoAt: Number(newJatuhTempoAt) || (Date.now() + 30 * 24 * 60 * 60 * 1000),
         statusBarang: 'AKTIF',
+        catatanBaterai: catatanPerpanjangan ? `${catatanPerpanjangan} (diperpanjang dari #${oldCode})` : (unit.catatanBaterai || `Diperpanjang dari #${oldCode}`),
         updatedAt: Date.now()
         // PENTING: Jika sedang CHARGING atau WAITING, sisa timer dan posisi antrian tetap utuh!
       };
@@ -516,7 +548,7 @@ export function extendGadaiUnit(unitId, newKodeGadai, newJatuhTempoAt) {
 
   return {
     success: true,
-    message: `Berhasil perpanjang! Kode ${oldCode} diperbarui menjadi ${cleanNewCode}.${queueNote}`
+    message: `Berhasil perpanjang! Kode #${oldCode} diperbarui menjadi #${cleanNewCode}.${queueNote}`
   };
 }
 
