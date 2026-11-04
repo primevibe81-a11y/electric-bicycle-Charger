@@ -69,11 +69,11 @@ export default function NetworkStatusBadge({ onNotify }) {
     return (
       <button
         onClick={handleManualSyncClick}
-        className="flex items-center gap-1.5 px-2.5 py-1 bg-sky-100 text-sky-800 border border-sky-300 rounded-full text-[10.5px] font-bold animate-pulse shadow-xs active:scale-95 transition-all"
-        title="Sedang mengunggah data mutasi ke cloud"
+        className="inline-flex items-center gap-1.5 px-2 py-1 bg-sky-50 text-sky-800 border border-sky-200 rounded-full text-[10.5px] font-semibold animate-pulse active:scale-95 transition-all shrink-0"
+        title="Sedang mengunggah mutasi ke cloud"
       >
         <RefreshCw className="w-3 h-3 animate-spin text-sky-600" />
-        <span>Sinkronisasi ({pendingCount})...</span>
+        <span className="leading-none">Sync ({pendingCount})...</span>
       </button>
     );
   }
@@ -83,37 +83,28 @@ export default function NetworkStatusBadge({ onNotify }) {
     return (
       <button
         onClick={handleManualSyncClick}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold shadow-xs active:scale-95 transition-all ${
+        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10.5px] font-semibold active:scale-95 transition-all shrink-0 ${
           !isOnline
-            ? "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200"
-            : "bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100"
+            ? "bg-amber-50 text-amber-800 border border-amber-200"
+            : "bg-blue-50 text-blue-800 border border-blue-200"
         }`}
         title="Klik untuk info sinkronisasi offline"
       >
-        {!isOnline ? (
-          <>
-            <WifiOff className="w-3 h-3 text-amber-600" />
-            <span>Offline {pendingCount > 0 ? `(${pendingCount} tersimpan)` : 'Gudang'}</span>
-          </>
-        ) : (
-          <>
-            <RefreshCw className="w-3 h-3 text-blue-600" />
-            <span>{pendingCount} mutasi siap kirim</span>
-          </>
-        )}
+        <span className={`w-1.5 h-1.5 rounded-full ${!isOnline ? 'bg-amber-500' : 'bg-blue-500'}`}></span>
+        <span className="leading-none">{!isOnline ? `Offline${pendingCount > 0 ? ` (${pendingCount})` : ''}` : `${pendingCount} mutasi`}</span>
       </button>
     );
   }
 
-  // 3. Online & All synced state (Quiet, subtle green indicator)
+  // 3. Online & All synced state (Ringkas: titik hijau + teks kecil)
   return (
     <button
       onClick={handleManualSyncClick}
-      className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-full text-[10px] font-bold shadow-xs hover:bg-emerald-100 transition-all active:scale-95"
+      className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50/90 text-emerald-800 border border-emerald-200/90 rounded-full text-[10.5px] font-medium hover:bg-emerald-100 transition-all active:scale-95 shrink-0"
       title="Terhubung ke cloud & tersinkron"
     >
       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-      <span className="text-[10px]">Cloud OK</span>
+      <span className="leading-none">Cloud OK</span>
     </button>
   );
 }

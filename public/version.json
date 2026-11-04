@@ -1,5 +1,5 @@
 {
-  "version": "1.5.0",
-  "buildTime": 1730728500000,
-  "description": "Full Offline-First Warehouse Support with Mutation Outbox Queue, Cache-First Service Worker, Last-Write-Wins Reconciliation, and Live Signal Badge"
+  "version": "1.5.1",
+  "buildTime": 1730731500000,
+  "description": "Refined Mobile-First UI: De-cluttered Header, Sticky Filter Bar, Compact Stats, Bottom Sheet Export, and Priority Unit List Area"
 }
