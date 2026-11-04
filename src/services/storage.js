@@ -9,6 +9,13 @@ import {
 import { playChimeSound, playGentleBeep, sendNativeNotification } from "./soundNotification";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { REAL_EXCEL_UNITS } from "../data/realUnits";
+import {
+  enqueueMutation,
+  removePendingMutations,
+  getPendingMutations,
+  drainOutboxQueue,
+  setLastSyncTime
+} from "./offlineQueue";
 
 const STORAGE_KEY = "ebike_gadai_units_real_v4";
 const SLOTS_CAPACITY_KEY = "ebike_charger_slots_capacity";
@@ -112,10 +119,76 @@ export function getStoredUnits() {
   }
 }
 
-export function saveStoredUnits(units, notifyBroadcast = true) {
+/**
+ * Rekonsiliasi Last-Write-Wins (LWW) Berbasis updatedAt:
+ * Menjamin mutasi lokal yang dibuat di gudang saat offline TIDAK tertimpa oleh remote Supabase
+ */
+export function reconcileUnits(localUnits, remoteUnits) {
+  if (!Array.isArray(localUnits)) return remoteUnits || [];
+  if (!Array.isArray(remoteUnits)) return localUnits || [];
+
+  const pendingTickets = getPendingMutations();
+  const pendingUnitIds = new Set(
+    pendingTickets.map(m => m.unitId).filter(Boolean)
+  );
+
+  const localMap = new Map();
+  localUnits.forEach(u => localMap.set(u.id, u));
+
+  const merged = [];
+  const processedLocalIds = new Set();
+
+  remoteUnits.forEach(remote => {
+    const local = localMap.get(remote.id);
+    if (!local) {
+      merged.push(remote);
+      return;
+    }
+
+    processedLocalIds.add(local.id);
+
+    // Jika unit ini memiliki tiket mutasi yang belum terkirim di Outbox,
+    // MAKA data lokal MUTLAK dipertahankan (jangan biarkan remote menimpa!)
+    if (pendingUnitIds.has(local.id)) {
+      merged.push(local);
+      return;
+    }
+
+    // Bandingkan timestamp updatedAt
+    const localTime = Number(local.updatedAt) || 0;
+    const remoteTime = Number(remote.updatedAt) || 0;
+
+    if (localTime >= remoteTime) {
+      merged.push(local);
+    } else {
+      merged.push(remote);
+    }
+  });
+
+  // Tambahkan unit lokal yang baru dibuat saat offline yang belum ada di remote
+  localUnits.forEach(local => {
+    if (!processedLocalIds.has(local.id)) {
+      merged.push(local);
+    }
+  });
+
+  return merged;
+}
+
+export function saveStoredUnits(units, notifyBroadcast = true, mutationMeta = null) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(units));
   if (notifyBroadcast && channel) {
     channel.postMessage({ type: "UNITS_UPDATED", timestamp: Date.now() });
+  }
+
+  // Catat tiket mutasi ke Outbox Queue untuk perlindungan offline
+  let ticket = null;
+  if (mutationMeta) {
+    ticket = enqueueMutation(
+      mutationMeta.action,
+      mutationMeta.unitId || null,
+      mutationMeta.payload || units
+    );
   }
 
   // Sinkronisasi otomatis ke Supabase jika environment variable diisi
@@ -126,13 +199,53 @@ export function saveStoredUnits(units, notifyBroadcast = true) {
         // Jika kolom baru belum ada di Supabase, fallback aman dengan menghapus kolom baru sementara
         if (error.code === '42703' || String(error.message).includes('column')) {
           const stripped = dbPayload.map(({ charge_duration_ms, kondisi_baterai, catatan_baterai, ...rest }) => rest);
-          supabase.from('gadai_units').upsert(stripped);
+          supabase.from('gadai_units').upsert(stripped).then(({ error: retryErr }) => {
+            if (!retryErr) {
+              setLastSyncTime();
+              if (ticket) removePendingMutations([ticket.id]);
+            }
+          });
         } else {
-          console.warn("Supabase upsert warning:", error);
+          console.warn("Supabase upsert warning (data tetap aman di lokal & outbox):", error);
+        }
+      } else {
+        // Upsert cloud berhasil
+        setLastSyncTime();
+        if (ticket) {
+          removePendingMutations([ticket.id]);
         }
       }
+    }).catch(networkErr => {
+      console.warn("Koneksi offline saat upsert, tiket mutasi tersimpan di outbox:", networkErr);
     });
   }
+}
+
+/**
+ * Sinkronisasi Manual saat pengguna mengetuk tombol "Sinkronkan Sekarang"
+ */
+export async function triggerManualSync() {
+  if (isSupabaseConfigured && supabase) {
+    const drainResult = await drainOutboxQueue(supabase, modelToDb);
+
+    try {
+      const { data, error } = await supabase.from('gadai_units').select('*');
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const mapped = data.map(dbToModel);
+        const currentLocal = getStoredUnits();
+        const reconciled = reconcileUnits(currentLocal, mapped);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(reconciled));
+        if (channel) {
+          channel.postMessage({ type: "UNITS_UPDATED", timestamp: Date.now() });
+        }
+        return { success: true, count: reconciled.length, drained: drainResult.drained };
+      }
+    } catch (e) {
+      console.warn("Manual sync fetch warning:", e);
+    }
+    return drainResult;
+  }
+  return { success: false, message: "Supabase belum terkonfigurasi." };
 }
 
 export function subscribeToStoreUpdates(callback) {
@@ -158,9 +271,13 @@ export function subscribeToStoreUpdates(callback) {
     supabase.from('gadai_units').select('*').then(({ data, error }) => {
       if (!error && Array.isArray(data) && data.length > 0) {
         const mapped = data.map(dbToModel);
-        saveStoredUnits(mapped, false);
-        callback(mapped);
+        const currentLocal = getStoredUnits();
+        const reconciled = reconcileUnits(currentLocal, mapped);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(reconciled));
+        callback(reconciled);
       }
+    }).catch(err => {
+      console.warn("Initial supabase fetch offline fallback:", err);
     });
 
     supabaseChannel = supabase
@@ -169,8 +286,10 @@ export function subscribeToStoreUpdates(callback) {
         supabase.from('gadai_units').select('*').then(({ data }) => {
           if (data && Array.isArray(data)) {
             const mapped = data.map(dbToModel);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
-            callback(mapped);
+            const currentLocal = getStoredUnits();
+            const reconciled = reconcileUnits(currentLocal, mapped);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(reconciled));
+            callback(reconciled);
           }
         });
       })
@@ -225,7 +344,7 @@ export function createGadaiUnit(data) {
   };
 
   const updated = [newUnit, ...units];
-  saveStoredUnits(updated);
+  saveStoredUnits(updated, true, { action: 'CREATE_UNIT', unitId: newUnit.id, payload: newUnit });
   return { success: true, unit: newUnit };
 }
 
@@ -256,7 +375,7 @@ export function enqueueUnitForCharging(unitId, batteryLevel) {
     return u;
   });
 
-  saveStoredUnits(updatedUnits);
+  saveStoredUnits(updatedUnits, true, { action: 'ENQUEUE_CHARGE', unitId, payload: { unitId, batteryLevel } });
   playGentleBeep();
   return { success: true, message: `Unit #${unit.kodeGadai} berhasil masuk antrian prioritas.` };
 }
@@ -283,7 +402,7 @@ export function autoEnqueueOverdueUnits() {
   });
 
   if (newlyEnqueued > 0) {
-    saveStoredUnits(updated);
+    saveStoredUnits(updated, true, { action: 'AUTO_ENQUEUE_OVERDUE', payload: updated });
   }
 
   return { newlyEnqueued, units: newlyEnqueued > 0 ? updated : units };
@@ -303,7 +422,7 @@ export function cancelWaitingQueue(unitId) {
     }
     return u;
   });
-  saveStoredUnits(updated);
+  saveStoredUnits(updated, true, { action: 'CANCEL_QUEUE', unitId });
   return { success: true };
 }
 
@@ -343,7 +462,7 @@ export function startChargingUnit(unitId, durationMs = DEFAULT_CHARGE_DURATION_M
     return u;
   });
 
-  saveStoredUnits(updated);
+  saveStoredUnits(updated, true, { action: 'START_CHARGING', unitId, payload: { unitId, durationMs: duration } });
   playGentleBeep();
   return { success: true, message: `Unit #${unit.kodeGadai} mulai di-charge (Durasi: ${hours} jam)!` };
 }
@@ -389,7 +508,7 @@ export function finishChargingUnit(unitId) {
     return u;
   });
 
-  saveStoredUnits(updated);
+  saveStoredUnits(updated, true, { action: 'FINISH_CHARGING', unitId });
   playChimeSound();
 
   sendNativeNotification("⚡ Pengisian Selesai!", {
@@ -433,7 +552,7 @@ export function cancelChargingUnit(unitId, returnToQueue = true) {
     return u;
   });
 
-  saveStoredUnits(updated);
+  saveStoredUnits(updated, true, { action: 'CANCEL_CHARGING', unitId, payload: { returnToQueue } });
   playGentleBeep();
   return {
     success: true,
@@ -459,7 +578,7 @@ export function updateBatteryAudit(unitId, kondisiBaterai, catatanBaterai) {
     return u;
   });
 
-  saveStoredUnits(updated);
+  saveStoredUnits(updated, true, { action: 'UPDATE_BATTERY_AUDIT', unitId, payload: { kondisiBaterai, catatanBaterai } });
   playGentleBeep();
   return {
     success: true,
@@ -536,7 +655,11 @@ export function extendGadaiUnit(unitId, newKodeGadai, newJatuhTempoAt, catatanPe
     return u;
   });
 
-  saveStoredUnits(updated);
+  saveStoredUnits(updated, true, {
+    action: 'EXTEND_LOAN',
+    unitId,
+    payload: { unitId, cleanNewCode, newJatuhTempoAt, catatanPerpanjangan }
+  });
   playGentleBeep();
 
   let queueNote = "";
@@ -591,7 +714,7 @@ export function redeemGadaiUnit(unitId, notes = "") {
     return u;
   });
 
-  saveStoredUnits(updated);
+  saveStoredUnits(updated, true, { action: 'REDEEM_LOAN', unitId, payload: { notes } });
   playGentleBeep();
 
   let extraMsg = "";
@@ -623,7 +746,7 @@ export function moveToLelang(unitId, estimatedPrice = 0) {
     }
     return u;
   });
-  saveStoredUnits(updated);
+  saveStoredUnits(updated, true, { action: 'MARK_LELANG_SOLD', unitId, payload: { soldPrice, buyerInfo } });
   return { success: true, message: "Unit berhasil dipindahkan ke daftar Lelang." };
 }
 
@@ -666,7 +789,7 @@ export function markLelangSold(unitId, soldPrice, buyerInfo) {
     return u;
   });
 
-  saveStoredUnits(updated);
+  saveStoredUnits(updated, true, { action: 'MARK_LELANG_SOLD', unitId, payload: { soldPrice, buyerInfo } });
   playGentleBeep();
   return { success: true, message: `Unit lelang ${unit.kodeGadai} tercatat TERJUAL!` };
 }

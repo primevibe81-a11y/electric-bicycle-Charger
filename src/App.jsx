@@ -11,9 +11,16 @@ import LelangView from './views/LelangView';
 import LaporanView from './views/LaporanView';
 
 import { getActiveSession, logoutSession } from './config/auth';
-import { getStoredUnits, subscribeToStoreUpdates, finishChargingUnit, autoEnqueueOverdueUnits } from './services/storage';
+import {
+  getStoredUnits,
+  subscribeToStoreUpdates,
+  finishChargingUnit,
+  autoEnqueueOverdueUnits,
+  triggerManualSync
+} from './services/storage';
 import { playChimeSound, sendNativeNotification } from './services/soundNotification';
 import { initPwaUpdateChecker } from './services/pwaUpdate';
+import { initOfflineSyncEngine } from './services/offlineQueue';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => getActiveSession());
@@ -68,6 +75,21 @@ export default function App() {
       setUnits(updated);
     });
     return () => unsubscribe();
+  }, []);
+
+  // Background Auto-Sync saat koneksi internet pulih kembali setelah offline di gudang
+  useEffect(() => {
+    const unsub = initOfflineSyncEngine(async () => {
+      const res = await triggerManualSync();
+      if (res && res.drained > 0) {
+        setToast({
+          title: "Sinkronisasi Cloud Berhasil! ☁️",
+          message: `${res.drained} perubahan mutasi dari gudang berhasil dikirim ke server Supabase.`,
+          type: "success"
+        });
+      }
+    });
+    return () => unsub();
   }, []);
 
   // Monitor charging timer completion and trigger chime sound + notification

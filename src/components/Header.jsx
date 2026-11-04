@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Zap, Bell, BellOff, LogOut, ShieldCheck, UserCheck, RotateCcw } from 'lucide-react';
 import { requestNotificationPermission } from '../services/soundNotification';
 import { resetToSeedData } from '../services/storage';
+import NetworkStatusBadge from './NetworkStatusBadge';
 
 export default function Header({ user, onLogout, onNotify }) {
   const [notifGranted, setNotifGranted] = useState(
@@ -74,6 +75,8 @@ export default function Header({ user, onLogout, onNotify }) {
         </div>
 
         <div className="flex items-center gap-1.5">
+          <NetworkStatusBadge onNotify={onNotify} />
+
           <button
             onClick={handleToggleNotif}
             className={`p-2 rounded-full border transition-all active:scale-95 ${
