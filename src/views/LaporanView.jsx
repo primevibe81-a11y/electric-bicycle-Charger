@@ -17,16 +17,18 @@ import {
   ShieldCheck,
   History,
   Download,
-  Info
+  Info,
+  MapPin
 } from 'lucide-react';
 import { exportLaporanExcel, generatePdfReport } from '../services/reportExport';
 import { getDaysSinceLastCharge, getChargeAuditInfo } from '../services/chargerQueue';
-import { extendGadaiUnit, redeemGadaiUnit, normalizeHistoryEntry } from '../services/storage';
+import { extendGadaiUnit, redeemGadaiUnit, normalizeHistoryEntry, updateUnitLocation } from '../services/storage';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import BatteryIndicator from '../components/BatteryIndicator';
 import ChargeAuditBadge from '../components/ChargeAuditBadge';
 import AuditBatteryModal from '../components/AuditBatteryModal';
 import ExcelSyncModal from '../components/ExcelSyncModal';
+import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
 
 /**
  * Filter cerdas untuk mendeteksi apakah sebuah unit benar-benar memiliki
@@ -46,6 +48,9 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isExportSheetOpen, setIsExportSheetOpen] = useState(false);
   const [expandedUnitId, setExpandedUnitId] = useState(null);
+  const [isStockOpnameSort, setIsStockOpnameSort] = useState(false);
+  const [editLokasiUnit, setEditLokasiUnit] = useState(null);
+  const [highlightedUnitId, setHighlightedUnitId] = useState(null);
 
   // Quick Action Modal states
   const [auditUnit, setAuditUnit] = useState(null);
@@ -123,7 +128,8 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
           (u.namaNasabah && u.namaNasabah.toLowerCase().includes(q)) ||
           (u.merkSepeda && u.merkSepeda.toLowerCase().includes(q)) ||
           (u.catatanBaterai && u.catatanBaterai.toLowerCase().includes(q)) ||
-          (u.kondisiBaterai && u.kondisiBaterai.toLowerCase().includes(q));
+          (u.kondisiBaterai && u.kondisiBaterai.toLowerCase().includes(q)) ||
+          (u.lokasi && u.lokasi.toLowerCase().includes(q));
 
         const matchOldCodes = Array.isArray(u.riwayatKodeGadai) && u.riwayatKodeGadai.some(entry => {
           const norm = normalizeHistoryEntry(entry);
@@ -143,7 +149,9 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
   // Handle Export Excel
   const handleExportExcel = () => {
     try {
-      const res = exportLaporanExcel(units, statusFilter);
+      const res = exportLaporanExcel(units, statusFilter, {
+        sortBy: isStockOpnameSort ? 'LOKASI_AZ' : undefined
+      });
       onNotify({
         title: 'Export Excel Berhasil! 📊',
         message: `${res.count} data sepeda listrik berhasil diexport ke file ${res.fileName}`,
@@ -162,7 +170,10 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
   // Handle Generate PDF
   const handleGeneratePdf = () => {
     try {
-      const res = generatePdfReport(units, { filterStatus: statusFilter });
+      const res = generatePdfReport(units, {
+        filterStatus: statusFilter,
+        sortBy: isStockOpnameSort ? 'LOKASI_AZ' : undefined
+      });
       onNotify({
         title: 'Generate PDF Berhasil! 📄',
         message: `Laporan lengkap sepeda listrik berhasil dibuat (${res.fileName})`,
@@ -421,6 +432,8 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
               <div
                 key={unit.id}
                 className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs ${
+                  highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
+                } ${
                   isDefect ? 'border-amber-300 ring-1 ring-amber-300/30' : 'border-slate-200/80'
                 }`}
               >
@@ -484,6 +497,22 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                       createdAt={unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null}
                     />
                   </div>
+
+                  {/* Lokasi Gudang Meta Row: Ikon Pin + Teks Lokasi, Abu-abu 12-13px, Ellipsis, Touch Target 44px */}
+                  <button
+                    type="button"
+                    onClick={() => setEditLokasiUnit(unit)}
+                    className="w-full text-left pt-1 flex items-center gap-1.5 text-[11px] group min-h-[36px] py-1 px-1 -mx-1 rounded-lg hover:bg-slate-50 active:bg-slate-100 transition-colors pressable"
+                    title="Ubah letak unit di gudang"
+                  >
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:text-sky-600 transition-colors" />
+                    <span className={`truncate flex-1 ${unit.lokasi ? 'text-slate-600 font-medium' : 'text-slate-400 italic'}`}>
+                      {unit.lokasi || 'Letak belum diisi'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Ubah
+                    </span>
+                  </button>
                 </div>
 
                 {/* 6. CATATAN KARTU UNIT:
@@ -614,6 +643,38 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
               >
                 <X className="w-4 h-4" />
               </button>
+            </div>
+
+            {/* Opsi Sortir Stock Opname */}
+            <div
+              onClick={() => setIsStockOpnameSort(!isStockOpnameSort)}
+              className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all pressable ${
+                isStockOpnameSort
+                  ? 'bg-sky-50 border-sky-300 ring-1 ring-sky-300/40'
+                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100/70'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  isStockOpnameSort ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-600'
+                }`}>
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-slate-800 block">
+                    Urutkan Berdasarkan Letak Gudang (A-Z)
+                  </span>
+                  <span className="text-[10px] text-slate-500 block truncate">
+                    Cocok untuk stock opname fisik menyusuri rak gudang
+                  </span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={isStockOpnameSort}
+                onChange={() => {}}
+                className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 shrink-0"
+              />
             </div>
 
             {/* Opsi Ekspor */}
@@ -814,6 +875,31 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
           </div>
         </div>
       )}
+      {/* MODAL EDIT LETAK UNIT */}
+      <LetakUnitBottomSheet
+        unit={editLokasiUnit}
+        allUnits={units}
+        isOpen={!!editLokasiUnit}
+        onClose={() => setEditLokasiUnit(null)}
+        onSave={(unitId, newLoc) => {
+          const res = updateUnitLocation(unitId, newLoc, "Admin Gudang");
+          if (res.success) {
+            setHighlightedUnitId(unitId);
+            setTimeout(() => setHighlightedUnitId(null), 700);
+            onNotify({
+              title: "Letak unit diperbarui",
+              message: res.message,
+              type: "success"
+            });
+          } else {
+            onNotify({
+              title: "Gagal Menyimpan",
+              message: res.message || "Terjadi kesalahan",
+              type: "warning"
+            });
+          }
+        }}
+      />
     </div>
   );
 }

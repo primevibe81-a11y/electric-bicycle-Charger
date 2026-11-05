@@ -1,5 +1,5 @@
 {
-  "version": "1.5.3",
-  "buildTime": 1730735400000,
-  "description": "Mobile-First Revision for Lelang & Dashboard: Unified Slot Charger, Single-Row Live Monitor, Action Bottom Sheets, Top KPI Summary, and Compact 6-Row Lelang Cards"
+  "version": "1.6.0",
+  "buildTime": 1730784000000,
+  "description": "Fitur Letak Unit: Catatan teks lokasi fisik sepeda listrik di gudang, saran cepat frekuensi, riwayat 5 mutasi lokasi, filter & sortir letak, konfirmasi selesai charging, dan export Excel/PDF"
 }

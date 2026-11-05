@@ -27,10 +27,20 @@ function formatIndoDate(ts) {
 /**
  * 1. Export Laporan Sepeda Listrik ke Format EXCEL (.xlsx)
  */
-export function exportLaporanExcel(units, filterStatus = 'SEMUA') {
-  const filtered = filterStatus === 'SEMUA'
-    ? units
+export function exportLaporanExcel(units, filterStatus = 'SEMUA', options = {}) {
+  let filtered = filterStatus === 'SEMUA'
+    ? [...units]
     : units.filter(u => u.statusBarang === filterStatus);
+
+  if (options.sortBy === 'LOKASI_AZ') {
+    filtered.sort((a, b) => {
+      const locA = (a.lokasi || '').trim().toLowerCase();
+      const locB = (b.lokasi || '').trim().toLowerCase();
+      if (!locA && locB) return 1;
+      if (locA && !locB) return -1;
+      return locA.localeCompare(locB);
+    });
+  }
 
   const excelRows = filtered.map((u, index) => {
     const days = getDaysSinceLastCharge(u.lastChargedAt, u.jatuhTempoAt ? u.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null);
@@ -52,6 +62,7 @@ export function exportLaporanExcel(units, filterStatus = 'SEMUA') {
     return {
       'No': index + 1,
       'Nomor Gadai Aktif': u.kodeGadai,
+      'Letak Unit (Gudang)': u.lokasi || 'Belum diisi',
       'Riwayat Nomor Gadai Lama': previousCodes,
       'Nama Nasabah': u.namaNasabah,
       'Merk & Model Sepeda': u.merkSepeda,
@@ -75,6 +86,7 @@ export function exportLaporanExcel(units, filterStatus = 'SEMUA') {
   worksheet['!cols'] = [
     { wch: 5 },  // No
     { wch: 15 }, // Nomor Gadai
+    { wch: 25 }, // Letak Unit
     { wch: 25 }, // Riwayat Nomor
     { wch: 22 }, // Nama Nasabah
     { wch: 30 }, // Merk Sepeda
@@ -120,9 +132,19 @@ export function generatePdfReport(units, options = {}) {
   });
 
   const filterStatus = options.filterStatus || 'SEMUA';
-  const filtered = filterStatus === 'SEMUA'
-    ? units
+  let filtered = filterStatus === 'SEMUA'
+    ? [...units]
     : units.filter(u => u.statusBarang === filterStatus);
+
+  if (options.sortBy === 'LOKASI_AZ') {
+    filtered.sort((a, b) => {
+      const locA = (a.lokasi || '').trim().toLowerCase();
+      const locB = (b.lokasi || '').trim().toLowerCase();
+      if (!locA && locB) return 1;
+      if (locA && !locB) return -1;
+      return locA.localeCompare(locB);
+    });
+  }
 
   const totalAktif = units.filter(u => u.statusBarang === 'AKTIF').length;
   const totalLelang = units.filter(u => u.statusBarang === 'LELANG').length;
@@ -229,7 +251,7 @@ export function generatePdfReport(units, options = {}) {
     doc.setTextColor(30, 41, 59);
     doc.setFont('helvetica', 'normal');
 
-    doc.text(`Nasabah : ${u.namaNasabah}`, detailX, y + 14);
+    doc.text(`Nasabah : ${u.namaNasabah}  |  Letak Gudang: ${u.lokasi || 'Belum diisi'}`, detailX, y + 14);
     doc.text(`Kondisi : ${u.kondisiBaterai || 'PRIMA'} | Belum Charge: ${days} Hari | Jatuh Tempo: ${formatIndoDate(u.jatuhTempoAt)}`, detailX, y + 19);
 
     // Catatan Masalah / Fisik Khusus

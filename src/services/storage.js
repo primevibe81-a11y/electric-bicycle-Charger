@@ -57,6 +57,10 @@ export function modelToDb(unit) {
     charge_duration_ms: unit.chargeDurationMs || DEFAULT_CHARGE_DURATION_MS,
     kondisi_baterai: unit.kondisiBaterai || 'PRIMA',
     catatan_baterai: unit.catatanBaterai || '',
+    lokasi: unit.lokasi || null,
+    lokasi_updated_at: unit.lokasiUpdatedAt || null,
+    lokasi_updated_by: unit.lokasiUpdatedBy || null,
+    riwayat_lokasi: Array.isArray(unit.riwayatLokasi) ? unit.riwayatLokasi : [],
     queued_at: unit.queuedAt || null,
     last_charged_at: unit.lastChargedAt || null,
     jatuh_tempo_at: unit.jatuhTempoAt || null,
@@ -80,6 +84,10 @@ export function dbToModel(row) {
     chargeDurationMs: row.charge_duration_ms ? Number(row.charge_duration_ms) : DEFAULT_CHARGE_DURATION_MS,
     kondisiBaterai: row.kondisi_baterai || 'PRIMA',
     catatanBaterai: row.catatan_baterai || '',
+    lokasi: row.lokasi || '',
+    lokasiUpdatedAt: row.lokasi_updated_at ? Number(row.lokasi_updated_at) : null,
+    lokasiUpdatedBy: row.lokasi_updated_by || '',
+    riwayatLokasi: Array.isArray(row.riwayat_lokasi) ? row.riwayat_lokasi : [],
     queuedAt: row.queued_at ? Number(row.queued_at) : null,
     lastChargedAt: row.last_charged_at ? Number(row.last_charged_at) : null,
     jatuhTempoAt: row.jatuh_tempo_at ? Number(row.jatuh_tempo_at) : null,
@@ -198,7 +206,7 @@ export function saveStoredUnits(units, notifyBroadcast = true, mutationMeta = nu
       if (error) {
         // Jika kolom baru belum ada di Supabase, fallback aman dengan menghapus kolom baru sementara
         if (error.code === '42703' || String(error.message).includes('column')) {
-          const stripped = dbPayload.map(({ charge_duration_ms, kondisi_baterai, catatan_baterai, ...rest }) => rest);
+          const stripped = dbPayload.map(({ charge_duration_ms, kondisi_baterai, catatan_baterai, lokasi, lokasi_updated_at, lokasi_updated_by, riwayat_lokasi, ...rest }) => rest);
           supabase.from('gadai_units').upsert(stripped).then(({ error: retryErr }) => {
             if (!retryErr) {
               setLastSyncTime();
@@ -322,6 +330,8 @@ export function createGadaiUnit(data) {
     return { success: false, message: `Kode Gadai ${cleanKode} sudah terdaftar pada unit aktif lain!` };
   }
 
+  const cleanLokasi = data.lokasi ? String(data.lokasi).trim().replace(/\s+/g, ' ').slice(0, 60) : '';
+
   const newUnit = {
     id: "unit-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
     kodeGadai: cleanKode,
@@ -331,6 +341,15 @@ export function createGadaiUnit(data) {
     batteryLevel: Math.max(0, Math.min(100, Number(data.batteryLevel) || 100)),
     kondisiBaterai: data.kondisiBaterai || 'PRIMA',
     catatanBaterai: data.catatanBaterai || '',
+    lokasi: cleanLokasi,
+    lokasiUpdatedAt: cleanLokasi ? Date.now() : null,
+    lokasiUpdatedBy: cleanLokasi ? (data.petugas || 'Admin') : '',
+    riwayatLokasi: cleanLokasi ? [{
+      lokasiLama: '',
+      lokasiBaru: cleanLokasi,
+      timestamp: Date.now(),
+      petugas: data.petugas || 'Admin'
+    }] : [],
     chargeDurationMs: DEFAULT_CHARGE_DURATION_MS,
     statusBarang: "AKTIF",
     statusCharger: "IDLE",
@@ -586,6 +605,80 @@ export function updateBatteryAudit(unitId, kondisiBaterai, catatanBaterai) {
   };
 }
 
+// 5c. Perbarui Letak Unit di Gudang & Rekam Riwayat Perubahan
+export function updateUnitLocation(unitId, newLocation, petugas = 'Admin') {
+  const units = getStoredUnits();
+  const unit = units.find(u => u.id === unitId);
+  if (!unit) return { success: false, message: "Unit tidak ditemukan." };
+
+  const cleanLoc = String(newLocation || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+  const currentLoc = (unit.lokasi || '').trim();
+
+  if (cleanLoc === currentLoc) {
+    return { success: true, message: "Letak unit tidak berubah.", unit };
+  }
+
+  const now = Date.now();
+  const historyEntry = {
+    lokasiLama: currentLoc,
+    lokasiBaru: cleanLoc,
+    timestamp: now,
+    petugas: petugas || 'Admin'
+  };
+
+  const oldHistory = Array.isArray(unit.riwayatLokasi) ? unit.riwayatLokasi : [];
+  const newHistory = [historyEntry, ...oldHistory].slice(0, 5);
+
+  const updated = units.map(u => {
+    if (u.id === unitId) {
+      return {
+        ...u,
+        lokasi: cleanLoc,
+        lokasiUpdatedAt: now,
+        lokasiUpdatedBy: petugas || 'Admin',
+        riwayatLokasi: newHistory,
+        updatedAt: now
+      };
+    }
+    return u;
+  });
+
+  saveStoredUnits(updated, true, {
+    action: 'UPDATE_LOCATION',
+    unitId,
+    payload: { lokasi: cleanLoc, petugas }
+  });
+
+  playGentleBeep();
+  return {
+    success: true,
+    message: "Letak unit diperbarui",
+    unit: updated.find(u => u.id === unitId)
+  };
+}
+
+// Helper: Ambil 5 saran lokasi yang paling sering digunakan
+export function getPopularLocations(units, limit = 5) {
+  if (!Array.isArray(units)) return [];
+  const countMap = new Map();
+  const displayMap = new Map();
+
+  units.forEach(u => {
+    const loc = (u.lokasi || '').trim();
+    if (!loc) return;
+    const key = loc.toLowerCase();
+    countMap.set(key, (countMap.get(key) || 0) + 1);
+    if (!displayMap.has(key)) {
+      displayMap.set(key, loc);
+    }
+  });
+
+  return Array.from(countMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([key]) => displayMap.get(key));
+}
+
 /**
  * Helper standarisasi item riwayat perpanjangan (objek maupun legacy string)
  */
@@ -746,7 +839,7 @@ export function moveToLelang(unitId, estimatedPrice = 0) {
     }
     return u;
   });
-  saveStoredUnits(updated, true, { action: 'MARK_LELANG_SOLD', unitId, payload: { soldPrice, buyerInfo } });
+  saveStoredUnits(updated, true, { action: 'MOVE_TO_LELANG', unitId, payload: { estimatedPrice } });
   return { success: true, message: "Unit berhasil dipindahkan ke daftar Lelang." };
 }
 

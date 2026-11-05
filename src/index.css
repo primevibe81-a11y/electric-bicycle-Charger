@@ -24,6 +24,10 @@
   /* Design Tokens: Touch Target Minimal (iPhone / Android) */
   --touch-min: 44px;
 
+  /* Animation Durations */
+  --dur-sheet: 200ms;
+  --dur-press: 100ms;
+
   /* Design Tokens: Brand & Status Colors (WCAG AA Compliant) */
   --color-brand-500: #0ea5e9;
   --color-brand-600: #0284c7;
@@ -77,4 +81,28 @@ input, textarea, [contenteditable="true"] {
 
 .safe-nav-bottom {
   padding-bottom: max(env(safe-area-inset-bottom), 12px);
+}
+
+/* Micro-interaction & Accessibility Utilities */
+.pressable {
+  transition: transform var(--dur-press) ease-out, opacity var(--dur-press) ease-out;
+}
+.pressable:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+@keyframes softHighlight {
+  0% {
+    background-color: rgba(14, 165, 233, 0.25);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-highlight {
+    animation: softHighlight 600ms ease-out;
+  }
 }

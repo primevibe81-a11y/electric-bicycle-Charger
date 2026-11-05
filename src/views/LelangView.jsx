@@ -13,11 +13,15 @@ import {
   FileText,
   PackageCheck,
   ChevronRight,
-  Info
+  Info,
+  MapPin,
+  SlidersHorizontal,
+  ArrowUpDown
 } from 'lucide-react';
 import BatteryIndicator from '../components/BatteryIndicator';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
-import { enqueueUnitForCharging, markLelangSold } from '../services/storage';
+import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
+import { enqueueUnitForCharging, markLelangSold, updateUnitLocation } from '../services/storage';
 import { getDaysSinceLastCharge } from '../services/chargerQueue';
 
 export default function LelangView({ units, onNotify }) {
@@ -26,22 +30,41 @@ export default function LelangView({ units, onNotify }) {
   const [buyerInfo, setBuyerInfo] = useState("");
   const [activeSubTab, setActiveSubTab] = useState("available"); // 'available' | 'sold'
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("ALL"); // 'ALL' | 'NO_LOCATION'
+  const [sortBy, setSortBy] = useState("DEFAULT"); // 'DEFAULT' | 'LOKASI_AZ'
+  const [editLokasiUnit, setEditLokasiUnit] = useState(null);
+  const [highlightedUnitId, setHighlightedUnitId] = useState(null);
 
   const lelangUnits = units.filter(u => u.statusBarang === 'LELANG');
   const soldUnits = units.filter(u => u.statusBarang === 'TERJUAL_LELANG');
+  const noLocationCount = lelangUnits.filter(u => !u.lokasi || !u.lokasi.trim()).length;
 
   const q = searchQuery.toLowerCase().trim();
 
-  // Filter pencarian untuk tab Siap Lelang
-  const filteredLelangUnits = lelangUnits.filter(u => {
+  // Filter pencarian & tipe untuk tab Siap Lelang
+  let filteredLelangUnits = lelangUnits.filter(u => {
+    if (filterType === 'NO_LOCATION' && u.lokasi && u.lokasi.trim()) {
+      return false;
+    }
     if (!q) return true;
     return (
       (u.kodeGadai && u.kodeGadai.toLowerCase().includes(q)) ||
       (u.merkSepeda && u.merkSepeda.toLowerCase().includes(q)) ||
       (u.namaNasabah && u.namaNasabah.toLowerCase().includes(q)) ||
-      (u.catatanBaterai && u.catatanBaterai.toLowerCase().includes(q))
+      (u.catatanBaterai && u.catatanBaterai.toLowerCase().includes(q)) ||
+      (u.lokasi && u.lokasi.toLowerCase().includes(q))
     );
   });
+
+  if (sortBy === 'LOKASI_AZ') {
+    filteredLelangUnits = [...filteredLelangUnits].sort((a, b) => {
+      const locA = (a.lokasi || '').trim().toLowerCase();
+      const locB = (b.lokasi || '').trim().toLowerCase();
+      if (!locA && locB) return 1;
+      if (locA && !locB) return -1;
+      return locA.localeCompare(locB);
+    });
+  }
 
   // Filter pencarian untuk tab Riwayat Terjual
   const filteredSoldUnits = soldUnits.filter(u => {
@@ -163,6 +186,49 @@ export default function LelangView({ units, onNotify }) {
             </button>
           )}
         </div>
+
+        {/* Chip Filter Cepat & Sortir Lokasi (Hanya di Tab Siap Lelang) */}
+        {activeSubTab === "available" && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none pt-0.5">
+            <button
+              onClick={() => setFilterType("ALL")}
+              className={`h-8 px-3 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 pressable ${
+                filterType === "ALL"
+                  ? "bg-purple-600 text-white shadow-2xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <span>Semua ({lelangUnits.length})</span>
+            </button>
+
+            <button
+              onClick={() => setFilterType(filterType === "NO_LOCATION" ? "ALL" : "NO_LOCATION")}
+              className={`h-8 px-3 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 pressable ${
+                filterType === "NO_LOCATION"
+                  ? "bg-amber-600 text-white shadow-2xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <MapPin className="w-3 h-3 text-slate-400" />
+              <span>Belum Ada Letak ({noLocationCount})</span>
+            </button>
+
+            <div className="w-[1px] h-5 bg-slate-200 mx-0.5 shrink-0" />
+
+            <button
+              onClick={() => setSortBy(sortBy === "LOKASI_AZ" ? "DEFAULT" : "LOKASI_AZ")}
+              className={`h-8 px-2.5 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 pressable ${
+                sortBy === "LOKASI_AZ"
+                  ? "bg-sky-600 text-white shadow-2xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+              }`}
+              title="Urutkan letak gudang A-Z"
+            >
+              <ArrowUpDown className="w-3 h-3" />
+              <span>{sortBy === "LOKASI_AZ" ? "Lokasi A-Z (Aktif)" : "Sortir Lokasi"}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 3. KONTEN TAB SIAP LELANG VS TERJUAL */}
@@ -194,6 +260,8 @@ export default function LelangView({ units, onNotify }) {
                 <div
                   key={unit.id}
                   className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs ${
+                    highlightedUnitId === unit.id ? 'animate-highlight border-purple-400 ring-2 ring-purple-200' : ''
+                  } ${
                     isCriticalOverdue
                       ? 'border-slate-200 border-l-4 border-l-rose-500'
                       : 'border-slate-200/90'
@@ -233,6 +301,22 @@ export default function LelangView({ units, onNotify }) {
                       </span>
                     )}
                   </div>
+
+                  {/* BARIS 3b: Meta Letak Unit (Ikon Pin + Teks Lokasi, Abu-abu 12-13px, Ellipsis, Touch Target 44px) */}
+                  <button
+                    type="button"
+                    onClick={() => setEditLokasiUnit(unit)}
+                    className="w-full text-left pt-1 flex items-center gap-1.5 text-[12px] group min-h-[36px] py-1 px-1 -mx-1 rounded-lg hover:bg-slate-50 active:bg-slate-100 transition-colors pressable"
+                    title="Ubah letak unit di gudang"
+                  >
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:text-purple-600 transition-colors" />
+                    <span className={`truncate flex-1 ${unit.lokasi ? 'text-slate-600 font-medium' : 'text-slate-400 italic'}`}>
+                      {unit.lokasi || 'Letak belum diisi'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Ubah
+                    </span>
+                  </button>
 
                   {/* BARIS 4: Meta Waktu Charge (Satu Sinyal Kritis Bersih, Kontras WCAG AA) */}
                   <div className="pt-2 flex items-center gap-1.5 text-[12px] flex-wrap">
@@ -398,6 +482,10 @@ export default function LelangView({ units, onNotify }) {
                   <span className="font-semibold text-slate-800">{selectedUnitForSale.namaNasabah}</span>
                 </div>
                 <div className="flex justify-between text-slate-500">
+                  <span>Letak Unit:</span>
+                  <span className="font-semibold text-slate-800">{selectedUnitForSale.lokasi || 'Belum diisi'}</span>
+                </div>
+                <div className="flex justify-between text-slate-500">
                   <span>Estimasi Awal:</span>
                   <span className="font-semibold text-purple-700">
                     {formatRupiah(selectedUnitForSale.hargaLelang || 2500000)}
@@ -460,6 +548,31 @@ export default function LelangView({ units, onNotify }) {
           </div>
         </div>
       )}
+      {/* 5. BOTTOM SHEET EDIT LETAK UNIT */}
+      <LetakUnitBottomSheet
+        unit={editLokasiUnit}
+        allUnits={units}
+        isOpen={!!editLokasiUnit}
+        onClose={() => setEditLokasiUnit(null)}
+        onSave={(unitId, newLoc) => {
+          const res = updateUnitLocation(unitId, newLoc, "Admin Gudang");
+          if (res.success) {
+            setHighlightedUnitId(unitId);
+            setTimeout(() => setHighlightedUnitId(null), 700);
+            onNotify({
+              title: "Letak unit diperbarui",
+              message: res.message,
+              type: "success"
+            });
+          } else {
+            onNotify({
+              title: "Gagal Menyimpan",
+              message: res.message || "Terjadi kesalahan",
+              type: "warning"
+            });
+          }
+        }}
+      />
     </div>
   );
 }

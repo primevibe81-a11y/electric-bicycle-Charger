@@ -18,12 +18,20 @@ import {
   FileText,
   MoreHorizontal,
   ChevronRight,
-  Info
+  Info,
+  MapPin
 } from 'lucide-react';
 import BatteryIndicator from '../components/BatteryIndicator';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import AuditBatteryModal from '../components/AuditBatteryModal';
-import { createGadaiUnit, enqueueUnitForCharging, moveToLelang } from '../services/storage';
+import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
+import {
+  createGadaiUnit,
+  enqueueUnitForCharging,
+  moveToLelang,
+  updateUnitLocation,
+  getPopularLocations
+} from '../services/storage';
 import {
   BATTERY_CONDITIONS,
   getDaysSinceLastCharge
@@ -32,11 +40,13 @@ import {
 export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onNavigateToTebus }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState("ALL"); // 'ALL' | 'CRITICAL' | 'DEFECT'
-  const [sortBy, setSortBy] = useState("DEFAULT"); // 'DEFAULT' | 'OLDEST_CHARGED'
+  const [filterType, setFilterType] = useState("ALL"); // 'ALL' | 'CRITICAL' | 'DEFECT' | 'NO_LOCATION'
+  const [sortBy, setSortBy] = useState("DEFAULT"); // 'DEFAULT' | 'OLDEST_CHARGED' | 'LOKASI_AZ'
   const [auditingUnit, setAuditingUnit] = useState(null);
   const [actionSheetUnit, setActionSheetUnit] = useState(null);
   const [detailUnit, setDetailUnit] = useState(null);
+  const [editLokasiUnit, setEditLokasiUnit] = useState(null);
+  const [highlightedUnitId, setHighlightedUnitId] = useState(null);
 
   // References for horizontal chip scrolling
   const chipsContainerRef = useRef(null);
@@ -49,6 +59,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
   const [batteryLevel, setBatteryLevel] = useState("100");
   const [kondisiBaterai, setKondisiBaterai] = useState("PRIMA");
   const [catatanBaterai, setCatatanBaterai] = useState("");
+  const [lokasiGudang, setLokasiGudang] = useState("");
   const [jatuhTempoDays, setJatuhTempoDays] = useState("30");
 
   const aktifUnits = units.filter(u => u.statusBarang === 'AKTIF');
@@ -60,6 +71,10 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
   }).length;
 
   const defectCount = aktifUnits.filter(u => u.kondisiBaterai && u.kondisiBaterai !== 'PRIMA').length;
+  const noLocationCount = aktifUnits.filter(u => !u.lokasi || !u.lokasi.trim()).length;
+
+  // Saran letak terpopuler dari populasi saat ini
+  const popularSuggestions = getPopularLocations(units, 5);
 
   // Auto scroll active chip into view smoothly
   useEffect(() => {
@@ -74,12 +89,13 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
   // Filter & Search Logic
   let processedUnits = aktifUnits.filter(u => {
-    // 1. Text Search
+    // 1. Text Search (mencari di kode, nama nasabah, merk, dan lokasi)
     const q = searchQuery.toLowerCase().trim();
     const matchText = !q || (
       u.kodeGadai.toLowerCase().includes(q) ||
       u.namaNasabah.toLowerCase().includes(q) ||
-      u.merkSepeda.toLowerCase().includes(q)
+      u.merkSepeda.toLowerCase().includes(q) ||
+      (u.lokasi && u.lokasi.toLowerCase().includes(q))
     );
     if (!matchText) return false;
 
@@ -91,17 +107,38 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
     if (filterType === 'DEFECT') {
       return u.kondisiBaterai && u.kondisiBaterai !== 'PRIMA';
     }
+    if (filterType === 'NO_LOCATION') {
+      return !u.lokasi || !u.lokasi.trim();
+    }
     return true;
   });
 
-  // Sorting: Oldest charged on top
+  // Sorting
   if (sortBy === 'OLDEST_CHARGED') {
     processedUnits.sort((a, b) => {
       const timeA = Number(a.lastChargedAt) || 0;
       const timeB = Number(b.lastChargedAt) || 0;
       return timeA - timeB; // Ascending: waktu terkecil (terlama belum di-charge) paling atas
     });
+  } else if (sortBy === 'LOKASI_AZ') {
+    processedUnits.sort((a, b) => {
+      const locA = (a.lokasi || '').trim().toLowerCase();
+      const locB = (b.lokasi || '').trim().toLowerCase();
+      if (!locA && locB) return 1;
+      if (locA && !locB) return -1;
+      return locA.localeCompare(locB);
+    });
   }
+
+  const handleToggleSort = () => {
+    if (sortBy === 'DEFAULT') {
+      setSortBy('OLDEST_CHARGED');
+    } else if (sortBy === 'OLDEST_CHARGED') {
+      setSortBy('LOKASI_AZ');
+    } else {
+      setSortBy('DEFAULT');
+    }
+  };
 
   const handleCreateSubmit = (e) => {
     e.preventDefault();
@@ -122,6 +159,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
       batteryLevel,
       kondisiBaterai,
       catatanBaterai,
+      lokasi: lokasiGudang,
       jatuhTempoAt
     });
 
@@ -133,6 +171,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
       setBatteryLevel("100");
       setKondisiBaterai("PRIMA");
       setCatatanBaterai("");
+      setLokasiGudang("");
       onNotify({
         title: "Unit Berhasil Didaftarkan",
         message: `Nomor gadai #${res.unit.kodeGadai} aktif terdaftar di sistem.`,
@@ -141,6 +180,25 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
     } else {
       onNotify({
         title: "Gagal Pendaftaran",
+        message: res.message,
+        type: "warning"
+      });
+    }
+  };
+
+  const handleSaveLocation = (unitId, newLoc, petugas) => {
+    const res = updateUnitLocation(unitId, newLoc, petugas);
+    if (res.success) {
+      onNotify({
+        title: "Letak Unit Diperbarui",
+        message: res.message,
+        type: "success"
+      });
+      setHighlightedUnitId(unitId);
+      setTimeout(() => setHighlightedUnitId(null), 650);
+    } else {
+      onNotify({
+        title: "Gagal Memperbarui",
         message: res.message,
         type: "warning"
       });
@@ -198,7 +256,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="h-11 px-3.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
+          className="pressable h-11 px-3.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 shrink-0"
         >
           {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           <span>{showAddForm ? "Tutup" : "Tambah Baru"}</span>
@@ -214,7 +272,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
             </div>
             <div>
               <h3 className="text-xs font-bold text-slate-900">Pendaftaran Sepeda Gadai Baru</h3>
-              <p className="text-[11px] text-slate-500">Isi data fisik &amp; kondisi awal baterai</p>
+              <p className="text-[11px] text-slate-500">Isi data fisik, kondisi baterai &amp; letak rak gudang</p>
             </div>
           </div>
 
@@ -325,10 +383,44 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               </div>
             </div>
 
+            {/* 3b. Field Opsional: Letak Unit di Gudang dengan Chip Saran Cepat */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-sky-600" />
+                  <span>Letak Unit di Gudang (Opsional)</span>
+                </label>
+                <span className="text-[10px] text-slate-400">{lokasiGudang.length}/60</span>
+              </div>
+              <input
+                type="text"
+                maxLength={60}
+                value={lokasiGudang}
+                onChange={(e) => setLokasiGudang(e.target.value)}
+                placeholder="Contoh: Rak B2, lantai 2"
+                className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400"
+              />
+              {popularSuggestions.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                  <span className="text-[10px] text-slate-400">Saran:</span>
+                  {popularSuggestions.map((s, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setLokasiGudang(s)}
+                      className="pressable px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 hover:bg-sky-50 hover:text-sky-700 border border-slate-200"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="pt-1">
               <button
                 type="submit"
-                className="w-full h-11 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs active:scale-[0.98] transition-all"
+                className="pressable w-full h-11 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all"
               >
                 Simpan Data Gadai Baru
               </button>
@@ -347,7 +439,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari akad / nasabah / merk"
+              placeholder="Cari akad / nasabah / lokasi"
               className="w-full h-11 pl-10 pr-9 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400"
             />
             {searchQuery && (
@@ -362,14 +454,22 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
           </div>
 
           <button
-            onClick={() => setSortBy(sortBy === 'DEFAULT' ? 'OLDEST_CHARGED' : 'DEFAULT')}
-            className={`h-11 w-11 shrink-0 rounded-xl border flex items-center justify-center transition-all ${
+            onClick={handleToggleSort}
+            className={`pressable h-11 w-11 shrink-0 rounded-xl border flex items-center justify-center transition-all ${
               sortBy === 'OLDEST_CHARGED'
                 ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
-                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 active:scale-95'
+                : sortBy === 'LOKASI_AZ'
+                  ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
             }`}
-            title={sortBy === 'OLDEST_CHARGED' ? "Urutan: Terlama belum charge (Aktif)" : "Urutkan dari terlama belum di-charge"}
-            aria-label="Urutkan Terlama Charge"
+            title={
+              sortBy === 'OLDEST_CHARGED'
+                ? "Urutan: Terlama belum charge"
+                : sortBy === 'LOKASI_AZ'
+                  ? "Urutan: Letak Unit (A-Z)"
+                  : "Urutan Default"
+            }
+            aria-label="Urutkan"
           >
             <ArrowDownUp className="w-4 h-4" />
           </button>
@@ -384,7 +484,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
             <button
               ref={filterType === 'ALL' ? activeChipRef : null}
               onClick={() => setFilterType('ALL')}
-              className={`h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
+              className={`pressable h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
                 filterType === 'ALL'
                   ? 'bg-sky-600 text-white shadow-xs'
                   : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
@@ -396,7 +496,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
             <button
               ref={filterType === 'CRITICAL' ? activeChipRef : null}
               onClick={() => setFilterType('CRITICAL')}
-              className={`h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+              className={`pressable h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
                 filterType === 'CRITICAL'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
@@ -409,13 +509,27 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
             <button
               ref={filterType === 'DEFECT' ? activeChipRef : null}
               onClick={() => setFilterType('DEFECT')}
-              className={`h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+              className={`pressable h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
                 filterType === 'DEFECT'
                   ? 'bg-amber-600 text-white shadow-xs'
                   : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
               }`}
             >
               <span>Baterai Bermasalah ({defectCount})</span>
+            </button>
+
+            {/* Chip Filter Baru: Belum Ada Letak */}
+            <button
+              ref={filterType === 'NO_LOCATION' ? activeChipRef : null}
+              onClick={() => setFilterType('NO_LOCATION')}
+              className={`pressable h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+                filterType === 'NO_LOCATION'
+                  ? 'bg-slate-800 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+              }`}
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Belum Ada Letak ({noLocationCount})</span>
             </button>
           </div>
 
@@ -512,7 +626,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   </div>
                 </div>
 
-                {/* BARIS 3 (META): Ikon Jam + Waktu Charge • Ikon Kalender + Jatuh Tempo, serta Catatan Informatif 1 Baris */}
+                {/* BARIS 3 (META): Ikon Jam + Waktu Charge • Ikon Kalender + Jatuh Tempo, Baris Letak Unit Gudang, serta Catatan Informatif */}
                 <div className="pt-2 space-y-1">
                   <div className="flex items-center gap-1.5 text-[12px] flex-wrap">
                     <span className={`inline-flex items-center gap-1 ${
@@ -533,6 +647,24 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                     </span>
                   </div>
 
+                  {/* Baris Meta Letak Unit di Gudang (Bisa ditekan, 44px hit-box, flash highlight 600ms) */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditLokasiUnit(unit);
+                    }}
+                    className={`pressable w-full min-h-[36px] py-0.5 text-left flex items-center gap-1.5 rounded-lg transition-colors group ${
+                      highlightedUnitId === unit.id ? 'animate-highlight' : ''
+                    }`}
+                    title="Ketuk untuk mengubah letak unit di gudang"
+                  >
+                    <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-sky-600' : 'text-slate-300'}`} />
+                    <span className={`text-[12px] truncate ${unit.lokasi ? 'text-slate-600 group-hover:text-slate-900 font-medium' : 'text-slate-400 italic'}`}>
+                      {unit.lokasi ? unit.lokasi : 'Letak belum diisi'}
+                    </span>
+                  </button>
+
                   {/* Catatan informatif biasa: 1 baris teks abu-abu kecil (12-13px), tanpa kotak, tanpa emoji, ellipsis */}
                   {unit.catatanBaterai && (
                     <div
@@ -552,7 +684,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   <button
                     onClick={() => handleQuickEnqueue(unit)}
                     disabled={isCharging || isWaiting}
-                    className={`h-11 flex-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] ${
+                    className={`pressable h-11 flex-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                       isCharging || isWaiting
                         ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                         : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
@@ -566,7 +698,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   {/* Tombol Sekunder: Perpanjang (outline, h-11) */}
                   <button
                     onClick={() => onNavigateToPerpanjang(unit.id)}
-                    className="h-11 px-3.5 rounded-xl text-xs font-bold bg-white hover:bg-sky-50 text-sky-700 border border-sky-300 transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 shrink-0"
+                    className="pressable h-11 px-3.5 rounded-xl text-xs font-bold bg-white hover:bg-sky-50 text-sky-700 border border-sky-300 transition-all flex items-center justify-center gap-1.5 shrink-0"
                     title="Perpanjang nomor gadai"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -576,7 +708,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   {/* Tombol Titik Tiga (⋯) 44x44px untuk membuka Bottom Sheet Aksi */}
                   <button
                     onClick={() => setActionSheetUnit(unit)}
-                    className="h-11 w-11 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 active:scale-95 flex items-center justify-center shrink-0 transition-all"
+                    className="pressable h-11 w-11 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center shrink-0 transition-all"
                     title="Menu aksi lainnya (Audit Baterai, Tebus, Lelang)"
                     aria-label="Aksi Lainnya"
                   >
@@ -605,6 +737,11 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                 <p className="text-xs text-slate-500 truncate max-w-[280px]">
                   {actionSheetUnit.merkSepeda} • {actionSheetUnit.namaNasabah}
                 </p>
+                {/* Informasi Lokasi Fisik di Aksi Cepat */}
+                <div className="flex items-center gap-1 mt-1 text-[11px] text-slate-600">
+                  <MapPin className="w-3 h-3 text-sky-600 shrink-0" />
+                  <span>Letak: <strong>{actionSheetUnit.lokasi || 'Belum diisi'}</strong></span>
+                </div>
               </div>
               <button
                 onClick={() => setActionSheetUnit(null)}
@@ -617,6 +754,27 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
             {/* Action Items List */}
             <div className="space-y-1.5 pt-1">
+              {/* Action: Ubah Letak Unit */}
+              <button
+                onClick={() => {
+                  const target = actionSheetUnit;
+                  setActionSheetUnit(null);
+                  setEditLokasiUnit(target);
+                }}
+                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
+              >
+                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-slate-900">Ubah Letak Unit</div>
+                  <div className="text-[11px] text-slate-500">
+                    Posisi rak gudang: {actionSheetUnit.lokasi || 'Belum diisi'}
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+              </button>
+
               {/* Action 1: Audit Baterai (Line icon ShieldCheck) */}
               <button
                 onClick={() => {
@@ -624,7 +782,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   setActionSheetUnit(null);
                   setAuditingUnit(target);
                 }}
-                className="w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 active:scale-[0.99]"
+                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
               >
                 <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-5 h-5" />
@@ -639,7 +797,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               {/* Action 2: Tebus Unit (Line icon CheckCircle2) */}
               <button
                 onClick={() => handleTebusConfirm(actionSheetUnit)}
-                className="w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 active:scale-[0.99]"
+                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
               >
                 <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                   <CheckCircle2 className="w-5 h-5" />
@@ -654,10 +812,10 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               {/* Divider sebelum aksi besar Lelang */}
               <div className="border-t border-slate-100 my-1" />
 
-              {/* Action 3: Pindah ke Lelang (Line icon Gavel, dipisahkan styling tersendiri) */}
+              {/* Action 3: Pindah ke Lelang */}
               <button
                 onClick={() => handleMoveToLelang(actionSheetUnit)}
-                className="w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 bg-purple-50/60 hover:bg-purple-100/70 text-purple-900 border border-purple-200/80 transition-colors active:scale-[0.99]"
+                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 bg-purple-50/60 hover:bg-purple-100/70 text-purple-900 border border-purple-200/80 transition-colors"
               >
                 <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
                   <Gavel className="w-5 h-5" />
@@ -674,7 +832,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
             <div className="pt-2">
               <button
                 onClick={() => setActionSheetUnit(null)}
-                className="w-full h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
+                className="pressable w-full h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
               >
                 Batal
               </button>
@@ -716,6 +874,28 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   <User className="w-3.5 h-3.5 text-slate-400" />
                   <span>{detailUnit.namaNasabah}</span>
                 </div>
+              </div>
+
+              {/* Letak Fisik di Gudang */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] text-slate-500 block">Letak di Gudang:</span>
+                  <span className="font-semibold text-slate-800 text-xs">
+                    {detailUnit.lokasi ? detailUnit.lokasi : 'Belum diisi'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = detailUnit;
+                    setDetailUnit(null);
+                    setEditLokasiUnit(target);
+                  }}
+                  className="pressable h-8 px-2.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold flex items-center gap-1"
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span>Ubah</span>
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -795,14 +975,14 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   setDetailUnit(null);
                   setAuditingUnit(target);
                 }}
-                className="h-11 flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5"
+                className="pressable h-11 flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5"
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span>Audit Baterai</span>
               </button>
               <button
                 onClick={() => setDetailUnit(null)}
-                className="h-11 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
+                className="pressable h-11 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
               >
                 Tutup
               </button>
@@ -817,6 +997,17 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
           unit={auditingUnit}
           onClose={() => setAuditingUnit(null)}
           onNotify={onNotify}
+        />
+      )}
+
+      {/* 8. BOTTOM SHEET LETAK UNIT */}
+      {editLokasiUnit && (
+        <LetakUnitBottomSheet
+          unit={editLokasiUnit}
+          units={units}
+          isOpen={Boolean(editLokasiUnit)}
+          onClose={() => setEditLokasiUnit(null)}
+          onSave={handleSaveLocation}
         />
       )}
     </div>
