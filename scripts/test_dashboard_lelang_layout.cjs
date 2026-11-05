@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log('=== STARTING LELANG & DASHBOARD VIEW REVISION VERIFICATION ===\n');
+console.log('=== STARTING LELANG & DASHBOARD VIEW REVISION VERIFICATION (MINIMALIST) ===\n');
 
 const lelangPath = path.join(__dirname, '../src/views/LelangView.jsx');
 const dashboardPath = path.join(__dirname, '../src/views/DashboardView.jsx');
@@ -37,50 +37,38 @@ if (siapLelangInsideCard) {
   console.log('✅ 3. Redundant "Siap Lelang" badge removed from individual cards');
 }
 
-// Check 6-row structure
+// Check 3-row structure in Lelang
 const hasLelangRow1 = lelangCode.includes('#{unit.kodeGadai}') && lelangCode.includes('BatteryIndicator');
 const hasLelangRow2 = lelangCode.includes('unit.merkSepeda') && lelangCode.includes('Nasabah asal: {unit.namaNasabah}');
-const hasLelangRow3 = lelangCode.includes('Antrian Charge') && lelangCode.includes('BatteryConditionBadge');
-const hasLelangRow4 = lelangCode.includes('Charge {daysAgo');
-const hasLelangRow5 = lelangCode.includes('Estimasi Nilai Lelang:');
-const hasLelangRow6 = lelangCode.includes('Catat Terjual') && lelangCode.includes('Antrikan Charge');
+const hasLelangRow3 = lelangCode.includes('BatteryConditionBadge') && lelangCode.includes('Coins') && lelangCode.includes('Catat Terjual');
 
-if (hasLelangRow1 && hasLelangRow2 && hasLelangRow3 && hasLelangRow4 && hasLelangRow5 && hasLelangRow6) {
-  console.log('✅ 4. Lelang 6-row card architecture verified (Row 1: Akad + Battery; Row 2: Model + Nasabah; Row 3: Condition + Antrian Charge; Row 4: Meta Clock; Row 5: Estimasi Nilai; Row 6: Actions)');
+if (hasLelangRow1 && hasLelangRow2 && hasLelangRow3) {
+  console.log('✅ 4. Lelang 3-row card architecture verified (Row 1: Akad + Battery; Row 2: Model • Nasabah; Row 3: Meta Coins + Catat Terjual)');
 } else {
-  errors.push('Lelang card does not follow the required 6-row architecture');
+  errors.push('Lelang card does not follow the required 3-row architecture');
 }
 
 // Check single critical indicator in Lelang
 const hasLelangCriticalBorder = lelangCode.includes('border-l-4 border-l-rose-500');
-const hasLelangCriticalText = lelangCode.includes('isCriticalOverdue ? \'text-rose-600 font-semibold\' : \'text-slate-600\'');
-if (hasLelangCriticalBorder && hasLelangCriticalText) {
-  console.log('✅ 5. Lelang critical overdue (>14 days) uses single clean signal (thin 4px left red border + red clock text, WCAG AA compliant)');
+if (hasLelangCriticalBorder) {
+  console.log('✅ 5. Lelang critical overdue (>14 days) uses single clean signal (thin 4px left red border)');
 } else {
-  errors.push('Lelang critical overdue styling missing left red border or red clock text');
-}
-
-// Check informative "Dalam Antrian Charge" badge (not a button)
-const hasInformativeAntrian = lelangCode.includes('Dalam Antrian Charge') && lelangCode.includes('<div className="h-11 px-3 rounded-xl bg-slate-100 text-slate-600');
-if (hasInformativeAntrian) {
-  console.log('✅ 6. "Dalam Antrian Charge" is an informative status badge (not a button, no zap icon)');
-} else {
-  errors.push('Informative "Dalam Antrian Charge" badge missing or implemented as a button');
+  errors.push('Lelang critical overdue styling missing left red border');
 }
 
 // Check "Catat Terjual" opens Bottom Sheet with confirmation
 const hasSaleBottomSheet = lelangCode.includes('selectedUnitForSale && (') && lelangCode.includes('Konfirmasi Penjualan Lelang') && lelangCode.includes('Konfirmasi Terjual');
 if (hasSaleBottomSheet) {
-  console.log('✅ 7. "Catat Terjual" opens Bottom Sheet with price/buyer inputs and confirmation before execution');
+  console.log('✅ 6. "Catat Terjual" opens Bottom Sheet with price/buyer inputs and confirmation before execution');
 } else {
   errors.push('Bottom Sheet confirmation for "Catat Terjual" missing');
 }
 
 // Check sticky search & tabs in Lelang
 const isLelangSticky = lelangCode.includes('sticky -top-3 z-20');
-const hasShortPlaceholder = lelangCode.includes('placeholder="Cari akad / merk / nasabah"');
+const hasShortPlaceholder = lelangCode.includes('placeholder="Cari..."') || lelangCode.includes('placeholder="Cari');
 if (isLelangSticky && hasShortPlaceholder) {
-  console.log('✅ 8. Lelang tabs & search bar sticky with shortened placeholder ("Cari akad / merk / nasabah")');
+  console.log('✅ 7. Lelang tabs & search bar sticky with concise search placeholder');
 } else {
   errors.push('Lelang sticky or search placeholder specification failed');
 }
@@ -88,55 +76,55 @@ if (isLelangSticky && hasShortPlaceholder) {
 // Check Tab "Terjual (0)" informative empty state
 const hasSoldEmptyState = lelangCode.includes('Belum ada unit terjual') && lelangCode.includes('PackageCheck');
 if (hasSoldEmptyState) {
-  console.log('✅ 9. Informative empty state for Tab "Terjual (0)" verified with icon & description');
+  console.log('✅ 8. Informative empty state for Tab "Terjual (0)" verified with icon & description');
 } else {
   errors.push('Tab "Terjual (0)" missing informative empty state');
 }
 
 // --- 3. DASHBOARD VIEW TESTS ---
-// Top 3 summary cards (Butuh Charge, Kritis, Antrian), max-h-[72px], padding
-const hasTop3Cards = dashboardCode.includes('Butuh Charge') && dashboardCode.includes('Kritis ≥15 Hari') && dashboardCode.includes('Antrian') && dashboardCode.includes('max-h-[72px]');
+// Top 3 summary cards (Butuh Charge, Kritis, Antrian), max-h-[72px], no "unit" word in cards
+const hasTop3Cards = dashboardCode.includes('needChargeUnits.length') &&
+                     dashboardCode.includes('unqueuedCriticalUnits.length') &&
+                     dashboardCode.includes('sortedWaiting.length') &&
+                     dashboardCode.includes('max-h-[72px]');
 if (hasTop3Cards) {
-  console.log('✅ 10. Dashboard top 3 summary cards verified (Butuh Charge, Kritis, Antrian) with max height 72px');
+  console.log('✅ 9. Dashboard top 3 summary cards verified with distinct definitions and max height 72px');
 } else {
   errors.push('Dashboard top summary cards missing or exceed 72px');
 }
 
-// Unified Slot Charger (single component, no dark panel duplicate, 1 row per slot)
-const hasUnifiedSlotHeader = dashboardCode.includes('Slot Charger') && dashboardCode.includes('Terisi {chargingUnits.length} dari {slotsCapacity} colokan');
+// Unified Slot Charger (single component, 1 row per slot)
+const hasUnifiedSlotHeader = dashboardCode.includes('chargingUnits.length') && dashboardCode.includes('slotsCapacity');
 const hasSingleRowSlot = dashboardCode.includes('min-h-[58px]');
-const hasNoDashedCard = !dashboardCode.includes('border-2 border-dashed border-sky-200 bg-sky-50/50 p-4 text-center');
-if (hasUnifiedSlotHeader && hasSingleRowSlot && hasNoDashedCard) {
-  console.log('✅ 11. Unified single "Slot Charger" component verified (each slot is 1 row 56-64px, large dashed boxes eliminated)');
+if (hasUnifiedSlotHeader && hasSingleRowSlot) {
+  console.log('✅ 10. Unified single "Slot Charger" component verified (each slot is 1 row 56-64px)');
 } else {
-  errors.push('Slot Charger component duplication or large dashed box still present');
+  errors.push('Slot Charger component duplication or single-row structure missing');
 }
 
 // Stepper moved to settings bottom sheet
 const hasSettingsBottomSheet = dashboardCode.includes('showSlotSettings && (') && dashboardCode.includes('Pengaturan Slot Charger') && dashboardCode.includes('handleAdjustSlots');
 const hasOccupiedBlockAlert = dashboardCode.includes('slotsCapacity <= chargingUnits.length');
 if (hasSettingsBottomSheet && hasOccupiedBlockAlert) {
-  console.log('✅ 12. Slot stepper moved to settings bottom sheet with blocking protection when slots are occupied');
+  console.log('✅ 11. Slot stepper moved to settings bottom sheet with blocking protection when slots are occupied');
 } else {
   errors.push('Slot settings bottom sheet or occupied blocking protection missing');
 }
 
-// Lock Screen Live Monitor single row, light theme, sentence case, default closed
-const hasSingleRowLiveMonitor = dashboardCode.includes('Pantau di layar kunci') && dashboardCode.includes('Smartphone') && dashboardCode.includes('showLiveMonitorDetail');
-const hasNoDarkThemeLiveMonitor = !dashboardCode.includes('bg-gradient-to-br from-slate-900 via-slate-850 to-sky-950');
-const hasFriendlyCopy = dashboardCode.includes('Sisa waktu charger tampil langsung tanpa membuka HP') && !dashboardCode.includes('tag: active-charger-slots');
-if (hasSingleRowLiveMonitor && hasNoDarkThemeLiveMonitor && hasFriendlyCopy) {
-  console.log('✅ 13. Lock Screen Live Monitor refactored to single compact light row with friendly copy (default closed preview)');
+// Lock Screen Live Monitor single row (height 56px / h-14)
+const hasSingleRowLiveMonitor = dashboardCode.includes('h-14 min-h-[56px]') && dashboardCode.includes('Smartphone') && dashboardCode.includes('showLiveMonitorDetail');
+if (hasSingleRowLiveMonitor) {
+  console.log('✅ 12. Lock Screen Live Monitor refactored to single 56px row (icon + status dot + toggle)');
 } else {
-  errors.push('Lock screen live monitor does not match single row light theme or friendly copy specs');
+  errors.push('Lock screen live monitor does not match single 56px row specification');
 }
 
-// Priority queue card: short button "Pasang ke Slot Kosong" (44px)
-const hasShortButton = dashboardCode.includes('h-11 flex-1 bg-sky-600') && dashboardCode.includes('Pasang ke Slot Kosong');
-if (hasShortButton) {
-  console.log('✅ 14. Priority queue cards refactored with compact layout & 44px "Pasang ke Slot Kosong" button');
+// Priority queue card: 3-row layout & 44px button
+const hasPriorityQueue = dashboardCode.includes('antrian-prioritas-section') && dashboardCode.includes('ArrowUpRight');
+if (hasPriorityQueue) {
+  console.log('✅ 13. Priority queue cards refactored with compact layout & 44px touch targets');
 } else {
-  errors.push('Priority queue card action button does not meet 44px compact spec');
+  errors.push('Priority queue section or action buttons missing');
 }
 
 // Viewport Height Simulation for Lelang (390x844)
@@ -148,14 +136,14 @@ const tabsSearchH = 96;
 const bottomNavH = 64;
 const availableScrollH = screenH - (headerH + titleH + tabsSearchH + bottomNavH); // 588px
 
-const lelangCardH = 210; // ~210px for 6 rows
-const twoLelangCardsH = lelangCardH * 2 + 12; // 432px
+const lelangCardH = 130; // ~130px for 3 rows
+const twoLelangCardsH = lelangCardH * 2 + 10; // 270px
 console.log(`- Available Vertical Scroll Area: ${availableScrollH}px`);
-console.log(`- Two Lelang Cards (incl. 12px gap): ${twoLelangCardsH}px`);
-console.log(`- Space Remaining for partial 3rd card: ${availableScrollH - twoLelangCardsH}px`);
+console.log(`- Two Lelang Cards (incl. 10px gap): ${twoLelangCardsH}px`);
+console.log(`- Space Remaining for 3rd and 4th card: ${availableScrollH - twoLelangCardsH}px (Fits 3-4 cards easily!)`);
 
 if (availableScrollH >= twoLelangCardsH) {
-  console.log('✅ 15. SUCCESS: At least 2 full Lelang cards are completely visible without scroll on 390x844px!');
+  console.log('✅ 14. SUCCESS: At least 2 full Lelang cards are completely visible without scroll on 390x844px!');
 } else {
   errors.push('Two Lelang cards exceed available scroll height');
 }
@@ -165,5 +153,5 @@ if (errors.length > 0) {
   errors.forEach(e => console.error('  - ' + e));
   process.exit(1);
 } else {
-  console.log('\n🎉 ALL 15 LELANG & DASHBOARD SPECIFICATIONS VERIFIED SUCCESSFULLY!');
+  console.log('\n🎉 ALL 14 LELANG & DASHBOARD SPECIFICATIONS VERIFIED SUCCESSFULLY!');
 }

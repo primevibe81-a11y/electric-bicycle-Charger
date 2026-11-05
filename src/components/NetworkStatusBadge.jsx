@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Wifi, WifiOff, RefreshCw, CheckCircle2, Cloud, CloudOff, AlertCircle } from 'lucide-react';
+import { Cloud, CloudOff, RefreshCw } from 'lucide-react';
 import { subscribeToNetworkStatus } from '../services/offlineQueue';
 import { triggerManualSync } from '../services/storage';
+import Tooltip from './Tooltip';
 
 export default function NetworkStatusBadge({ onNotify }) {
   const [networkState, setNetworkState] = useState({
@@ -77,49 +78,41 @@ export default function NetworkStatusBadge({ onNotify }) {
 
   const { isOnline, isSyncing, pendingCount } = networkState;
 
-  // 1. Syncing state
-  if (isSyncing) {
-    return (
-      <button
-        onClick={handleManualSyncClick}
-        className="inline-flex items-center gap-1.5 px-2 py-1 bg-sky-50 text-sky-800 border border-sky-200 rounded-full text-[10.5px] font-semibold animate-pulse active:scale-95 transition-all shrink-0"
-        title="Sedang mengunggah mutasi ke cloud"
-      >
-        <RefreshCw className="w-3 h-3 animate-spin text-sky-600" />
-        <span className="leading-none">Sync ({pendingCount})...</span>
-      </button>
-    );
-  }
+  let tooltipText = "Cloud Terhubung & Sinkron";
+  if (isSyncing) tooltipText = `Sedang sinkronisasi (${pendingCount})...`;
+  else if (!isOnline) tooltipText = `Mode Offline: ${pendingCount} mutasi tertunda`;
+  else if (pendingCount > 0) tooltipText = `${pendingCount} mutasi antri ke cloud`;
 
-  // 2. Offline state (In warehouse without signal)
-  if (!isOnline || pendingCount > 0) {
-    return (
-      <button
-        onClick={handleManualSyncClick}
-        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10.5px] font-semibold active:scale-95 transition-all shrink-0 ${
-          !isOnline
-            ? "bg-amber-50 text-amber-800 border border-amber-200"
-            : "bg-blue-50 text-blue-800 border border-blue-200"
-        }`}
-        title="Klik untuk info sinkronisasi offline"
-      >
-        <span className={`w-1.5 h-1.5 rounded-full ${!isOnline ? 'bg-amber-500' : 'bg-blue-500'}`}></span>
-        <span className="leading-none">{!isOnline ? `Offline${pendingCount > 0 ? ` (${pendingCount})` : ''}` : `${pendingCount} mutasi`}</span>
-      </button>
-    );
-  }
-
-  // 3. Online & All synced state (Ringkas: titik hijau + teks kecil, berdenyut sekali saat selesai sync)
   return (
-    <button
-      onClick={handleManualSyncClick}
-      className={`pressable inline-flex items-center gap-1 px-2 py-1 bg-emerald-50/90 text-emerald-800 border border-emerald-200/90 rounded-full text-[10.5px] font-medium hover:bg-emerald-100 transition-all shrink-0 ${
-        justSynced ? 'animate-cloud-pulse ring-2 ring-emerald-300' : ''
-      }`}
-      title="Terhubung ke cloud & tersinkron"
-    >
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-      <span className="leading-none">Cloud OK</span>
-    </button>
+    <Tooltip content={tooltipText} position="bottom">
+      <button
+        onClick={handleManualSyncClick}
+        aria-label={tooltipText}
+        className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center relative transition-all active:scale-95 ${
+          isSyncing
+            ? 'text-sky-600 bg-sky-50'
+            : !isOnline
+              ? 'text-amber-600 bg-amber-50 hover:bg-amber-100'
+              : 'text-slate-600 hover:bg-slate-50'
+        } ${justSynced ? 'animate-cloud-pulse ring-2 ring-emerald-300' : ''}`}
+      >
+        {isSyncing ? (
+          <RefreshCw className="w-4 h-4 animate-spin text-sky-600" />
+        ) : !isOnline ? (
+          <CloudOff className="w-4 h-4 text-amber-600" />
+        ) : (
+          <Cloud className="w-4 h-4 text-slate-600" />
+        )}
+
+        {/* Status Dot Indikator (Hijau = Online, Amber = Offline / Pending) */}
+        {!isSyncing && (
+          <span
+            className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full border-2 border-white ${
+              !isOnline || pendingCount > 0 ? 'bg-amber-500' : 'bg-emerald-500'
+            }`}
+          />
+        )}
+      </button>
+    </Tooltip>
   );
 }

@@ -33,7 +33,7 @@ export default function BottomNav({ activeTab, onChangeTab, queueCount = 0 }) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto z-40 bg-white/95 backdrop-blur-lg border-t border-sky-100 safe-nav-bottom shadow-lg shadow-sky-900/10 select-none">
       <div className="grid grid-cols-4 h-16 items-center px-2 relative">
-        {/* Satu elemen indikator pil biru yang meluncur (translateX) ke tab baru */}
+        {/* Indikator pil biru yang meluncur ke tab aktif */}
         <div
           aria-hidden="true"
           className="absolute top-1 bottom-1 left-2 w-[calc((100%-16px)/4)] pointer-events-none transition-transform duration-220 ease-[cubic-bezier(0.2,0.8,0.2,1)] will-change-transform z-0 flex items-center justify-center pt-0.5"
@@ -41,28 +41,30 @@ export default function BottomNav({ activeTab, onChangeTab, queueCount = 0 }) {
             transform: `translateX(${activeIndex * 100}%)`
           }}
         >
-          <div className="w-12 h-8 rounded-xl bg-sky-100/90 shadow-2xs" />
+          <div className="w-12 h-9 rounded-xl bg-sky-100/90 shadow-2xs" />
         </div>
 
-        {/* 4 Tombol Tab Navigation */}
+        {/* 4 Tombol Tab Navigation Minimalis (Ikon besar, label di tab aktif) */}
         {tabs.map((tab) => {
-          const Icon = tab.icon;
+          const IconComponent = tab.icon;
           const isActive = activeTab === tab.id;
 
           return (
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
-              className="flex flex-col items-center justify-center py-1 relative z-10 pressable focus:outline-none"
+              className="flex flex-col items-center justify-center h-14 min-h-[44px] py-1 relative z-10 pressable focus:outline-none"
               aria-selected={isActive}
+              aria-label={tab.label}
+              title={tab.label}
             >
               <div className="relative">
-                <div className="p-1 rounded-xl flex items-center justify-center">
-                  <Icon
-                    className={`w-5 h-5 transition-transform ${
+                <div className="p-0.5 rounded-xl flex items-center justify-center">
+                  <IconComponent
+                    className={`transition-all ${
                       isActive
-                        ? "stroke-[2.5] text-sky-700 nav-icon-active"
-                        : "stroke-[1.8] text-slate-400 hover:text-slate-600"
+                        ? "w-5 h-5 stroke-[2.4] text-sky-700 nav-icon-active"
+                        : "w-5.5 h-5.5 stroke-[1.6] text-slate-400 hover:text-slate-600"
                     }`}
                   />
                 </div>
@@ -78,13 +80,12 @@ export default function BottomNav({ activeTab, onChangeTab, queueCount = 0 }) {
                 )}
               </div>
 
-              <span
-                className={`text-[11px] mt-0.5 tracking-tight transition-colors duration-150 ${
-                  isActive ? "font-bold text-sky-800" : "font-medium text-slate-400"
-                }`}
-              >
-                {tab.label}
-              </span>
+              {/* Label aktif hanya pada tab terpilih untuk menjaga kebersihan visual */}
+              {isActive && (
+                <span className="text-[10px] font-extrabold text-sky-800 leading-tight mt-0.5 tracking-tight animate-in fade-in duration-150">
+                  {tab.label}
+                </span>
+              )}
             </button>
           );
         })}

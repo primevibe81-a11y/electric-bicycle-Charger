@@ -10,11 +10,15 @@ import {
   X,
   User,
   Smartphone,
-  Clock
+  Clock,
+  HelpCircle,
+  Sparkles
 } from 'lucide-react';
 import { requestNotificationPermission } from '../services/soundNotification';
 import { resetToSeedData } from '../services/storage';
 import NetworkStatusBadge from './NetworkStatusBadge';
+import IconLegendSheet from './IconLegendSheet';
+import OnboardingModal from './OnboardingModal';
 
 // Mode demo hanya aktif saat development lokal atau flag environment VITE_ENABLE_DEMO_MODE=true
 const IS_DEMO_MODE = Boolean(
@@ -27,6 +31,8 @@ export default function Header({ user, onLogout, onNotify }) {
   );
   const [currentTime, setCurrentTime] = useState('');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLegendOpen, setIsLegendOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -84,29 +90,19 @@ export default function Header({ user, onLogout, onNotify }) {
     <>
       <header className="sticky top-0 z-30 bg-white border-b border-sky-100 px-4 py-2.5 shadow-xs">
         <div className="flex items-center justify-between gap-2">
-          {/* Sisi Kiri: Logo + Nama Aplikasi + Peran */}
-          <div className="flex items-center gap-2 min-w-0">
+          {/* Sisi Kiri: Logo + Nama Aplikasi (Peran dipindah ke menu avatar agar header bersih) */}
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-sky-400 text-white flex items-center justify-center shadow-xs shrink-0">
               <Zap className="w-5 h-5 fill-white" />
             </div>
-            <div className="min-w-0">
-              <h1 className="text-sm font-bold text-slate-900 leading-tight truncate">
-                E-Bike Gadai
-              </h1>
-              <p className="text-[10.5px] text-slate-500 flex items-center gap-1 leading-none mt-0.5 truncate">
-                {user?.role === 'admin_gudang' ? (
-                  <ShieldCheck className="w-3 h-3 text-sky-600 shrink-0" />
-                ) : (
-                  <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
-                )}
-                <span className="truncate">{user?.displayName || 'Petugas'}</span>
-              </p>
-            </div>
+            <h1 className="text-sm font-bold text-slate-900 leading-tight truncate">
+              E-Bike Gadai
+            </h1>
           </div>
 
-          {/* Sisi Kanan: Cloud OK + Notifikasi + Avatar Profil (Logout dipindah ke dalam profil) */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Badge Ringkas Cloud OK */}
+          {/* Sisi Kanan: Cloud Icon + Notifikasi + Avatar Profil */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Status Cloud (Ikon Awan + Titik Status, Tanpa Teks) */}
             <NetworkStatusBadge onNotify={onNotify} />
 
             {/* Tombol Notifikasi (Touch Target 44x44px) */}
@@ -145,7 +141,7 @@ export default function Header({ user, onLogout, onNotify }) {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 animate-in fade-in duration-150">
           <div className="w-full max-w-[430px] bg-white rounded-t-3xl p-5 shadow-2xl border-t border-slate-100 space-y-4 animate-in slide-in-from-bottom duration-200">
             {/* Sheet Handle */}
-            <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
+            <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1" />
 
             {/* Profile Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -158,7 +154,7 @@ export default function Header({ user, onLogout, onNotify }) {
                     {user?.displayName || 'Petugas'}
                   </h3>
                   <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                    <span className="capitalize">{user?.role === 'admin_gudang' ? 'Admin Gudang' : 'Kasir Gadai'}</span>
+                    <span className="capitalize">{user?.role === 'admin_gudang' ? 'Admin Gudang' : 'Petugas Gudang'}</span>
                     <span>•</span>
                     <span className="text-slate-400">@{user?.username || 'user'}</span>
                   </p>
@@ -167,8 +163,36 @@ export default function Header({ user, onLogout, onNotify }) {
               <button
                 onClick={() => setIsProfileOpen(false)}
                 className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200"
+                aria-label="Tutup menu profil"
               >
                 <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quick Menu: Legenda Ikon & Panduan Penggunaan */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  setIsLegendOpen(true);
+                }}
+                className="pressable h-11 px-3 bg-sky-50 hover:bg-sky-100 text-sky-800 rounded-xl text-xs font-bold border border-sky-200 flex items-center justify-center gap-2"
+              >
+                <HelpCircle className="w-4 h-4 text-sky-600" />
+                <span>Legenda Ikon</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  setIsOnboardingOpen(true);
+                }}
+                className="pressable h-11 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>Panduan Simbol</span>
               </button>
             </div>
 
@@ -201,7 +225,7 @@ export default function Header({ user, onLogout, onNotify }) {
               </button>
             )}
 
-            {/* Logout Action (Dipindah dari Header utama) */}
+            {/* Logout Action */}
             <button
               onClick={handleLogoutClick}
               className="w-full h-11 min-h-[44px] px-4 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
@@ -212,6 +236,18 @@ export default function Header({ user, onLogout, onNotify }) {
           </div>
         </div>
       )}
+
+      {/* Legenda Ikon Bottom Sheet */}
+      <IconLegendSheet
+        isOpen={isLegendOpen}
+        onClose={() => setIsLegendOpen(false)}
+      />
+
+      {/* Onboarding / Panduan Simbol Modal */}
+      <OnboardingModal
+        forceOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+      />
     </>
   );
 }

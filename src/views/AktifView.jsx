@@ -466,7 +466,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari akad / nasabah / lokasi"
+              placeholder="Cari..."
               className="w-full h-11 pl-10 pr-9 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400"
             />
             {searchQuery && (
@@ -506,12 +506,12 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
         <div className="relative">
           <div
             ref={chipsContainerRef}
-            className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 pr-8 scroll-smooth"
+            className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 pr-8 scroll-smooth"
           >
             <button
               ref={filterType === 'ALL' ? activeChipRef : null}
               onClick={() => setFilterType('ALL')}
-              className={`pressable h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
+              className={`pressable h-8 px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
                 filterType === 'ALL'
                   ? 'bg-sky-600 text-white shadow-xs'
                   : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
@@ -523,40 +523,44 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
             <button
               ref={filterType === 'CRITICAL' ? activeChipRef : null}
               onClick={() => setFilterType('CRITICAL')}
-              className={`pressable h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+              className={`pressable h-8 px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
                 filterType === 'CRITICAL'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
               }`}
+              title="Kritis >14 Hari Belum Charge"
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>&gt;14 Hari Belum Charge ({criticalCount})</span>
+              <span>&gt;14h ({criticalCount})</span>
             </button>
 
             <button
               ref={filterType === 'DEFECT' ? activeChipRef : null}
               onClick={() => setFilterType('DEFECT')}
-              className={`pressable h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+              className={`pressable h-8 px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
                 filterType === 'DEFECT'
                   ? 'bg-amber-600 text-white shadow-xs'
                   : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
               }`}
+              title="Baterai Bermasalah"
             >
-              <span>Baterai Bermasalah ({defectCount})</span>
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Bermasalah ({defectCount})</span>
             </button>
 
-            {/* Chip Filter Baru: Belum Ada Letak */}
+            {/* Chip Filter: Belum Ada Letak */}
             <button
               ref={filterType === 'NO_LOCATION' ? activeChipRef : null}
               onClick={() => setFilterType('NO_LOCATION')}
-              className={`pressable h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+              className={`pressable h-8 px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
                 filterType === 'NO_LOCATION'
                   ? 'bg-slate-800 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
               }`}
+              title="Belum Ada Letak Gudang"
             >
               <MapPin className="w-3.5 h-3.5" />
-              <span>Belum Ada Letak ({noLocationCount})</span>
+              <span>Tanpa Letak ({noLocationCount})</span>
             </button>
           </div>
 
@@ -565,8 +569,8 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
         </div>
       </div>
 
-      {/* 4. LIST KARTU UNIT GADAI AKTIF */}
-      <div className="space-y-3 pt-1">
+      {/* 4. LIST KARTU UNIT GADAI AKTIF (MAKSIMAL 3 BARIS, SANGAT BERSIH) */}
+      <div className="space-y-2.5 pt-1">
         {processedUnits.length === 0 ? (
           <div className="bg-white rounded-2xl p-6 text-center text-xs text-slate-500 border border-slate-200">
             {searchQuery || filterType !== 'ALL'
@@ -584,14 +588,13 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
               const jatuhTempoDate = new Date(unit.jatuhTempoAt).toLocaleDateString('id-ID', {
                 day: 'numeric',
-                month: 'short',
-                year: 'numeric'
+                month: 'short'
               });
 
               return (
                 <div
                   key={unit.id}
-                  className={`bg-white rounded-2xl p-3.5 border transition-colors shadow-xs pressable-card unit-card-optimized ${
+                  className={`bg-white rounded-2xl p-3 border transition-colors shadow-xs pressable-card unit-card-optimized ${
                     removingUnitId === unit.id ? 'opacity-0 scale-95 transition-opacity duration-200 pointer-events-none' : ''
                   } ${
                     highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
@@ -601,176 +604,176 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                       : 'border-slate-200/90'
                   }`}
                 >
-                {/* BARIS 1: Nomor Akad (kiri) + Badge Baterai % (kanan) */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-base font-bold text-slate-900 font-mono tracking-tight">
-                      #{unit.kodeGadai}
-                    </span>
-                    {Array.isArray(unit.riwayatKodeGadai) && unit.riwayatKodeGadai.length > 0 && (
-                      <span
-                        onClick={() => onNavigateToPerpanjang(unit.id)}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 cursor-pointer hover:bg-slate-200 flex items-center gap-1 transition-colors shrink-0"
-                        title="Klik untuk melihat riwayat mutasi perpanjangan"
-                      >
-                        <History className="w-3 h-3 text-slate-500" />
-                        <span>Riwayat ({unit.riwayatKodeGadai.length})</span>
+                  {/* BARIS 1: Nomor Akad (kiri) + Badge Baterai (kanan) */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-base font-bold text-slate-900 font-mono tracking-tight">
+                        #{unit.kodeGadai}
                       </span>
-                    )}
+                      {Array.isArray(unit.riwayatKodeGadai) && unit.riwayatKodeGadai.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToPerpanjang(unit.id)}
+                          className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200 transition-colors shrink-0"
+                          title={`Riwayat mutasi perpanjangan (${unit.riwayatKodeGadai.length})`}
+                          aria-label="Riwayat mutasi"
+                        >
+                          <History className="w-3 h-3 text-slate-500" />
+                        </button>
+                      )}
+                    </div>
+
+                    <BatteryIndicator level={unit.batteryLevel} isCharging={isCharging} size="sm" />
                   </div>
 
-                  <BatteryIndicator level={unit.batteryLevel} isCharging={isCharging} size="sm" />
-                </div>
-
-                {/* BARIS 2: Merk Sepeda + Nama Nasabah (kiri) & Status Kondisi / Antrian Charge (kanan) */}
-                <div className="flex items-start justify-between gap-2 pt-1.5">
+                  {/* BARIS 2: Merk Sepeda • Nama Nasabah (1 baris, ellipsis) */}
                   <div
-                    className="min-w-0 flex-1 cursor-pointer"
+                    className="pt-1 min-w-0 cursor-pointer"
                     onClick={() => setDetailUnit(unit)}
-                    title="Klik untuk melihat detail lengkap unit"
+                    title="Ketuk untuk melihat detail unit"
                   >
-                    <h4 className="text-[14px] font-semibold text-slate-900 truncate leading-snug">
-                      {unit.merkSepeda}
-                    </h4>
-                    <p className="text-[12px] text-slate-500 truncate leading-tight mt-0.5">
-                      {unit.namaNasabah}
+                    <p className="text-[13px] text-slate-800 truncate leading-snug">
+                      <span className="font-semibold text-slate-900">{unit.merkSepeda}</span>
+                      <span className="text-slate-400 mx-1.5">•</span>
+                      <span className="text-slate-500 text-[12px]">{unit.namaNasabah}</span>
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                    <BatteryConditionBadge
-                      condition={unit.kondisiBaterai || 'PRIMA'}
-                      size="sm"
-                      onClick={() => setDetailUnit(unit)}
-                    />
+                  {/* BARIS 3: Meta Ikon (kiri) + Tombol Aksi (kanan) */}
+                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 mt-1.5">
+                    {/* Meta Info (Ikon + Nilai Ringkas) */}
+                    <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                      {/* Letak Gudang (Ikon Pin + Teks; jika kosong ikon pudar tanpa teks) */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditLokasiUnit(unit);
+                        }}
+                        className={`pressable flex items-center gap-1 text-[11px] truncate ${
+                          highlightedUnitId === unit.id ? 'animate-highlight' : ''
+                        }`}
+                        title={unit.lokasi ? `Letak di gudang: ${unit.lokasi}` : 'Ketuk untuk isi letak di gudang'}
+                        aria-label="Letak unit di gudang"
+                      >
+                        <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-sky-600' : 'text-slate-300'}`} />
+                        {unit.lokasi && (
+                          <span className="truncate max-w-[85px] font-medium text-slate-700">
+                            {unit.lokasi}
+                          </span>
+                        )}
+                      </button>
 
-                    {isCharging && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 flex items-center gap-1">
-                        <Zap className="w-3 h-3 fill-sky-600" /> Di-Charge
+                      {/* Waktu Terakhir Charge (Ikon Jam + Nilai Jam) */}
+                      <span
+                        className={`flex items-center gap-1 text-[11px] font-mono tabular-nums ${
+                          isCriticalOverdue ? 'text-rose-600 font-semibold' : 'text-slate-600'
+                        }`}
+                        title={`Charge ${daysAgo === 0 ? 'hari ini' : `${daysAgo} hari lalu`}`}
+                      >
+                        <Clock className={`w-3.5 h-3.5 shrink-0 ${isCriticalOverdue ? 'text-rose-600' : 'text-slate-400'}`} />
+                        <span>{daysAgo === 0 ? '0j' : `${daysAgo * 24}j`}</span>
                       </span>
-                    )}
 
-                    {isWaiting && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-amber-600" /> Antrian Charge
+                      {/* Jatuh Tempo (Ikon Kalender + Nilai "3 Des") */}
+                      <span
+                        className="flex items-center gap-1 text-[11px] text-slate-600 font-mono tabular-nums"
+                        title={`Jatuh tempo ${jatuhTempoDate}`}
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>{jatuhTempoDate}</span>
                       </span>
-                    )}
-                  </div>
-                </div>
 
-                {/* BARIS 3 (META): Ikon Jam + Waktu Charge • Ikon Kalender + Jatuh Tempo, Baris Letak Unit Gudang, serta Catatan Informatif */}
-                <div className="pt-2 space-y-1">
-                  <div className="flex items-center gap-1.5 text-[12px] flex-wrap">
-                    <span className={`inline-flex items-center gap-1 ${
-                      isCriticalOverdue ? 'text-rose-600 font-semibold' : 'text-slate-600'
-                    }`}>
-                      <Clock className={`w-3.5 h-3.5 shrink-0 ${isCriticalOverdue ? 'text-rose-600' : 'text-slate-400'}`} />
-                      <span>Charge {daysAgo === 0 ? 'hari ini' : `${daysAgo} hari lalu`}</span>
-                      {isCriticalOverdue && (
-                        <span className="text-[11px] font-bold text-rose-600">(Segera charge)</span>
+                      {/* Kondisi Baterai (Bentuk Pembeda Ramah Buta Warna) */}
+                      <BatteryConditionBadge
+                        condition={unit.kondisiBaterai || 'PRIMA'}
+                        size="xs"
+                        onClick={() => setDetailUnit(unit)}
+                      />
+
+                      {/* Status Charger Aktif atau Antrian (Ikon saja bila ada) */}
+                      {isCharging && (
+                        <span
+                          className="w-5 h-5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 flex items-center justify-center"
+                          title="Sedang Di-charge"
+                        >
+                          <Zap className="w-3 h-3 fill-sky-600" />
+                        </span>
                       )}
-                    </span>
 
-                    <span className="text-slate-300">•</span>
+                      {isWaiting && (
+                        <span
+                          className="w-5 h-5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center justify-center"
+                          title="Dalam Antrian Charge"
+                        >
+                          <Clock className="w-3 h-3 text-amber-600" />
+                        </span>
+                      )}
 
-                    <span className="inline-flex items-center gap-1 text-slate-600">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>Jatuh tempo {jatuhTempoDate}</span>
-                    </span>
+                      {/* Ikon Catatan Kecil (Bila ada catatan) */}
+                      {unit.catatanBaterai && (
+                        <button
+                          type="button"
+                          onClick={() => setDetailUnit(unit)}
+                          className="text-slate-400 hover:text-slate-600"
+                          title={unit.catatanBaterai}
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Tombol Aksi Baris 3: Utama (Charge) + Titik Tiga (...) ke Bottom Sheet */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {chargingSuccessUnitId === unit.id ? (
+                        <div className="h-10 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-300">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>Antri</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleQuickEnqueue(unit)}
+                          disabled={isCharging || isWaiting}
+                          className={`pressable h-10 px-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                            isCharging || isWaiting
+                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                              : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
+                          }`}
+                          title={isCharging ? "Sedang di-charge" : isWaiting ? "Sedang dalam antrian" : "Mulai / jadwalkan charge"}
+                        >
+                          <Zap className="w-3.5 h-3.5" />
+                          <span>{isCharging ? "Di-charge" : isWaiting ? "Antrian" : "Charge"}</span>
+                        </button>
+                      )}
+
+                      {/* Tombol Titik Tiga (⋯) 44x44px untuk membuka Bottom Sheet Aksi */}
+                      <button
+                        onClick={() => setActionSheetUnit(unit)}
+                        className="pressable h-10 w-10 min-w-[40px] rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center shrink-0 transition-all active:scale-95"
+                        title="Menu aksi lainnya (Perpanjang, Audit, Tebus, Lelang)"
+                        aria-label="Aksi Lainnya"
+                      >
+                        <MoreHorizontal className="w-4 h-4 text-slate-600" />
+                      </button>
+                    </div>
                   </div>
-
-                  {/* Baris Meta Letak Unit di Gudang (Bisa ditekan, 44px hit-box, flash highlight 600ms) */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditLokasiUnit(unit);
-                    }}
-                    className={`pressable w-full min-h-[36px] py-0.5 text-left flex items-center gap-1.5 rounded-lg transition-colors group ${
-                      highlightedUnitId === unit.id ? 'animate-highlight' : ''
-                    }`}
-                    title="Ketuk untuk mengubah letak unit di gudang"
-                  >
-                    <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-sky-600' : 'text-slate-300'}`} />
-                    <span className={`text-[12px] truncate ${unit.lokasi ? 'text-slate-600 group-hover:text-slate-900 font-medium' : 'text-slate-400 italic'}`}>
-                      {unit.lokasi ? unit.lokasi : 'Letak belum diisi'}
-                    </span>
-                  </button>
-
-                  {/* Catatan informatif biasa: 1 baris teks abu-abu kecil (12-13px), tanpa kotak, tanpa emoji, ellipsis */}
-                  {unit.catatanBaterai && (
-                    <div
-                      onClick={() => setDetailUnit(unit)}
-                      className="text-[12px] text-slate-500 truncate cursor-pointer hover:text-slate-700 flex items-center gap-1 pt-0.5"
-                      title={unit.catatanBaterai}
-                    >
-                      <FileText className="w-3 h-3 text-slate-400 shrink-0" />
-                      <span className="truncate">{unit.catatanBaterai}</span>
-                    </div>
-                  )}
                 </div>
+              );
+            })}
 
-                {/* BARIS 4: Aksi dengan Hierarki Jelas (Charge, Perpanjang, dan Titik Tiga ⋯) */}
-                <div className="pt-2.5 flex items-center gap-2">
-                  {/* Tombol Utama: Charge (solid sky, h-11, fleksibel) dengan Micro-interaction Sukses */}
-                  {chargingSuccessUnitId === unit.id ? (
-                    <div className="h-11 flex-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-300 animate-in zoom-in-95 duration-200">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 animate-in zoom-in-50 duration-200" />
-                      <span>Berhasil Diantrikan!</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleQuickEnqueue(unit)}
-                      disabled={isCharging || isWaiting}
-                      className={`pressable h-11 flex-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                        isCharging || isWaiting
-                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                          : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
-                      }`}
-                      title={isCharging ? "Sedang di-charge" : isWaiting ? "Sedang dalam antrian" : "Mulai / jadwalkan charge"}
-                    >
-                      <Zap className="w-4 h-4" />
-                      <span>{isCharging ? "Sedang Di-charge" : isWaiting ? "Dalam Antrian" : "Charge"}</span>
-                    </button>
-                  )}
-
-                  {/* Tombol Sekunder: Perpanjang (outline, h-11) */}
-                  <button
-                    onClick={() => onNavigateToPerpanjang(unit.id)}
-                    className="pressable h-11 px-3.5 rounded-xl text-xs font-bold bg-white hover:bg-sky-50 text-sky-700 border border-sky-300 transition-all flex items-center justify-center gap-1.5 shrink-0"
-                    title="Perpanjang nomor gadai"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Perpanjang</span>
-                  </button>
-
-                  {/* Tombol Titik Tiga (⋯) 44x44px untuk membuka Bottom Sheet Aksi */}
-                  <button
-                    onClick={() => setActionSheetUnit(unit)}
-                    className="pressable h-11 w-11 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center shrink-0 transition-all"
-                    title="Menu aksi lainnya (Audit Baterai, Tebus, Lelang)"
-                    aria-label="Aksi Lainnya"
-                  >
-                    <MoreHorizontal className="w-5 h-5 text-slate-600" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Tombol Tampilkan Lebih Banyak untuk Membatasi Beban DOM iOS Safari */}
-          {processedUnits.length > displayLimit && (
-            <button
-              type="button"
-              onClick={() => setDisplayLimit(prev => prev + 25)}
-              className="w-full h-11 bg-white hover:bg-sky-50 text-sky-700 font-bold text-xs rounded-xl border border-sky-200 shadow-2xs pressable transition-colors flex items-center justify-center gap-1.5"
-            >
-              Tampilkan Lebih Banyak ({displayLimit} dari {processedUnits.length} Unit)
-            </button>
-          )}
-        </>
-      )}
-    </div>
+            {/* Tombol Tampilkan Lebih Banyak untuk Membatasi Beban DOM iOS Safari */}
+            {processedUnits.length > displayLimit && (
+              <button
+                type="button"
+                onClick={() => setDisplayLimit(prev => prev + 25)}
+                className="w-full h-11 bg-white hover:bg-sky-50 text-sky-700 font-bold text-xs rounded-xl border border-sky-200 shadow-2xs pressable transition-colors flex items-center justify-center gap-1.5"
+              >
+                Tampilkan Lebih Banyak ({displayLimit} dari {processedUnits.length} Unit)
+              </button>
+            )}
+          </>
+        )}
+      </div>
 
     {/* 5. BOTTOM SHEET AKSI (⋯) */}
     {actionSheetUnit && (
@@ -805,6 +808,25 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
             {/* Action Items List */}
             <div className="space-y-1.5 pt-1">
+              {/* Action: Perpanjang Gadai */}
+              <button
+                onClick={() => {
+                  const target = actionSheetUnit;
+                  setActionSheetUnit(null);
+                  onNavigateToPerpanjang(target.id);
+                }}
+                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
+              >
+                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <RefreshCw className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-slate-900">Perpanjang Gadai</div>
+                  <div className="text-[11px] text-slate-500">Perpanjang masa gadai & terbitkan nomor akad baru</div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+              </button>
+
               {/* Action: Ubah Letak Unit */}
               <button
                 onClick={() => {

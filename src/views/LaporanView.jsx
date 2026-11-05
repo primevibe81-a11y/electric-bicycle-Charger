@@ -9,6 +9,7 @@ import {
   User,
   Calendar,
   AlertTriangle,
+  AlertOctagon,
   CheckCircle2,
   RefreshCw,
   Sparkles,
@@ -18,7 +19,9 @@ import {
   History,
   Download,
   Info,
-  MapPin
+  MapPin,
+  Box,
+  PackageCheck
 } from 'lucide-react';
 import { exportLaporanExcel, generatePdfReport } from '../services/reportExport';
 import { getDaysSinceLastCharge, getChargeAuditInfo } from '../services/chargerQueue';
@@ -30,6 +33,7 @@ import AuditBatteryModal from '../components/AuditBatteryModal';
 import ExcelSyncModal from '../components/ExcelSyncModal';
 import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
 import BottomSheet from '../components/BottomSheet';
+import Tooltip from '../components/Tooltip';
 import { triggerHaptic } from '../services/animationHelpers';
 
 /**
@@ -289,76 +293,79 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
         </button>
       </div>
 
-      {/* 2. STATS CARDS (Kompak, Padding Vertikal <= 12px, Interaktif) */}
+      {/* 2. STATS CARDS (Kompak, Ikon di atas, Angka Besar, Tanpa Teks "Unit") */}
       <div className="grid grid-cols-3 gap-2">
         {/* Total Fisik Card */}
-        <button
-          onClick={() => {
-            triggerHaptic('light');
-            setStatusFilter(statusFilter === 'SEMUA' ? 'AKTIF' : 'SEMUA');
-          }}
-          className={`pressable p-2 rounded-2xl border text-center transition-all ${
-            statusFilter === 'SEMUA' || statusFilter === 'AKTIF'
-              ? 'bg-sky-50 border-sky-300 ring-2 ring-sky-400/20 shadow-xs'
-              : 'bg-white border-slate-200/80 hover:bg-slate-50'
-          }`}
-          title="Filter unit fisik di gudang"
-        >
-          <div className="text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider">
-            Fisik Gudang
-          </div>
-          <div className="text-sm font-black text-slate-900 leading-tight">
-            <span className="tabular-nums">{stats.aktif + stats.lelang}</span> <span className="text-[10px] font-normal text-slate-500">Unit</span>
-          </div>
-        </button>
+        <Tooltip content="Fisik Gudang: Total unit aktif & lelang di gudang" position="bottom" className="w-full">
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              setStatusFilter(statusFilter === 'SEMUA' ? 'AKTIF' : 'SEMUA');
+            }}
+            className={`pressable w-full p-2.5 rounded-2xl border text-center transition-all min-h-[68px] flex flex-col items-center justify-center gap-1 ${
+              statusFilter === 'SEMUA' || statusFilter === 'AKTIF'
+                ? 'bg-sky-50 border-sky-300 ring-2 ring-sky-400/20 shadow-xs'
+                : 'bg-white border-slate-200/80 hover:bg-slate-50'
+            }`}
+            title="Fisik Gudang"
+            aria-label="Filter Fisik Gudang"
+          >
+            <Box className="w-4 h-4 text-sky-600" />
+            <span className="text-xl font-black text-slate-900 leading-none tabular-nums">
+              {stats.aktif + stats.lelang}
+            </span>
+          </button>
+        </Tooltip>
 
         {/* Ditebus Card */}
-        <button
-          onClick={() => {
-            triggerHaptic('light');
-            setStatusFilter('DITEBUS');
-          }}
-          className={`pressable p-2 rounded-2xl border text-center transition-colors ${
-            statusFilter === 'DITEBUS'
-              ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-400/20 shadow-xs'
-              : 'bg-white border-slate-200/80 hover:bg-slate-50'
-          }`}
-          title="Filter unit ditebus / keluar gudang"
-        >
-          <div className="text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider">
-            Ditebus
-          </div>
-          <div className="text-sm font-black text-blue-700 leading-tight">
-            <span className="tabular-nums">{stats.ditebus}</span> <span className="text-[10px] font-normal text-slate-500">Unit</span>
-          </div>
-        </button>
+        <Tooltip content="Ditebus: Unit yang telah dilunasi dan keluar gudang" position="bottom" className="w-full">
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              setStatusFilter('DITEBUS');
+            }}
+            className={`pressable w-full p-2.5 rounded-2xl border text-center transition-colors min-h-[68px] flex flex-col items-center justify-center gap-1 ${
+              statusFilter === 'DITEBUS'
+                ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-400/20 shadow-xs'
+                : 'bg-white border-slate-200/80 hover:bg-slate-50'
+            }`}
+            title="Ditebus"
+            aria-label="Filter Ditebus"
+          >
+            <PackageCheck className="w-4 h-4 text-blue-600" />
+            <span className="text-xl font-black text-blue-700 leading-none tabular-nums">
+              {stats.ditebus}
+            </span>
+          </button>
+        </Tooltip>
 
-        {/* Bermasalah Card (Warna Merah & Filter Cepat) */}
-        <button
-          onClick={() => {
-            triggerHaptic('light');
-            setStatusFilter('BERMASALAH');
-          }}
-          className={`pressable p-2 rounded-2xl border text-center transition-colors ${
-            statusFilter === 'BERMASALAH'
-              ? 'bg-rose-100/80 border-rose-300 ring-2 ring-rose-400/30 shadow-xs'
-              : 'bg-rose-50/60 border-rose-200 hover:bg-rose-100/50'
-          }`}
-          title="Filter unit baterai bermasalah"
-        >
-          <div className="text-[9.5px] font-semibold text-rose-700 uppercase tracking-wider">
-            Bermasalah
-          </div>
-          <div className="text-sm font-black text-rose-600 leading-tight">
-            <span className="tabular-nums">{stats.bermasalah}</span> <span className="text-[10px] font-normal text-rose-400">Unit</span>
-          </div>
-        </button>
+        {/* Bermasalah Card */}
+        <Tooltip content="Bermasalah: Unit dengan kendala baterai atau fisik" position="bottom" className="w-full">
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              setStatusFilter('BERMASALAH');
+            }}
+            className={`pressable w-full p-2.5 rounded-2xl border text-center transition-colors min-h-[68px] flex flex-col items-center justify-center gap-1 ${
+              statusFilter === 'BERMASALAH'
+                ? 'bg-rose-100/80 border-rose-300 ring-2 ring-rose-400/30 shadow-xs'
+                : 'bg-rose-50/60 border-rose-200 hover:bg-rose-100/50'
+            }`}
+            title="Bermasalah"
+            aria-label="Filter Bermasalah"
+          >
+            <AlertOctagon className="w-4 h-4 text-rose-600" />
+            <span className="text-xl font-black text-rose-600 leading-none tabular-nums">
+              {stats.bermasalah}
+            </span>
+          </button>
+        </Tooltip>
       </div>
 
       {/* 3. STICKY CONTROLS (Solid Background, Bebas Blur GPU iOS) */}
       <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-[#F0F9FF] border-b border-sky-100 shadow-xs space-y-2">
-        {/* Row 1: Search Bar + Single "Ekspor" Button */}
-        <div className="flex items-center gap-2">
+        {/* Row 1: Search Bar + Dua Tombol Ikon Ekspor (Excel & PDF, 44x44px) */}
+        <div className="flex items-center gap-1.5">
           {/* Kolom Pencarian (radius 12px, shadow-none, border jelas) */}
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -366,7 +373,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari no gadai, nasabah, masalah..."
+              placeholder="Cari..."
               className="w-full h-11 pl-9 pr-9 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 shadow-none focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
             />
             {searchQuery && (
@@ -380,16 +387,29 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             )}
           </div>
 
-          {/* Tombol Ekspor Ringkas (Touch target 44x44px, membuka Bottom Sheet) */}
-          <button
-            onClick={() => setIsExportSheetOpen(true)}
-            className="h-11 min-h-[44px] px-3.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-1.5 shadow-xs active:scale-95 transition-all shrink-0"
-            title="Buka pilihan ekspor laporan"
-            aria-label="Buka Opsi Ekspor Laporan"
-          >
-            <Download className="w-4 h-4 text-sky-600" />
-            <span>Ekspor</span>
-          </button>
+          {/* Tombol Ikon Ekspor Excel (44x44px, Tooltip saat ditahan lama) */}
+          <Tooltip content="Ekspor Excel (.xlsx)" position="bottom">
+            <button
+              onClick={() => handleExportExcel(filteredUnits)}
+              className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white hover:bg-emerald-50 border border-slate-200 rounded-xl text-emerald-700 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
+              title="Ekspor Excel (.xlsx)"
+              aria-label="Ekspor Excel"
+            >
+              <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+            </button>
+          </Tooltip>
+
+          {/* Tombol Ikon Cetak PDF (44x44px, Tooltip saat ditahan lama) */}
+          <Tooltip content="Cetak Laporan PDF (.pdf)" position="bottom">
+            <button
+              onClick={() => handleGeneratePdf(filteredUnits)}
+              className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white hover:bg-rose-50 border border-slate-200 rounded-xl text-rose-700 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
+              title="Cetak Laporan PDF (.pdf)"
+              aria-label="Cetak PDF"
+            >
+              <FileText className="w-5 h-5 text-rose-600" />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Row 2: Status Filter Tabs dengan Fade Gradient & Auto-scroll */}
@@ -405,7 +425,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                   key={tab.id}
                   ref={isActive ? activeTabRef : null}
                   onClick={() => setStatusFilter(tab.id)}
-                  className={`h-9 min-h-[36px] px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all active:scale-95 flex items-center gap-1.5 shrink-0 ${
+                  className={`h-8 min-h-[32px] px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all active:scale-95 flex items-center gap-1.5 shrink-0 ${
                     isActive
                       ? 'bg-sky-600 text-white shadow-xs'
                       : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50'
@@ -454,89 +474,110 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
               return (
                 <div
                   key={unit.id}
-                  className={`bg-white rounded-2xl p-3.5 border transition-colors shadow-xs pressable-card unit-card-optimized ${
+                  className={`bg-white rounded-2xl p-3 border transition-colors shadow-xs pressable-card unit-card-optimized ${
                     highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
                   } ${
-                    isDefect ? 'border-amber-300 ring-1 ring-amber-300/30' : 'border-slate-200/80'
+                    isDefect ? 'border-rose-300 ring-1 ring-rose-300/30' : 'border-slate-200/80'
                   }`}
                 >
-                {/* Header Card: Pawn Ticket, Status & History Badge (Pills) */}
-                <div className="flex items-center justify-between gap-1.5 pb-2 border-b border-slate-100">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded-full">
-                      #{unit.kodeGadai}
-                    </span>
-
-                    {/* Status Badge (Pill) */}
-                    <span
-                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                        unit.statusBarang === 'AKTIF'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : unit.statusBarang === 'LELANG'
-                          ? 'bg-purple-100 text-purple-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}
-                    >
-                      {unit.statusBarang === 'DITEBUS' ? 'DITEBUS' : unit.statusBarang}
-                    </span>
-
-                    {/* History Mutasi Badge (Pill) */}
-                    {hasHistory && (
-                      <span className="text-[9.5px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <Sparkles className="w-2.5 h-2.5" />
-                        Perpanjangan
+                  {/* BARIS 1: Nomor Akad + Status Pill + Badge Baterai */}
+                  <div className="flex items-center justify-between gap-1.5 pb-1.5 border-b border-slate-100">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-base font-bold text-slate-900 font-mono tracking-tight">
+                        #{unit.kodeGadai}
                       </span>
-                    )}
-                  </div>
 
-                  <BatteryConditionBadge kondisi={unit.kondisiBaterai} />
-                </div>
+                      {/* Status Badge */}
+                      <span
+                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                          unit.statusBarang === 'AKTIF'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : unit.statusBarang === 'LELANG'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
+                        {unit.statusBarang === 'DITEBUS' ? 'DITEBUS' : unit.statusBarang}
+                      </span>
 
-                {/* Bike Model & Customer Info */}
-                <div className="mt-2 space-y-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <h4 className="text-xs font-bold text-slate-900 leading-tight truncate">
-                        {unit.merkSepeda}
-                      </h4>
-                      <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 truncate">
-                        <User className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span className="truncate">Nasabah: <strong className="text-slate-700">{unit.namaNasabah}</strong></span>
-                      </p>
+                      {/* History Mutasi Badge */}
+                      {hasHistory && (
+                        <span
+                          className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center"
+                          title="Ada riwayat mutasi perpanjangan"
+                        >
+                          <Sparkles className="w-3 h-3 text-amber-600" />
+                        </span>
+                      )}
                     </div>
+
                     <BatteryIndicator level={unit.batteryLevel} size="sm" />
                   </div>
 
-                  {/* Charging & Overdue Stats */}
-                  <div className="flex items-center justify-between text-[10.5px] pt-1">
-                    <span className="text-slate-500">
-                      Charge:{' '}
-                      <strong className={daysSinceCharge >= 15 ? 'text-rose-600' : 'text-slate-700'}>
-                        {daysSinceCharge} Hari Lalu
-                      </strong>
-                    </span>
-                    <ChargeAuditBadge
-                      lastChargedAt={unit.lastChargedAt}
-                      createdAt={unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null}
-                    />
+                  {/* BARIS 2: Merk Sepeda • Nama Nasabah */}
+                  <div className="pt-1 min-w-0">
+                    <p className="text-[13px] text-slate-800 truncate leading-snug">
+                      <span className="font-semibold text-slate-900">{unit.merkSepeda}</span>
+                      <span className="text-slate-400 mx-1.5">•</span>
+                      <span className="text-slate-500 text-[12px]">{unit.namaNasabah}</span>
+                    </p>
                   </div>
 
-                  {/* Lokasi Gudang Meta Row: Ikon Pin + Teks Lokasi, Abu-abu 12-13px, Ellipsis, Touch Target 44px */}
-                  <button
-                    type="button"
-                    onClick={() => setEditLokasiUnit(unit)}
-                    className="w-full text-left pt-1 flex items-center gap-1.5 text-[11px] group min-h-[36px] py-1 px-1 -mx-1 rounded-lg hover:bg-slate-50 active:bg-slate-100 transition-colors pressable"
-                    title="Ubah letak unit di gudang"
-                  >
-                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:text-sky-600 transition-colors" />
-                    <span className={`truncate flex-1 ${unit.lokasi ? 'text-slate-600 font-medium' : 'text-slate-400 italic'}`}>
-                      {unit.lokasi || 'Letak belum diisi'}
-                    </span>
-                    <span className="text-[10px] text-slate-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Ubah
-                    </span>
-                  </button>
-                </div>
+                  {/* BARIS 3: Meta Info (Letak, Charge, Kondisi) + Tombol Audit */}
+                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 mt-1.5">
+                    <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                      {/* Lokasi Gudang */}
+                      <button
+                        type="button"
+                        onClick={() => setEditLokasiUnit(unit)}
+                        className="pressable flex items-center gap-1 text-[11px] truncate"
+                        title={unit.lokasi ? `Letak di gudang: ${unit.lokasi}` : 'Ketuk untuk isi letak di gudang'}
+                      >
+                        <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-sky-600' : 'text-slate-300'}`} />
+                        {unit.lokasi && (
+                          <span className="truncate max-w-[85px] font-medium text-slate-700">
+                            {unit.lokasi}
+                          </span>
+                        )}
+                      </button>
+
+                      {/* Waktu Terakhir Charge */}
+                      <span
+                        className={`flex items-center gap-1 text-[11px] font-mono tabular-nums ${
+                          daysSinceCharge >= 15 ? 'text-rose-600 font-bold' : 'text-slate-600'
+                        }`}
+                        title={`Charge ${daysSinceCharge} hari lalu`}
+                      >
+                        <Clock className={`w-3.5 h-3.5 shrink-0 ${daysSinceCharge >= 15 ? 'text-rose-600' : 'text-slate-400'}`} />
+                        <span>{daysSinceCharge * 24}j</span>
+                      </span>
+
+                      {/* Kondisi Baterai (Bentuk Pembeda Ramah Buta Warna) */}
+                      <BatteryConditionBadge kondisi={unit.kondisiBaterai} size="xs" />
+
+                      {/* Catatan Baterai */}
+                      {unit.catatanBaterai && (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedUnitId(isExpanded ? null : unit.id)}
+                          className="text-slate-400 hover:text-slate-600"
+                          title={unit.catatanBaterai}
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => setAuditingUnit(unit)}
+                        className="h-8 px-2.5 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold border border-sky-200 transition-colors"
+                        title="Audit Baterai"
+                      >
+                        Audit
+                      </button>
+                    </div>
+                  </div>
 
                 {/* 6. CATATAN KARTU UNIT:
                     Warna amber/kuning HANYA jika ada masalah baterai / fisik nyata.
