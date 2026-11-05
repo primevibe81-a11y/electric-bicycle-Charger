@@ -4,6 +4,7 @@ import BottomNav from './components/BottomNav';
 import Toast from './components/Toast';
 import LoginModal from './components/LoginModal';
 import PwaUpdateNotification from './components/PwaUpdateNotification';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import DashboardView from './views/DashboardView';
 import AktifView from './views/AktifView';
@@ -215,37 +216,39 @@ export default function App() {
               ref={mainRef}
               className="flex-1 px-4 pt-3 pb-24 overflow-y-auto overscroll-y-contain -webkit-overflow-scrolling-touch"
             >
-              {activeTab === 'dashboard' && (
-                <DashboardView
-                  units={units}
-                  onNotify={handleNotify}
-                  onSelectTab={handleTabChange}
-                />
-              )}
+              <ErrorBoundary key={activeTab} onReset={() => setActiveTab('dashboard')}>
+                {activeTab === 'dashboard' && (
+                  <DashboardView
+                    units={units}
+                    onNotify={handleNotify}
+                    onSelectTab={handleTabChange}
+                  />
+                )}
 
-              {activeTab === 'aktif' && (
-                <AktifView
-                  units={units}
-                  onNotify={handleNotify}
-                  onNavigateToPerpanjang={handleNavigateToPerpanjang}
-                  onNavigateToTebus={handleNavigateToTebus}
-                />
-              )}
+                {activeTab === 'aktif' && (
+                  <AktifView
+                    units={units}
+                    onNotify={handleNotify}
+                    onNavigateToPerpanjang={handleNavigateToPerpanjang}
+                    onNavigateToTebus={handleNavigateToTebus}
+                  />
+                )}
 
-              {activeTab === 'lelang' && (
-                <LelangView
-                  units={units}
-                  onNotify={handleNotify}
-                />
-              )}
+                {activeTab === 'lelang' && (
+                  <LelangView
+                    units={units}
+                    onNotify={handleNotify}
+                  />
+                )}
 
-              {activeTab === 'laporan' && (
-                <LaporanView
-                  units={units}
-                  onNotify={handleNotify}
-                  initialAction={laporanInitialAction}
-                />
-              )}
+                {activeTab === 'laporan' && (
+                  <LaporanView
+                    units={units}
+                    onNotify={handleNotify}
+                    initialAction={laporanInitialAction}
+                  />
+                )}
+              </ErrorBoundary>
             </main>
 
             {/* Fixed Bottom Navigation (4 Tab Bar) */}
