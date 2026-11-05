@@ -25,6 +25,7 @@ import BatteryIndicator from '../components/BatteryIndicator';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import AuditBatteryModal from '../components/AuditBatteryModal';
 import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
+import { getStaggerStyle, triggerHaptic } from '../services/animationHelpers';
 import {
   createGadaiUnit,
   enqueueUnitForCharging,
@@ -47,6 +48,16 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
   const [detailUnit, setDetailUnit] = useState(null);
   const [editLokasiUnit, setEditLokasiUnit] = useState(null);
   const [highlightedUnitId, setHighlightedUnitId] = useState(null);
+  const [chargingSuccessUnitId, setChargingSuccessUnitId] = useState(null);
+  const [removingUnitId, setRemovingUnitId] = useState(null);
+  const [isStaggerActive, setIsStaggerActive] = useState(true);
+
+  // Stagger hanya aktif saat awal render atau filter/sort berubah, bukan saat sync background
+  useEffect(() => {
+    setIsStaggerActive(true);
+    const timer = setTimeout(() => setIsStaggerActive(false), 500);
+    return () => clearTimeout(timer);
+  }, [filterType, sortBy, searchQuery]);
 
   // References for horizontal chip scrolling
   const chipsContainerRef = useRef(null);
@@ -208,12 +219,16 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
   const handleQuickEnqueue = (unit) => {
     const res = enqueueUnitForCharging(unit.id, unit.batteryLevel);
     if (res.success) {
+      triggerHaptic('success');
+      setChargingSuccessUnitId(unit.id);
+      setTimeout(() => setChargingSuccessUnitId(null), 1200);
       onNotify({
-        title: "Masuk Antrian",
-        message: res.message,
+        title: "Perawatan Baterai",
+        message: `Unit #${unit.kodeGadai} berhasil masuk antrian charger!`,
         type: "success"
       });
     } else {
+      triggerHaptic('medium');
       onNotify({
         title: "Gagal Masuk Antrian",
         message: res.message,
@@ -224,20 +239,29 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
   const handleMoveToLelang = (unit) => {
     if (window.confirm(`Pindahkan sepeda listrik #${unit.kodeGadai} (${unit.merkSepeda}) ke daftar Lelang?`)) {
-      moveToLelang(unit.id);
       setActionSheetUnit(null);
-      onNotify({
-        title: "Pindah ke Lelang",
-        message: `Unit #${unit.kodeGadai} kini masuk daftar Lelang.`,
-        type: "info"
-      });
+      setRemovingUnitId(unit.id);
+      setTimeout(() => {
+        moveToLelang(unit.id);
+        setRemovingUnitId(null);
+        triggerHaptic('success');
+        onNotify({
+          title: "Pindah ke Lelang",
+          message: `Unit #${unit.kodeGadai} kini masuk daftar Lelang.`,
+          type: "info"
+        });
+      }, 200);
     }
   };
 
   const handleTebusConfirm = (unit) => {
     if (window.confirm(`Lanjutkan proses penebusan unit #${unit.kodeGadai} (${unit.merkSepeda})?`)) {
       setActionSheetUnit(null);
-      onNavigateToTebus(unit.id);
+      setRemovingUnitId(unit.id);
+      setTimeout(() => {
+        setRemovingUnitId(null);
+        onNavigateToTebus(unit.id);
+      }, 200);
     }
   };
 
@@ -547,7 +571,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               : "Belum ada unit sepeda aktif terdaftar."}
           </div>
         ) : (
-          processedUnits.map((unit) => {
+          processedUnits.map((unit, index) => {
             const isCharging = unit.statusCharger === 'CHARGING';
             const isWaiting = unit.statusCharger === 'WAITING';
             const fallbackMasuk = unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
@@ -563,9 +587,16 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
             return (
               <div
                 key={unit.id}
-                className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs ${
+                style={getStaggerStyle(index, isStaggerActive)}
+                className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs pressable-card ${
+                  removingUnitId === unit.id ? 'opacity-0 scale-95 transition-all duration-200 pointer-events-none' : ''
+                } ${
+                  index < 6 && isStaggerActive ? 'animate-card-enter' : ''
+                } ${
+                  highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
+                } ${
                   isCriticalOverdue
-                    ? 'border-slate-200 border-l-4 border-l-rose-500'
+                    ? 'border-slate-200 border-l-4 border-l-rose-500 animate-critical-pulse'
                     : 'border-slate-200/90'
                 }`}
               >
@@ -680,20 +711,27 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
                 {/* BARIS 4: Aksi dengan Hierarki Jelas (Charge, Perpanjang, dan Titik Tiga ⋯) */}
                 <div className="pt-2.5 flex items-center gap-2">
-                  {/* Tombol Utama: Charge (solid sky, h-11, fleksibel) */}
-                  <button
-                    onClick={() => handleQuickEnqueue(unit)}
-                    disabled={isCharging || isWaiting}
-                    className={`pressable h-11 flex-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                      isCharging || isWaiting
-                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                        : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
-                    }`}
-                    title={isCharging ? "Sedang di-charge" : isWaiting ? "Sedang dalam antrian" : "Mulai / jadwalkan charge"}
-                  >
-                    <Zap className="w-4 h-4" />
-                    <span>{isCharging ? "Sedang Di-charge" : isWaiting ? "Dalam Antrian" : "Charge"}</span>
-                  </button>
+                  {/* Tombol Utama: Charge (solid sky, h-11, fleksibel) dengan Micro-interaction Sukses */}
+                  {chargingSuccessUnitId === unit.id ? (
+                    <div className="h-11 flex-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-300 animate-in zoom-in-95 duration-200">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 animate-in zoom-in-50 duration-200" />
+                      <span>Berhasil Diantrikan!</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleQuickEnqueue(unit)}
+                      disabled={isCharging || isWaiting}
+                      className={`pressable h-11 flex-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                        isCharging || isWaiting
+                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                          : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
+                      }`}
+                      title={isCharging ? "Sedang di-charge" : isWaiting ? "Sedang dalam antrian" : "Mulai / jadwalkan charge"}
+                    >
+                      <Zap className="w-4 h-4" />
+                      <span>{isCharging ? "Sedang Di-charge" : isWaiting ? "Dalam Antrian" : "Charge"}</span>
+                    </button>
+                  )}
 
                   {/* Tombol Sekunder: Perpanjang (outline, h-11) */}
                   <button

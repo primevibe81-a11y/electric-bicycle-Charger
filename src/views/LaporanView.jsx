@@ -29,6 +29,9 @@ import ChargeAuditBadge from '../components/ChargeAuditBadge';
 import AuditBatteryModal from '../components/AuditBatteryModal';
 import ExcelSyncModal from '../components/ExcelSyncModal';
 import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
+import BottomSheet from '../components/BottomSheet';
+import CountUp from '../components/CountUp';
+import { getStaggerStyle, triggerHaptic } from '../services/animationHelpers';
 
 /**
  * Filter cerdas untuk mendeteksi apakah sebuah unit benar-benar memiliki
@@ -51,6 +54,14 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
   const [isStockOpnameSort, setIsStockOpnameSort] = useState(false);
   const [editLokasiUnit, setEditLokasiUnit] = useState(null);
   const [highlightedUnitId, setHighlightedUnitId] = useState(null);
+  const [isStaggerActive, setIsStaggerActive] = useState(true);
+
+  // Stagger hanya aktif saat awal render atau filter berubah
+  useEffect(() => {
+    setIsStaggerActive(true);
+    const timer = setTimeout(() => setIsStaggerActive(false), 500);
+    return () => clearTimeout(timer);
+  }, [statusFilter, searchQuery]);
 
   // Quick Action Modal states
   const [auditUnit, setAuditUnit] = useState(null);
@@ -280,8 +291,11 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
       <div className="grid grid-cols-3 gap-2">
         {/* Total Fisik Card */}
         <button
-          onClick={() => setStatusFilter(statusFilter === 'SEMUA' ? 'AKTIF' : 'SEMUA')}
-          className={`p-2 rounded-2xl border text-center transition-all active:scale-95 ${
+          onClick={() => {
+            triggerHaptic('light');
+            setStatusFilter(statusFilter === 'SEMUA' ? 'AKTIF' : 'SEMUA');
+          }}
+          className={`pressable p-2 rounded-2xl border text-center transition-all ${
             statusFilter === 'SEMUA' || statusFilter === 'AKTIF'
               ? 'bg-sky-50 border-sky-300 ring-2 ring-sky-400/20 shadow-xs'
               : 'bg-white border-slate-200/80 hover:bg-slate-50'
@@ -292,14 +306,17 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             Fisik Gudang
           </div>
           <div className="text-sm font-black text-slate-900 leading-tight">
-            {stats.aktif + stats.lelang} <span className="text-[10px] font-normal text-slate-500">Unit</span>
+            <CountUp to={stats.aktif + stats.lelang} /> <span className="text-[10px] font-normal text-slate-500">Unit</span>
           </div>
         </button>
 
         {/* Ditebus Card */}
         <button
-          onClick={() => setStatusFilter('DITEBUS')}
-          className={`p-2 rounded-2xl border text-center transition-all active:scale-95 ${
+          onClick={() => {
+            triggerHaptic('light');
+            setStatusFilter('DITEBUS');
+          }}
+          className={`pressable p-2 rounded-2xl border text-center transition-all ${
             statusFilter === 'DITEBUS'
               ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-400/20 shadow-xs'
               : 'bg-white border-slate-200/80 hover:bg-slate-50'
@@ -310,14 +327,17 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             Ditebus
           </div>
           <div className="text-sm font-black text-blue-700 leading-tight">
-            {stats.ditebus} <span className="text-[10px] font-normal text-slate-500">Unit</span>
+            <CountUp to={stats.ditebus} /> <span className="text-[10px] font-normal text-slate-500">Unit</span>
           </div>
         </button>
 
         {/* Bermasalah Card (Warna Merah & Filter Cepat) */}
         <button
-          onClick={() => setStatusFilter('BERMASALAH')}
-          className={`p-2 rounded-2xl border text-center transition-all active:scale-95 ${
+          onClick={() => {
+            triggerHaptic('light');
+            setStatusFilter('BERMASALAH');
+          }}
+          className={`pressable p-2 rounded-2xl border text-center transition-all ${
             statusFilter === 'BERMASALAH'
               ? 'bg-rose-100/80 border-rose-300 ring-2 ring-rose-400/30 shadow-xs'
               : 'bg-rose-50/60 border-rose-200 hover:bg-rose-100/50'
@@ -328,7 +348,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             Bermasalah
           </div>
           <div className="text-sm font-black text-rose-600 leading-tight">
-            {stats.bermasalah} <span className="text-[10px] font-normal text-rose-400">Unit</span>
+            <CountUp to={stats.bermasalah} /> <span className="text-[10px] font-normal text-rose-400">Unit</span>
           </div>
         </button>
       </div>
@@ -418,7 +438,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             </p>
           </div>
         ) : (
-          filteredUnits.map((unit) => {
+          filteredUnits.map((unit, index) => {
             const daysSinceCharge = getDaysSinceLastCharge(
               unit.lastChargedAt,
               unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null
@@ -431,7 +451,10 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             return (
               <div
                 key={unit.id}
-                className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs ${
+                style={getStaggerStyle(index, isStaggerActive)}
+                className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs pressable-card ${
+                  index < 6 && isStaggerActive ? 'animate-card-enter' : ''
+                } ${
                   highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
                 } ${
                   isDefect ? 'border-amber-300 ring-1 ring-amber-300/30' : 'border-slate-200/80'
@@ -622,107 +645,90 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
       </div>
 
       {/* 5. BOTTOM SHEET EKSPOR LAPORAN (Pengganti Kartu Ekspor Besar) */}
-      {isExportSheetOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-[430px] bg-white rounded-t-3xl p-5 shadow-2xl border-t border-slate-100 space-y-4 animate-in slide-in-from-bottom duration-200">
-            {/* Sheet Handle */}
-            <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
-
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div>
-                <h3 className="text-sm font-extrabold text-slate-900">
-                  Ekspor Dokumen Laporan
-                </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Filter aktif: <span className="font-bold text-sky-700">{statusFilter} ({filteredUnits.length} Unit)</span>
-                </p>
-              </div>
-              <button
-                onClick={() => setIsExportSheetOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      <BottomSheet
+        isOpen={isExportSheetOpen}
+        onClose={() => setIsExportSheetOpen(false)}
+        title="Ekspor Dokumen Laporan"
+        subtitle={`Filter aktif: ${statusFilter} (${filteredUnits.length} Unit)`}
+        icon={Download}
+        maxHeight="90vh"
+      >
+        {/* Opsi Sortir Stock Opname */}
+        <div
+          onClick={() => setIsStockOpnameSort(!isStockOpnameSort)}
+          className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all pressable ${
+            isStockOpnameSort
+              ? 'bg-sky-50 border-sky-300 ring-1 ring-sky-300/40'
+              : 'bg-slate-50 border-slate-200 hover:bg-slate-100/70'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+              isStockOpnameSort ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-600'
+            }`}>
+              <MapPin className="w-4 h-4" />
             </div>
-
-            {/* Opsi Sortir Stock Opname */}
-            <div
-              onClick={() => setIsStockOpnameSort(!isStockOpnameSort)}
-              className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all pressable ${
-                isStockOpnameSort
-                  ? 'bg-sky-50 border-sky-300 ring-1 ring-sky-300/40'
-                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100/70'
-              }`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                  isStockOpnameSort ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-600'
-                }`}>
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-slate-800 block">
-                    Urutkan Berdasarkan Letak Gudang (A-Z)
-                  </span>
-                  <span className="text-[10px] text-slate-500 block truncate">
-                    Cocok untuk stock opname fisik menyusuri rak gudang
-                  </span>
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={isStockOpnameSort}
-                onChange={() => {}}
-                className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 shrink-0"
-              />
+            <div className="min-w-0">
+              <span className="text-xs font-bold text-slate-800 block">
+                Urutkan Berdasarkan Letak Gudang (A-Z)
+              </span>
+              <span className="text-[10px] text-slate-500 block truncate">
+                Cocok untuk stock opname fisik menyusuri rak gudang
+              </span>
             </div>
-
-            {/* Opsi Ekspor */}
-            <div className="space-y-2.5">
-              {/* Opsi Excel */}
-              <button
-                onClick={() => {
-                  handleExportExcel();
-                  setIsExportSheetOpen(false);
-                }}
-                className="w-full flex items-center gap-3 p-3.5 bg-emerald-50/70 hover:bg-emerald-100/70 border border-emerald-200 rounded-2xl text-left transition-all active:scale-98"
-              >
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <FileSpreadsheet className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-emerald-950">Export ke Excel (.xlsx)</div>
-                  <div className="text-[11px] text-emerald-700">Tabel lengkap nomor gadai, nasabah, baterai, & riwayat</div>
-                </div>
-              </button>
-
-              {/* Opsi PDF */}
-              <button
-                onClick={() => {
-                  handleGeneratePdf();
-                  setIsExportSheetOpen(false);
-                }}
-                className="w-full flex items-center gap-3 p-3.5 bg-rose-50/70 hover:bg-rose-100/70 border border-rose-200 rounded-2xl text-left transition-all active:scale-98"
-              >
-                <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-rose-950">Generate PDF Resmi (.pdf)</div>
-                  <div className="text-[11px] text-rose-700">Laporan cetak A4 dengan bukti foto fisik & tanda tangan</div>
-                </div>
-              </button>
-            </div>
-
-            <button
-              onClick={() => setIsExportSheetOpen(false)}
-              className="w-full py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700"
-            >
-              Tutup
-            </button>
           </div>
+          <input
+            type="checkbox"
+            checked={isStockOpnameSort}
+            onChange={() => {}}
+            className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 shrink-0"
+          />
         </div>
-      )}
+
+        {/* Opsi Ekspor */}
+        <div className="space-y-2.5">
+          {/* Opsi Excel */}
+          <button
+            onClick={() => {
+              handleExportExcel();
+              setIsExportSheetOpen(false);
+            }}
+            className="w-full flex items-center gap-3 p-3.5 bg-emerald-50/70 hover:bg-emerald-100/70 border border-emerald-200 rounded-2xl text-left transition-all pressable"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <FileSpreadsheet className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-bold text-emerald-950">Export ke Excel (.xlsx)</div>
+              <div className="text-[11px] text-emerald-700">Tabel lengkap nomor gadai, nasabah, baterai, & riwayat</div>
+            </div>
+          </button>
+
+          {/* Opsi PDF */}
+          <button
+            onClick={() => {
+              handleGeneratePdf();
+              setIsExportSheetOpen(false);
+            }}
+            className="w-full flex items-center gap-3 p-3.5 bg-rose-50/70 hover:bg-rose-100/70 border border-rose-200 rounded-2xl text-left transition-all pressable"
+          >
+            <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-bold text-rose-950">Generate PDF Resmi (.pdf)</div>
+              <div className="text-[11px] text-rose-700">Laporan cetak A4 dengan bukti foto fisik & tanda tangan</div>
+            </div>
+          </button>
+        </div>
+
+        <button
+          onClick={() => setIsExportSheetOpen(false)}
+          className="w-full py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 pressable"
+        >
+          Tutup
+        </button>
+      </BottomSheet>
 
       {/* MODAL AUTO-SYNC EXCEL */}
       <ExcelSyncModal

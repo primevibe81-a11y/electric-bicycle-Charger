@@ -55,6 +55,8 @@ import {
 import BatteryIndicator from '../components/BatteryIndicator';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
+import CountUp from '../components/CountUp';
+import { getStaggerStyle, triggerHaptic } from '../services/animationHelpers';
 
 export default function DashboardView({ units, onNotify, onSelectTab }) {
   const [nowTick, setNowTick] = useState(Date.now());
@@ -74,6 +76,15 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
   const [editLokasiUnit, setEditLokasiUnit] = useState(null);
   const [highlightedUnitId, setHighlightedUnitId] = useState(null);
   const [finishConfirmUnit, setFinishConfirmUnit] = useState(null);
+  const [lastPluggedSlotId, setLastPluggedSlotId] = useState(null);
+  const [isStaggerActive, setIsStaggerActive] = useState(true);
+
+  // Stagger hanya aktif saat awal render atau saat query pencarian berubah (bukan saat sinkronisasi background)
+  useEffect(() => {
+    setIsStaggerActive(true);
+    const timer = setTimeout(() => setIsStaggerActive(false), 500);
+    return () => clearTimeout(timer);
+  }, [queueSearchQuery]);
 
   // Timer update interval (1 second)
   useEffect(() => {
@@ -253,6 +264,9 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
     setTargetStartUnitId("");
 
     if (result.success) {
+      triggerHaptic('success');
+      setLastPluggedSlotId(unitId);
+      setTimeout(() => setLastPluggedSlotId(null), 800);
       onNotify({
         title: "Mulai Di-Charge",
         message: result.message,
@@ -302,7 +316,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         {/* Card 1: Butuh Charge */}
         <div
           onClick={() => onSelectTab && onSelectTab('aktif')}
-          className="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-xs hover:border-sky-300 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between"
+          className="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-xs hover:border-sky-300 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between pressable-card"
           title="Lihat unit yang butuh di-charge"
         >
           <div className="flex items-center justify-between text-slate-500">
@@ -310,7 +324,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
             <BatteryCharging className="w-3.5 h-3.5 text-sky-600 shrink-0" />
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-lg font-bold text-slate-900 leading-none">{needChargeUnits.length}</span>
+            <CountUp to={needChargeUnits.length} className="text-lg font-bold text-slate-900 leading-none" />
             <span className="text-[10px] text-slate-400">unit</span>
           </div>
         </div>
@@ -318,7 +332,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         {/* Card 2: Kritis */}
         <div
           onClick={() => onSelectTab && onSelectTab('aktif')}
-          className="bg-rose-50/70 rounded-2xl p-2.5 border border-rose-200 shadow-xs hover:border-rose-400 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between"
+          className="bg-rose-50/70 rounded-2xl p-2.5 border border-rose-200 shadow-xs hover:border-rose-400 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between pressable-card"
           title="Unit kritis belum di-charge ≥15 hari"
         >
           <div className="flex items-center justify-between text-rose-700">
@@ -326,7 +340,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
             <AlertOctagon className="w-3.5 h-3.5 text-rose-600 shrink-0" />
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-lg font-bold text-rose-700 leading-none">{overdueUnits.length}</span>
+            <CountUp to={overdueUnits.length} className="text-lg font-bold text-rose-700 leading-none" />
             <span className="text-[10px] text-rose-500">unit</span>
           </div>
         </div>
@@ -337,7 +351,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
             const el = document.getElementById('antrian-prioritas-section');
             if (el) el.scrollIntoView({ behavior: 'smooth' });
           }}
-          className="bg-amber-50/70 rounded-2xl p-2.5 border border-amber-200 shadow-xs hover:border-amber-400 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between"
+          className="bg-amber-50/70 rounded-2xl p-2.5 border border-amber-200 shadow-xs hover:border-amber-400 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between pressable-card"
           title="Unit dalam antrian charger"
         >
           <div className="flex items-center justify-between text-amber-800">
@@ -345,7 +359,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
             <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-lg font-bold text-amber-800 leading-none">{sortedWaiting.length}</span>
+            <CountUp to={sortedWaiting.length} className="text-lg font-bold text-amber-800 leading-none" />
             <span className="text-[10px] text-amber-600">unit</span>
           </div>
         </div>
@@ -445,7 +459,9 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
               return (
                 <div
                   key={unit.id}
-                  className="bg-sky-50/70 border border-sky-200 rounded-xl p-2.5 flex items-center justify-between gap-2 min-h-[58px]"
+                  className={`bg-sky-50/70 border border-sky-200 rounded-xl p-2.5 flex items-center justify-between gap-2 min-h-[58px] transition-colors ${
+                    lastPluggedSlotId === unit.id ? 'animate-highlight ring-2 ring-sky-300' : ''
+                  }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300 animate-pulse shrink-0" />
@@ -600,11 +616,14 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
               return (
                 <div
                   key={unit.id}
-                  className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs ${
+                  style={getStaggerStyle(index, isStaggerActive)}
+                  className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs pressable-card ${
+                    index < 6 && isStaggerActive ? 'animate-card-enter' : ''
+                  } ${
                     highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
                   } ${
                     isOverdue
-                      ? 'border-slate-200 border-l-4 border-l-rose-500'
+                      ? 'border-slate-200 border-l-4 border-l-rose-500 animate-critical-pulse'
                       : 'border-slate-200/90'
                   }`}
                 >

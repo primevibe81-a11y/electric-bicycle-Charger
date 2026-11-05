@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Wifi, WifiOff, RefreshCw, CheckCircle2, Cloud, CloudOff, AlertCircle } from 'lucide-react';
 import { subscribeToNetworkStatus } from '../services/offlineQueue';
 import { triggerManualSync } from '../services/storage';
@@ -11,12 +11,25 @@ export default function NetworkStatusBadge({ onNotify }) {
     lastSyncTime: null
   });
 
+  const [justSynced, setJustSynced] = useState(false);
+  const prevSyncingRef = useRef(false);
+
   useEffect(() => {
     const unsub = subscribeToNetworkStatus((state) => {
       setNetworkState(state);
     });
     return () => unsub();
   }, []);
+
+  // Denyut sekali saat proses sinkronisasi selesai
+  useEffect(() => {
+    if (prevSyncingRef.current && !networkState.isSyncing && networkState.isOnline && networkState.pendingCount === 0) {
+      setJustSynced(true);
+      const timer = setTimeout(() => setJustSynced(false), 800);
+      return () => clearTimeout(timer);
+    }
+    prevSyncingRef.current = networkState.isSyncing;
+  }, [networkState.isSyncing, networkState.isOnline, networkState.pendingCount]);
 
   const handleManualSyncClick = async () => {
     if (networkState.isSyncing) return;
@@ -96,11 +109,13 @@ export default function NetworkStatusBadge({ onNotify }) {
     );
   }
 
-  // 3. Online & All synced state (Ringkas: titik hijau + teks kecil)
+  // 3. Online & All synced state (Ringkas: titik hijau + teks kecil, berdenyut sekali saat selesai sync)
   return (
     <button
       onClick={handleManualSyncClick}
-      className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50/90 text-emerald-800 border border-emerald-200/90 rounded-full text-[10.5px] font-medium hover:bg-emerald-100 transition-all active:scale-95 shrink-0"
+      className={`pressable inline-flex items-center gap-1 px-2 py-1 bg-emerald-50/90 text-emerald-800 border border-emerald-200/90 rounded-full text-[10.5px] font-medium hover:bg-emerald-100 transition-all shrink-0 ${
+        justSynced ? 'animate-cloud-pulse ring-2 ring-emerald-300' : ''
+      }`}
       title="Terhubung ke cloud & tersinkron"
     >
       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>

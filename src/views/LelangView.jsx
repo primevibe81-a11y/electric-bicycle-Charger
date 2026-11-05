@@ -23,6 +23,7 @@ import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
 import { enqueueUnitForCharging, markLelangSold, updateUnitLocation } from '../services/storage';
 import { getDaysSinceLastCharge } from '../services/chargerQueue';
+import { getStaggerStyle, triggerHaptic } from '../services/animationHelpers';
 
 export default function LelangView({ units, onNotify }) {
   const [selectedUnitForSale, setSelectedUnitForSale] = useState(null);
@@ -34,6 +35,16 @@ export default function LelangView({ units, onNotify }) {
   const [sortBy, setSortBy] = useState("DEFAULT"); // 'DEFAULT' | 'LOKASI_AZ'
   const [editLokasiUnit, setEditLokasiUnit] = useState(null);
   const [highlightedUnitId, setHighlightedUnitId] = useState(null);
+  const [chargingSuccessUnitId, setChargingSuccessUnitId] = useState(null);
+  const [removingUnitId, setRemovingUnitId] = useState(null);
+  const [isStaggerActive, setIsStaggerActive] = useState(true);
+
+  // Stagger hanya aktif saat awal render atau saat tab/filter/sort berubah
+  React.useEffect(() => {
+    setIsStaggerActive(true);
+    const timer = setTimeout(() => setIsStaggerActive(false), 500);
+    return () => clearTimeout(timer);
+  }, [activeSubTab, filterType, sortBy, searchQuery]);
 
   const lelangUnits = units.filter(u => u.statusBarang === 'LELANG');
   const soldUnits = units.filter(u => u.statusBarang === 'TERJUAL_LELANG');
@@ -80,12 +91,16 @@ export default function LelangView({ units, onNotify }) {
   const handleChargeLelangUnit = (unit) => {
     const res = enqueueUnitForCharging(unit.id, unit.batteryLevel);
     if (res.success) {
+      triggerHaptic('success');
+      setChargingSuccessUnitId(unit.id);
+      setTimeout(() => setChargingSuccessUnitId(null), 1200);
       onNotify({
         title: "Perawatan Baterai Lelang",
         message: `Unit lelang #${unit.kodeGadai} berhasil masuk antrian charger!`,
         type: "success"
       });
     } else {
+      triggerHaptic('medium');
       onNotify({
         title: "Gagal Masuk Antrian",
         message: res.message,
@@ -98,23 +113,31 @@ export default function LelangView({ units, onNotify }) {
     e.preventDefault();
     if (!selectedUnitForSale) return;
 
-    const res = markLelangSold(selectedUnitForSale.id, soldPrice, buyerInfo);
-    if (res.success) {
-      setSelectedUnitForSale(null);
+    const unitToSell = selectedUnitForSale;
+    setRemovingUnitId(unitToSell.id);
+    setSelectedUnitForSale(null);
+
+    setTimeout(() => {
+      const res = markLelangSold(unitToSell.id, soldPrice, buyerInfo);
+      setRemovingUnitId(null);
       setSoldPrice("");
       setBuyerInfo("");
-      onNotify({
-        title: "Lelang Terjual!",
-        message: res.message,
-        type: "success"
-      });
-    } else {
-      onNotify({
-        title: "Gagal Mencatat",
-        message: res.message,
-        type: "warning"
-      });
-    }
+      if (res.success) {
+        triggerHaptic('success');
+        onNotify({
+          title: "Lelang Terjual!",
+          message: res.message,
+          type: "success"
+        });
+      } else {
+        triggerHaptic('medium');
+        onNotify({
+          title: "Gagal Mencatat",
+          message: res.message,
+          type: "warning"
+        });
+      }
+    }, 200);
   };
 
   const formatRupiah = (val) => {
@@ -249,7 +272,7 @@ export default function LelangView({ units, onNotify }) {
               </button>
             </div>
           ) : (
-            filteredLelangUnits.map((unit) => {
+            filteredLelangUnits.map((unit, index) => {
               const isCharging = unit.statusCharger === 'CHARGING';
               const isWaiting = unit.statusCharger === 'WAITING';
               const fallbackMasuk = unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
@@ -259,11 +282,16 @@ export default function LelangView({ units, onNotify }) {
               return (
                 <div
                   key={unit.id}
-                  className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs ${
+                  style={getStaggerStyle(index, isStaggerActive)}
+                  className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs pressable-card ${
+                    removingUnitId === unit.id ? 'opacity-0 scale-95 transition-all duration-200 pointer-events-none' : ''
+                  } ${
+                    index < 6 && isStaggerActive ? 'animate-card-enter' : ''
+                  } ${
                     highlightedUnitId === unit.id ? 'animate-highlight border-purple-400 ring-2 ring-purple-200' : ''
                   } ${
                     isCriticalOverdue
-                      ? 'border-slate-200 border-l-4 border-l-rose-500'
+                      ? 'border-slate-200 border-l-4 border-l-rose-500 animate-critical-pulse'
                       : 'border-slate-200/90'
                   }`}
                 >
@@ -349,14 +377,21 @@ export default function LelangView({ units, onNotify }) {
                         <span>Sedang Di-charge</span>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => handleChargeLelangUnit(unit)}
-                        className="h-11 px-3.5 rounded-xl text-xs font-bold bg-white hover:bg-sky-50 text-sky-700 border border-sky-300 transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 shrink-0"
-                        title="Masukkan unit lelang ke antrian charger"
-                      >
-                        <Zap className="w-3.5 h-3.5 text-sky-600" />
-                        <span>Antrikan Charge</span>
-                      </button>
+                      chargingSuccessUnitId === unit.id ? (
+                        <div className="h-11 px-3.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 flex items-center justify-center gap-1.5 shrink-0 animate-in zoom-in-95 duration-200">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 animate-in zoom-in-50 duration-200" />
+                          <span>Diantrikan!</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleChargeLelangUnit(unit)}
+                          className="pressable h-11 px-3.5 rounded-xl text-xs font-bold bg-white hover:bg-sky-50 text-sky-700 border border-sky-300 transition-all flex items-center justify-center gap-1.5 shrink-0"
+                          title="Masukkan unit lelang ke antrian charger"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-sky-600" />
+                          <span>Antrikan Charge</span>
+                        </button>
+                      )
                     )}
 
                     {/* Tombol Utama: Catat Terjual (Wajib Membuka Bottom Sheet Konfirmasi) */}
@@ -366,7 +401,7 @@ export default function LelangView({ units, onNotify }) {
                         setSoldPrice(String(unit.hargaLelang || 2500000));
                         setBuyerInfo("");
                       }}
-                      className="h-11 flex-1 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-xs transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+                      className="pressable h-11 flex-1 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-xs transition-all flex items-center justify-center gap-1.5"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       <span>Catat Terjual</span>

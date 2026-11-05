@@ -1,5 +1,5 @@
 {
-  "version": "1.6.0",
-  "buildTime": 1730784000000,
-  "description": "Fitur Letak Unit: Catatan teks lokasi fisik sepeda listrik di gudang, saran cepat frekuensi, riwayat 5 mutasi lokasi, filter & sortir letak, konfirmasi selesai charging, dan export Excel/PDF"
+  "version": "1.7.0",
+  "buildTime": 1730796000000,
+  "description": "Lapisan Animasi & Micro-interactions: Transisi Menu Berarah (View Transitions & Web Animations API), Sliding Blue Pill Bottom Nav, Reusable Bottom Sheet dengan Drag-to-Close Gesture, 6-Card Stagger, Count-Up Angka, Battery scaleX Entrance, Card Removal FLIP, Haptic Feedback, dan Aksesibilitas Prefers-Reduced-Motion"
 }

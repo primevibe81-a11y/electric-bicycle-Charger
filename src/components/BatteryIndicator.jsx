@@ -41,7 +41,7 @@ export default function BatteryIndicator({ level, isCharging = false, size = "md
       </div>
       <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden max-w-[80px]">
         <div
-          className={`h-full transition-all duration-500 ${barColor}`}
+          className={`h-full battery-fill-anim transition-all duration-300 ${barColor}`}
           style={{ width: `${numLevel}%` }}
         />
       </div>

@@ -5,6 +5,16 @@
 :root {
   -webkit-tap-highlight-color: transparent;
 
+  /* 1. Design Token Animasi (CSS Variables Sesuai Spesifikasi) */
+  --dur-press: 90ms;
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-sheet: 300ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --stagger: 35ms;
+
   /* Design Tokens: Spacing Scale (4/8/12/16/24px) */
   --space-xs: 4px;
   --space-sm: 8px;
@@ -12,23 +22,19 @@
   --space-lg: 16px;
   --space-xl: 24px;
 
-  /* Design Tokens: Radii (Konsistensi Bentuk) */
+  /* Design Tokens: Radii */
   --radius-card: 16px;
   --radius-btn: 12px;
   --radius-pill: 9999px;
 
-  /* Design Tokens: Shadows (Satu Level Halus) */
+  /* Design Tokens: Shadows */
   --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.06);
   --shadow-sheet: 0 -4px 24px -2px rgba(15, 23, 42, 0.16);
 
-  /* Design Tokens: Touch Target Minimal (iPhone / Android) */
+  /* Touch Target Minimal (iPhone / Android) */
   --touch-min: 44px;
 
-  /* Animation Durations */
-  --dur-sheet: 200ms;
-  --dur-press: 100ms;
-
-  /* Design Tokens: Brand & Status Colors (WCAG AA Compliant) */
+  /* Status & Brand Colors */
   --color-brand-500: #0ea5e9;
   --color-brand-600: #0284c7;
   --color-brand-700: #0369a1;
@@ -37,6 +43,15 @@
   --color-text-muted: #64748b;
   --color-border-card: #e2e8f0;
   --color-surface-card: #ffffff;
+}
+
+/* Global Reset & Tap Delay Fix */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, input, select, textarea, [role="button"] {
+  touch-action: manipulation;
 }
 
 body {
@@ -83,15 +98,170 @@ input, textarea, [contenteditable="true"] {
   padding-bottom: max(env(safe-area-inset-bottom), 12px);
 }
 
-/* Micro-interaction & Accessibility Utilities */
+/* =========================================================================
+   5. EFEK SAAT DITEKAN (.pressable & .pressable-card)
+   Transform scale(0.97) dalam 90ms, kembali dengan --ease-spring
+   ========================================================================= */
 .pressable {
-  transition: transform var(--dur-press) ease-out, opacity var(--dur-press) ease-out;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform var(--dur-press) var(--ease-spring), opacity var(--dur-press) var(--ease-out);
 }
 .pressable:active {
   transform: scale(0.97);
-  opacity: 0.9;
+  transition-duration: var(--dur-press);
 }
 
+.pressable-card {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  position: relative;
+  transition: transform var(--dur-press) var(--ease-spring);
+}
+.pressable-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: #0f172a;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-press) var(--ease-out);
+}
+.pressable-card:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-press);
+}
+.pressable-card:active::after {
+  opacity: 0.05; /* Menggelap 5% */
+}
+
+/* =========================================================================
+   3. STAGGER ENTRANCE (Hanya Transform & Opacity)
+   ========================================================================= */
+@keyframes cardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-card-enter {
+  animation: cardEntrance var(--dur-base) var(--ease-out) both;
+}
+
+/* =========================================================================
+   4. BOTTOM NAVIGATION ANIMASI (Icon Pop & Badge Pop)
+   ========================================================================= */
+@keyframes iconPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.nav-icon-active {
+  animation: iconPop 250ms var(--ease-spring);
+}
+
+@keyframes badgePop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.badge-pop {
+  animation: badgePop 250ms var(--ease-spring);
+}
+
+/* =========================================================================
+   7. UMPAN BALIK AKSI (Error Shake, Cloud OK Pulse, Card Removal FLIP)
+   ========================================================================= */
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+}
+
+.animate-shake {
+  animation: errorShake 250ms var(--ease-out);
+}
+
+@keyframes cloudOkPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.animate-cloud-pulse {
+  animation: cloudOkPulse 350ms var(--ease-spring) 1;
+}
+
+/* =========================================================================
+   8. EFEK DINAMIS LAIN (Battery scaleX, Critical Accent Border Pulse, Shimmer)
+   ========================================================================= */
+@keyframes batteryScaleX {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.battery-fill-anim {
+  transform-origin: left;
+  animation: batteryScaleX var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes criticalBorderPulse {
+  0% {
+    border-left-color: rgba(244, 63, 94, 0.3);
+  }
+  50% {
+    border-left-color: #f43f5e;
+    box-shadow: 0 0 8px rgba(244, 63, 94, 0.25);
+  }
+  100% {
+    border-left-color: #f43f5e;
+    box-shadow: none;
+  }
+}
+
+.animate-critical-pulse {
+  animation: criticalBorderPulse 800ms var(--ease-out) 1 forwards;
+}
+
+/* Shimmer Loading (Transform Only, Non-Reflow) */
+@keyframes shimmerSlide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: #e2e8f0;
+}
+
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: shimmerSlide 1.2s infinite;
+}
+
+/* Highlight lembut 600ms */
 @keyframes softHighlight {
   0% {
     background-color: rgba(14, 165, 233, 0.25);
@@ -101,8 +271,117 @@ input, textarea, [contenteditable="true"] {
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .animate-highlight {
-    animation: softHighlight 600ms ease-out;
+.animate-highlight {
+  animation: softHighlight 600ms ease-out forwards;
+}
+
+/* =========================================================================
+   2. VIEW TRANSITIONS API CSS (Main Content)
+   ========================================================================= */
+::view-transition-old(main-content),
+::view-transition-new(main-content) {
+  animation-duration: var(--dur-base);
+  animation-timing-function: var(--ease-out);
+}
+
+html[data-transition-direction="forward"]::view-transition-old(main-content) {
+  animation: viewSlideOutLeft var(--dur-base) var(--ease-out) both;
+}
+html[data-transition-direction="forward"]::view-transition-new(main-content) {
+  animation: viewSlideInRight var(--dur-base) var(--ease-out) both;
+}
+
+html[data-transition-direction="backward"]::view-transition-old(main-content) {
+  animation: viewSlideOutRight var(--dur-base) var(--ease-out) both;
+}
+html[data-transition-direction="backward"]::view-transition-new(main-content) {
+  animation: viewSlideInLeft var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes viewSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
   }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes viewSlideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+@keyframes viewSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes viewSlideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* =========================================================================
+   9. AKSESIBILITAS: PREFERS-REDUCED-MOTION
+   Matikan geser, scale, pegas, stagger, shimmer; sisakan cross-fade 100ms
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 100ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 100ms !important;
+  }
+
+  .animate-card-enter,
+  .battery-fill-anim,
+  .animate-critical-pulse,
+  .animate-shake,
+  .animate-cloud-pulse,
+  .nav-icon-active,
+  .badge-pop,
+  .animate-highlight {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .skeleton-shimmer::after {
+    display: none !important;
+  }
+
+  .pressable:active,
+  .pressable-card:active {
+    transform: none !important;
+  }
+
+  ::view-transition-old(main-content),
+  ::view-transition-new(main-content) {
+    animation: simpleFade 100ms ease-out both !important;
+    transform: none !important;
+  }
+}
+
+@keyframes simpleFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

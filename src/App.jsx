@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import Toast from './components/Toast';
@@ -21,6 +21,9 @@ import {
 import { playChimeSound, sendNativeNotification } from './services/soundNotification';
 import { initPwaUpdateChecker } from './services/pwaUpdate';
 import { initOfflineSyncEngine } from './services/offlineQueue';
+import { isReducedMotion } from './services/animationHelpers';
+
+const TAB_INDICES = { dashboard: 0, aktif: 1, lelang: 2, laporan: 3 };
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => getActiveSession());
@@ -36,6 +39,13 @@ export default function App() {
 
   // Status deteksi pembaruan aplikasi PWA
   const [pwaUpdateInfo, setPwaUpdateInfo] = useState(null);
+
+  // Ref untuk scroll restoration dan pencegahan transisi ganda
+  const mainRef = useRef(null);
+  const scrollPositions = useRef({ dashboard: 0, aktif: 0, lelang: 0, laporan: 0 });
+  const isTransitioningRef = useRef(false);
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
 
   // Listener deteksi pembaruan aplikasi PWA (Service Worker & Version Check)
   useEffect(() => {
@@ -131,14 +141,93 @@ export default function App() {
     });
   };
 
+  // Fungsi transisi antar menu dengan View Transitions + Web Animations fallback & scroll memory
+  const handleTabChange = (newTab) => {
+    const currentTab = activeTabRef.current;
+
+    // 1. Jika tab yang sama ditekan lagi: scroll ke atas dengan halus, tanpa transisi menu
+    if (newTab === currentTab) {
+      if (mainRef.current) {
+        mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
+
+    // 2. Cegah transisi ganda bila pengguna menekan tab berulang cepat
+    if (isTransitioningRef.current) {
+      return;
+    }
+
+    // 3. Simpan posisi scroll tab saat ini
+    if (mainRef.current) {
+      scrollPositions.current[currentTab] = mainRef.current.scrollTop;
+    }
+
+    const prevIndex = TAB_INDICES[currentTab] ?? 0;
+    const nextIndex = TAB_INDICES[newTab] ?? 0;
+    const direction = nextIndex > prevIndex ? 'forward' : 'backward';
+
+    const prefersReduced = isReducedMotion();
+    isTransitioningRef.current = true;
+
+    const performStateChange = () => {
+      setLaporanInitialAction(null);
+      setActiveTab(newTab);
+      activeTabRef.current = newTab;
+    };
+
+    const onTransitionDone = () => {
+      isTransitioningRef.current = false;
+      // Pulihkan posisi scroll tab tujuan setelah render
+      requestAnimationFrame(() => {
+        if (mainRef.current) {
+          mainRef.current.scrollTop = scrollPositions.current[newTab] || 0;
+        }
+      });
+    };
+
+    // Implementasi utama: document.startViewTransition bila tersedia
+    if (typeof document !== 'undefined' && 'startViewTransition' in document && !prefersReduced) {
+      document.documentElement.dataset.transitionDirection = direction;
+      const transition = document.startViewTransition(() => {
+        performStateChange();
+      });
+      transition.finished.finally(() => {
+        delete document.documentElement.dataset.transitionDirection;
+        onTransitionDone();
+      });
+    } else if (mainRef.current && !prefersReduced) {
+      // Fallback cross-fade / slide 220ms memakai Web Animations API
+      const xOffset = direction === 'forward' ? '20px' : '-20px';
+      const anim = mainRef.current.animate(
+        [
+          { opacity: 0, transform: `translateX(${xOffset})` },
+          { opacity: 1, transform: 'translateX(0)' }
+        ],
+        {
+          duration: 220,
+          easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+          fill: 'both'
+        }
+      );
+      performStateChange();
+      anim.onfinish = onTransitionDone;
+      anim.oncancel = onTransitionDone;
+    } else {
+      // Fallback untuk reduced motion (cross-fade 100ms)
+      performStateChange();
+      onTransitionDone();
+    }
+  };
+
   const handleNavigateToPerpanjang = (unitId) => {
     setLaporanInitialAction({ type: 'perpanjang', unitId });
-    setActiveTab("laporan");
+    handleTabChange("laporan");
   };
 
   const handleNavigateToTebus = (unitId) => {
     setLaporanInitialAction({ type: 'tebus', unitId });
-    setActiveTab("laporan");
+    handleTabChange("laporan");
   };
 
   const waitingQueueCount = units.filter(u => u.statusCharger === 'WAITING').length;
@@ -182,12 +271,16 @@ export default function App() {
             />
 
             {/* Main Scrollable View Area with Safe Area Padding */}
-            <main className="flex-1 px-4 pt-3 pb-24 overflow-y-auto">
+            <main
+              ref={mainRef}
+              style={{ viewTransitionName: 'main-content' }}
+              className="flex-1 px-4 pt-3 pb-24 overflow-y-auto"
+            >
               {activeTab === 'dashboard' && (
                 <DashboardView
                   units={units}
                   onNotify={handleNotify}
-                  onSelectTab={setActiveTab}
+                  onSelectTab={handleTabChange}
                 />
               )}
 
@@ -219,10 +312,7 @@ export default function App() {
             {/* Fixed Bottom Navigation (4 Tab Bar) */}
             <BottomNav
               activeTab={activeTab}
-              onChangeTab={(tabId) => {
-                setLaporanInitialAction(null);
-                setActiveTab(tabId);
-              }}
+              onChangeTab={handleTabChange}
               queueCount={waitingQueueCount}
             />
           </>
