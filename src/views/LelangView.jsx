@@ -23,7 +23,7 @@ import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
 import { enqueueUnitForCharging, markLelangSold, updateUnitLocation } from '../services/storage';
 import { getDaysSinceLastCharge } from '../services/chargerQueue';
-import { getStaggerStyle, triggerHaptic } from '../services/animationHelpers';
+import { triggerHaptic } from '../services/animationHelpers';
 
 export default function LelangView({ units, onNotify }) {
   const [selectedUnitForSale, setSelectedUnitForSale] = useState(null);
@@ -37,14 +37,6 @@ export default function LelangView({ units, onNotify }) {
   const [highlightedUnitId, setHighlightedUnitId] = useState(null);
   const [chargingSuccessUnitId, setChargingSuccessUnitId] = useState(null);
   const [removingUnitId, setRemovingUnitId] = useState(null);
-  const [isStaggerActive, setIsStaggerActive] = useState(true);
-
-  // Stagger hanya aktif saat awal render atau saat tab/filter/sort berubah
-  React.useEffect(() => {
-    setIsStaggerActive(true);
-    const timer = setTimeout(() => setIsStaggerActive(false), 500);
-    return () => clearTimeout(timer);
-  }, [activeSubTab, filterType, sortBy, searchQuery]);
 
   const lelangUnits = units.filter(u => u.statusBarang === 'LELANG');
   const soldUnits = units.filter(u => u.statusBarang === 'TERJUAL_LELANG');
@@ -160,8 +152,8 @@ export default function LelangView({ units, onNotify }) {
         </p>
       </div>
 
-      {/* 2. STICKY SEGMENTED TABS & SEARCH BAR */}
-      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2 pb-2 bg-[#F0F9FF]/95 backdrop-blur-md border-b border-sky-100/80 shadow-xs space-y-2">
+      {/* 2. STICKY SEGMENTED TABS & SEARCH BAR (Solid Background, Bebas Blur GPU iOS) */}
+      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2 pb-2 bg-[#F0F9FF] border-b border-sky-100 shadow-xs space-y-2">
         {/* Segmented Tabs: Siap Lelang vs Terjual */}
         <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-200/80 rounded-2xl">
           <button
@@ -282,11 +274,8 @@ export default function LelangView({ units, onNotify }) {
               return (
                 <div
                   key={unit.id}
-                  style={getStaggerStyle(index, isStaggerActive)}
-                  className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs pressable-card ${
-                    removingUnitId === unit.id ? 'opacity-0 scale-95 transition-all duration-200 pointer-events-none' : ''
-                  } ${
-                    index < 6 && isStaggerActive ? 'animate-card-enter' : ''
+                  className={`bg-white rounded-2xl p-3.5 border transition-colors shadow-xs pressable-card unit-card-optimized ${
+                    removingUnitId === unit.id ? 'opacity-0 scale-95 transition-opacity duration-200 pointer-events-none' : ''
                   } ${
                     highlightedUnitId === unit.id ? 'animate-highlight border-purple-400 ring-2 ring-purple-200' : ''
                   } ${
@@ -449,7 +438,7 @@ export default function LelangView({ units, onNotify }) {
               return (
                 <div
                   key={unit.id}
-                  className="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-xs flex items-center justify-between gap-3"
+                  className="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-xs flex items-center justify-between gap-3 unit-card-optimized"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -483,7 +472,7 @@ export default function LelangView({ units, onNotify }) {
 
       {/* 4. BOTTOM SHEET KONFIRMASI CATAT TERJUAL LELANG */}
       {selectedUnitForSale && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200">
             {/* Drag Handle Indicator */}
             <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />

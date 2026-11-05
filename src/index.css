@@ -276,70 +276,17 @@ input, textarea, [contenteditable="true"] {
 }
 
 /* =========================================================================
-   2. VIEW TRANSITIONS API CSS (Main Content)
+   2. VIEW TRANSITIONS & OPTIMASI INSTAN (Bebas Ghosting iOS Safari)
    ========================================================================= */
 ::view-transition-old(main-content),
 ::view-transition-new(main-content) {
-  animation-duration: var(--dur-base);
-  animation-timing-function: var(--ease-out);
+  animation: none !important;
 }
 
-html[data-transition-direction="forward"]::view-transition-old(main-content) {
-  animation: viewSlideOutLeft var(--dur-base) var(--ease-out) both;
-}
-html[data-transition-direction="forward"]::view-transition-new(main-content) {
-  animation: viewSlideInRight var(--dur-base) var(--ease-out) both;
-}
-
-html[data-transition-direction="backward"]::view-transition-old(main-content) {
-  animation: viewSlideOutRight var(--dur-base) var(--ease-out) both;
-}
-html[data-transition-direction="backward"]::view-transition-new(main-content) {
-  animation: viewSlideInLeft var(--dur-base) var(--ease-out) both;
-}
-
-@keyframes viewSlideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes viewSlideOutLeft {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-}
-
-@keyframes viewSlideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes viewSlideOutRight {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(20px);
-  }
+/* Optimasi Kartu Unit untuk WebKit iPhone 13 (Zero Jitter, Off-screen culling) */
+.unit-card-optimized {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 178px;
 }
 
 /* =========================================================================

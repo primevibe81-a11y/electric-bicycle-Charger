@@ -30,8 +30,7 @@ import AuditBatteryModal from '../components/AuditBatteryModal';
 import ExcelSyncModal from '../components/ExcelSyncModal';
 import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
 import BottomSheet from '../components/BottomSheet';
-import CountUp from '../components/CountUp';
-import { getStaggerStyle, triggerHaptic } from '../services/animationHelpers';
+import { triggerHaptic } from '../services/animationHelpers';
 
 /**
  * Filter cerdas untuk mendeteksi apakah sebuah unit benar-benar memiliki
@@ -54,14 +53,12 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
   const [isStockOpnameSort, setIsStockOpnameSort] = useState(false);
   const [editLokasiUnit, setEditLokasiUnit] = useState(null);
   const [highlightedUnitId, setHighlightedUnitId] = useState(null);
-  const [isStaggerActive, setIsStaggerActive] = useState(true);
+  const [displayLimit, setDisplayLimit] = useState(20);
 
-  // Stagger hanya aktif saat awal render atau filter berubah
+  // Reset limit saat filter berubah
   useEffect(() => {
-    setIsStaggerActive(true);
-    const timer = setTimeout(() => setIsStaggerActive(false), 500);
-    return () => clearTimeout(timer);
-  }, [statusFilter, searchQuery]);
+    setDisplayLimit(20);
+  }, [statusFilter, searchQuery, isStockOpnameSort]);
 
   // Quick Action Modal states
   const [auditUnit, setAuditUnit] = useState(null);
@@ -156,6 +153,11 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
 
     return result;
   }, [units, statusFilter, searchQuery]);
+
+  // Batasi render awal (misal 20 kartu) untuk menjamin 60fps di WebKit iOS Safari
+  const displayedUnits = useMemo(() => {
+    return filteredUnits.slice(0, displayLimit);
+  }, [filteredUnits, displayLimit]);
 
   // Handle Export Excel
   const handleExportExcel = () => {
@@ -306,7 +308,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             Fisik Gudang
           </div>
           <div className="text-sm font-black text-slate-900 leading-tight">
-            <CountUp to={stats.aktif + stats.lelang} /> <span className="text-[10px] font-normal text-slate-500">Unit</span>
+            <span className="tabular-nums">{stats.aktif + stats.lelang}</span> <span className="text-[10px] font-normal text-slate-500">Unit</span>
           </div>
         </button>
 
@@ -316,7 +318,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             triggerHaptic('light');
             setStatusFilter('DITEBUS');
           }}
-          className={`pressable p-2 rounded-2xl border text-center transition-all ${
+          className={`pressable p-2 rounded-2xl border text-center transition-colors ${
             statusFilter === 'DITEBUS'
               ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-400/20 shadow-xs'
               : 'bg-white border-slate-200/80 hover:bg-slate-50'
@@ -327,7 +329,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             Ditebus
           </div>
           <div className="text-sm font-black text-blue-700 leading-tight">
-            <CountUp to={stats.ditebus} /> <span className="text-[10px] font-normal text-slate-500">Unit</span>
+            <span className="tabular-nums">{stats.ditebus}</span> <span className="text-[10px] font-normal text-slate-500">Unit</span>
           </div>
         </button>
 
@@ -337,7 +339,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             triggerHaptic('light');
             setStatusFilter('BERMASALAH');
           }}
-          className={`pressable p-2 rounded-2xl border text-center transition-all ${
+          className={`pressable p-2 rounded-2xl border text-center transition-colors ${
             statusFilter === 'BERMASALAH'
               ? 'bg-rose-100/80 border-rose-300 ring-2 ring-rose-400/30 shadow-xs'
               : 'bg-rose-50/60 border-rose-200 hover:bg-rose-100/50'
@@ -348,13 +350,13 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             Bermasalah
           </div>
           <div className="text-sm font-black text-rose-600 leading-tight">
-            <CountUp to={stats.bermasalah} /> <span className="text-[10px] font-normal text-rose-400">Unit</span>
+            <span className="tabular-nums">{stats.bermasalah}</span> <span className="text-[10px] font-normal text-rose-400">Unit</span>
           </div>
         </button>
       </div>
 
-      {/* 3. STICKY CONTROLS (Collapsing Header Effect: Search Bar + Tombol Ekspor + Tab Filter dengan Fade) */}
-      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-[#F0F9FF]/95 backdrop-blur-md border-b border-sky-100/70 shadow-xs space-y-2">
+      {/* 3. STICKY CONTROLS (Solid Background, Bebas Blur GPU iOS) */}
+      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-[#F0F9FF] border-b border-sky-100 shadow-xs space-y-2">
         {/* Row 1: Search Bar + Single "Ekspor" Button */}
         <div className="flex items-center gap-2">
           {/* Kolom Pencarian (radius 12px, shadow-none, border jelas) */}
@@ -438,28 +440,26 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             </p>
           </div>
         ) : (
-          filteredUnits.map((unit, index) => {
-            const daysSinceCharge = getDaysSinceLastCharge(
-              unit.lastChargedAt,
-              unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null
-            );
-            const hasHistory = Array.isArray(unit.riwayatKodeGadai) && unit.riwayatKodeGadai.length > 0;
-            const isExpanded = expandedUnitId === unit.id;
-            const isDitebus = unit.statusBarang === 'DITEBUS';
-            const isDefect = isRealBatteryOrPhysicalDefect(unit);
+          <>
+            {displayedUnits.map((unit, index) => {
+              const daysSinceCharge = getDaysSinceLastCharge(
+                unit.lastChargedAt,
+                unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null
+              );
+              const hasHistory = Array.isArray(unit.riwayatKodeGadai) && unit.riwayatKodeGadai.length > 0;
+              const isExpanded = expandedUnitId === unit.id;
+              const isDitebus = unit.statusBarang === 'DITEBUS';
+              const isDefect = isRealBatteryOrPhysicalDefect(unit);
 
-            return (
-              <div
-                key={unit.id}
-                style={getStaggerStyle(index, isStaggerActive)}
-                className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs pressable-card ${
-                  index < 6 && isStaggerActive ? 'animate-card-enter' : ''
-                } ${
-                  highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
-                } ${
-                  isDefect ? 'border-amber-300 ring-1 ring-amber-300/30' : 'border-slate-200/80'
-                }`}
-              >
+              return (
+                <div
+                  key={unit.id}
+                  className={`bg-white rounded-2xl p-3.5 border transition-colors shadow-xs pressable-card unit-card-optimized ${
+                    highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
+                  } ${
+                    isDefect ? 'border-amber-300 ring-1 ring-amber-300/30' : 'border-slate-200/80'
+                  }`}
+                >
                 {/* Header Card: Pawn Ticket, Status & History Badge (Pills) */}
                 <div className="flex items-center justify-between gap-1.5 pb-2 border-b border-slate-100">
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -640,9 +640,21 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                 )}
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+
+          {/* Tombol Tampilkan Lebih Banyak untuk Membatasi Beban DOM iOS Safari */}
+          {filteredUnits.length > displayLimit && (
+            <button
+              type="button"
+              onClick={() => setDisplayLimit(prev => prev + 25)}
+              className="w-full h-11 bg-white hover:bg-sky-50 text-sky-700 font-bold text-xs rounded-xl border border-sky-200 shadow-2xs pressable transition-colors flex items-center justify-center gap-1.5"
+            >
+              Tampilkan Lebih Banyak ({displayLimit} dari {filteredUnits.length} Unit)
+            </button>
+          )}
+        </>
+      )}
+    </div>
 
       {/* 5. BOTTOM SHEET EKSPOR LAPORAN (Pengganti Kartu Ekspor Besar) */}
       <BottomSheet
@@ -749,7 +761,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
 
       {/* MODAL QUICK PERPANJANG */}
       {perpanjangUnit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/75 animate-in fade-in duration-150">
           <div className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl border border-sky-100 space-y-3.5">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -825,7 +837,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
 
       {/* MODAL QUICK TEBUS */}
       {tebusUnit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/75 animate-in fade-in duration-150">
           <div className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl border border-sky-100 space-y-3.5">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">

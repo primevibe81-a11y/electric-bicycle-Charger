@@ -82,7 +82,7 @@ export default function Header({ user, onLogout, onNotify }) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-sky-100 px-4 py-2.5 shadow-xs">
+      <header className="sticky top-0 z-30 bg-white border-b border-sky-100 px-4 py-2.5 shadow-xs">
         <div className="flex items-center justify-between gap-2">
           {/* Sisi Kiri: Logo + Nama Aplikasi + Peran */}
           <div className="flex items-center gap-2 min-w-0">
@@ -142,7 +142,7 @@ export default function Header({ user, onLogout, onNotify }) {
 
       {/* Profile & Settings Bottom Sheet */}
       {isProfileOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 animate-in fade-in duration-150">
           <div className="w-full max-w-[430px] bg-white rounded-t-3xl p-5 shadow-2xl border-t border-slate-100 space-y-4 animate-in slide-in-from-bottom duration-200">
             {/* Sheet Handle */}
             <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>

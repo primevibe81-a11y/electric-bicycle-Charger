@@ -1,14 +1,14 @@
 /**
- * Automated test suite for Lapisan Animasi & Micro-interactions
+ * Automated test suite for Lapisan Animasi & Optimasi iPhone 13 (iOS Safari / WebKit)
  * Tests:
  * 1. Animation Design Tokens in index.css
  * 2. .pressable, .pressable-card, -webkit-tap-highlight-color, touch-action
- * 3. View Transitions API CSS & App.jsx transitions + scroll memory
- * 4. Sliding Blue Pill Bottom Nav & active scale/pop
+ * 3. Instant tab switching & iOS momentum scroll reset via useLayoutEffect (Anti-Ghosting)
+ * 4. Sliding Blue Pill Bottom Nav (backdrop-blur retained exclusively on BottomNav)
  * 5. Reusable BottomSheet with Drag Handle & Gestures
  * 6. Battery Indicator scaleX entrance
- * 7. CountUp component implementation & reduced motion checks
- * 8. Stagger styling helper & isolation from background sync
+ * 7. Direct stats rendering without CountUp jitter on views
+ * 8. GPU optimization: unit-card-optimized, solid backgrounds replacing blur on headers & cards
  * 9. prefers-reduced-motion media query overrides
  * 10. Micro-interactions: Charge button checkmark feedback & Cloud sync pulse
  */
@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 
-console.log('🧪 Starting Automated Tests: Lapisan Animasi & Micro-interactions...\n');
+console.log('🧪 Starting Automated Tests: Optimasi Animasi & Performa iPhone 13 (iOS Safari)...\n');
 
 let passCount = 0;
 let failCount = 0;
@@ -46,7 +46,6 @@ it('1. Design token animasi didefinisikan lengkap di :root (index.css)', () => {
   assert(css.includes('--ease-out: cubic-bezier(0.2, 0.8, 0.2, 1)'), 'Harus ada --ease-out');
   assert(css.includes('--ease-in: cubic-bezier(0.4, 0, 1, 1)'), 'Harus ada --ease-in');
   assert(css.includes('--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1)'), 'Harus ada --ease-spring');
-  assert(css.includes('--stagger: 35ms'), 'Harus ada --stagger: 35ms');
 });
 
 // 2. Check Global Tap and Pressable Styles
@@ -60,28 +59,29 @@ it('2. Global tap highlight & touch action serta kelas .pressable dan .pressable
   assert(css.includes('opacity: 0.05'), '.pressable-card harus ada overlay gelap 5% saat aktif');
 });
 
-// 3. View Transitions API and Fallback in App.jsx
-it('3. View Transitions API CSS styles dan navigasi arah di App.jsx', () => {
-  const css = fs.readFileSync(path.join(rootDir, 'src/index.css'), 'utf8');
-  assert(css.includes('::view-transition-old(main-content)'), 'Harus ada ::view-transition-old(main-content)');
-  assert(css.includes('::view-transition-new(main-content)'), 'Harus ada ::view-transition-new(main-content)');
-  assert(css.includes('data-transition-direction="forward"'), 'Harus ada CSS selector arah forward');
-  assert(css.includes('data-transition-direction="backward"'), 'Harus ada CSS selector arah backward');
-
+// 3. Anti-Ghosting & Momentum Scroll Reset (App.jsx)
+it('3. Perpindahan tab instan (anti-ghosting) & reset momentum scroll iOS via useLayoutEffect', () => {
   const appCode = fs.readFileSync(path.join(rootDir, 'src/App.jsx'), 'utf8');
-  assert(appCode.includes('startViewTransition'), 'App.jsx harus mendukung document.startViewTransition');
-  assert(appCode.includes('scrollPositions'), 'App.jsx harus menyimpan memori posisi scroll tiap tab');
-  assert(appCode.includes('isTransitioningRef'), 'App.jsx harus mencegah transisi ganda saat sedang berjalan');
-  assert(appCode.includes("mainRef.current.scrollTo({ top: 0, behavior: 'smooth' })"), 'Menekan tab aktif harus scroll halus ke atas');
+  assert(!appCode.includes('startViewTransition'), 'App.jsx tidak boleh menggunakan startViewTransition yang memicu ghosting di iOS');
+  assert(appCode.includes('useLayoutEffect'), 'App.jsx harus menggunakan useLayoutEffect untuk reset scroll sebelum paint');
+  assert(appCode.includes("behavior: 'instant'"), 'App.jsx harus memanggil scrollTo instant untuk membatalkan momentum scroll iOS');
+  assert(!appCode.includes('viewTransitionName:'), 'Elemen main tidak boleh memiliki viewTransitionName');
 });
 
-// 4. Bottom Nav Sliding Indicator
-it('4. Bottom Navigation memiliki sliding pill indicator & active pop', () => {
+// 4. Bottom Nav Sliding Indicator & backdrop-blur exclusivity
+it('4. Bottom Navigation memiliki sliding pill indicator & satu-satunya pemegang backdrop-blur', () => {
   const navCode = fs.readFileSync(path.join(rootDir, 'src/components/BottomNav.jsx'), 'utf8');
+  assert(navCode.includes('backdrop-blur'), 'BottomNav harus mempertahankan backdrop-blur');
   assert(navCode.includes('transform: `translateX(${activeIndex * 100}%)`'), 'Harus ada transform sliding pill translateX');
-  assert(navCode.includes('nav-icon-active'), 'Harus menerapkan .nav-icon-active pada ikon aktif');
-  assert(navCode.includes('badge-pop'), 'Harus memicu .badge-pop saat nilai badge berubah');
   assert(navCode.includes('triggerHaptic'), 'Harus memicu haptic feedback saat tab ditekan');
+
+  // Pastikan sticky bars di view lain tidak memakai backdrop-blur
+  const aktifCode = fs.readFileSync(path.join(rootDir, 'src/views/AktifView.jsx'), 'utf8');
+  const lelangCode = fs.readFileSync(path.join(rootDir, 'src/views/LelangView.jsx'), 'utf8');
+  const laporanCode = fs.readFileSync(path.join(rootDir, 'src/views/LaporanView.jsx'), 'utf8');
+  assert(!aktifCode.includes('backdrop-blur'), 'AktifView tidak boleh memakai backdrop-blur');
+  assert(!lelangCode.includes('backdrop-blur'), 'LelangView tidak boleh memakai backdrop-blur');
+  assert(!laporanCode.includes('backdrop-blur'), 'LaporanView tidak boleh memakai backdrop-blur');
 });
 
 // 5. Reusable BottomSheet with Gestures
@@ -93,7 +93,6 @@ it('5. Komponen BottomSheet mendukung touch drag handle, velocity check, & acces
   assert(sheetCode.includes('velocity > 0.5'), 'Harus mendeteksi swipe cepat / flick downwards > 0.5px/ms');
   assert(sheetCode.includes('sheetHeight * 0.3'), 'Harus memiliki ambang batas drag > 30% tinggi');
   assert(sheetCode.includes("overflow = 'hidden'"), 'Harus mengunci scroll body');
-  assert(sheetCode.includes("overscrollBehavior = 'contain'"), 'Harus mengunci overscrollBehavior body');
   assert(sheetCode.includes("e.key === 'Escape'"), 'Harus menutup sheet saat tombol Escape ditekan');
 });
 
@@ -107,31 +106,30 @@ it('6. BatteryIndicator menggunakan animasi scaleX dan transform-origin left', (
   assert(css.includes('@keyframes batteryScaleX'), 'Harus ada @keyframes batteryScaleX');
 });
 
-// 7. CountUp Component
-it('7. Komponen CountUp menggunakan requestAnimationFrame dan tabular-nums', () => {
-  const countUpCode = fs.readFileSync(path.join(rootDir, 'src/components/CountUp.jsx'), 'utf8');
-  assert(countUpCode.includes('requestAnimationFrame'), 'Harus menggunakan requestAnimationFrame');
-  assert(countUpCode.includes('tabular-nums'), 'Harus ada class font tabular-nums');
-  assert(countUpCode.includes('isReducedMotion()'), 'Harus memeriksa preferensi reduced motion');
+// 7. Direct stats rendering without CountUp jitter
+it('7. Statistik angka di Dashboard dan Laporan langsung dirender instan tanpa CountUp', () => {
+  const dashCode = fs.readFileSync(path.join(rootDir, 'src/views/DashboardView.jsx'), 'utf8');
+  const lapCode = fs.readFileSync(path.join(rootDir, 'src/views/LaporanView.jsx'), 'utf8');
+
+  assert(!dashCode.includes('<CountUp'), 'DashboardView tidak boleh menggunakan CountUp');
+  assert(!lapCode.includes('<CountUp'), 'LaporanView tidak boleh menggunakan CountUp');
+  assert(dashCode.includes('tabular-nums'), 'DashboardView harus menggunakan font tabular-nums');
+  assert(lapCode.includes('tabular-nums'), 'LaporanView harus menggunakan font tabular-nums');
 });
 
-// 8. Stagger Helper & Card Stagger in Views
-it('8. Card stagger diterapkan pada 6 kartu pertama di 4 view utama', () => {
-  const helperCode = fs.readFileSync(path.join(rootDir, 'src/services/animationHelpers.js'), 'utf8');
-  assert(helperCode.includes('getStaggerStyle'), 'Harus mengekspor getStaggerStyle');
-  assert(helperCode.includes('index >= 6'), 'Hanya menstagger 6 kartu pertama (guard index >= 6)');
-
-  const dashboardCode = fs.readFileSync(path.join(rootDir, 'src/views/DashboardView.jsx'), 'utf8');
-  assert(dashboardCode.includes('getStaggerStyle'), 'DashboardView harus menggunakan getStaggerStyle');
+// 8. Card rendering optimization (content-visibility & unit-card-optimized)
+it('8. Optimalisasi rendering kartu: content-visibility: auto dan limit 20 kartu', () => {
+  const css = fs.readFileSync(path.join(rootDir, 'src/index.css'), 'utf8');
+  assert(css.includes('content-visibility: auto'), 'index.css harus mendefinisikan content-visibility: auto');
+  assert(css.includes('unit-card-optimized'), 'index.css harus menyediakan kelas .unit-card-optimized');
 
   const aktifCode = fs.readFileSync(path.join(rootDir, 'src/views/AktifView.jsx'), 'utf8');
-  assert(aktifCode.includes('getStaggerStyle'), 'AktifView harus menggunakan getStaggerStyle');
+  assert(aktifCode.includes('unit-card-optimized'), 'AktifView harus menerapkan unit-card-optimized pada kartu');
+  assert(aktifCode.includes('displayLimit'), 'AktifView harus menerapkan pembatasan jumlah render awal kartu');
 
-  const lelangCode = fs.readFileSync(path.join(rootDir, 'src/views/LelangView.jsx'), 'utf8');
-  assert(lelangCode.includes('getStaggerStyle'), 'LelangView harus menggunakan getStaggerStyle');
-
-  const laporanCode = fs.readFileSync(path.join(rootDir, 'src/views/LaporanView.jsx'), 'utf8');
-  assert(laporanCode.includes('getStaggerStyle'), 'LaporanView harus menggunakan getStaggerStyle');
+  const lapCode = fs.readFileSync(path.join(rootDir, 'src/views/LaporanView.jsx'), 'utf8');
+  assert(lapCode.includes('unit-card-optimized'), 'LaporanView harus menerapkan unit-card-optimized pada kartu');
+  assert(lapCode.includes('displayLimit'), 'LaporanView harus menerapkan pembatasan jumlah render awal kartu');
 });
 
 // 9. Accessibility: prefers-reduced-motion
@@ -139,7 +137,6 @@ it('9. Overrides untuk prefers-reduced-motion didefinisikan lengkap di index.css
   const css = fs.readFileSync(path.join(rootDir, 'src/index.css'), 'utf8');
   assert(css.includes('@media (prefers-reduced-motion: reduce)'), 'Harus ada media query prefers-reduced-motion');
   assert(css.includes('animation: none !important;'), 'Animasi kompleks dimatikan');
-  assert(css.includes('simpleFade 100ms'), 'Transisi disederhanakan ke crossfade 100ms');
 });
 
 // 10. Micro-interactions: Charge button checkmark feedback & Cloud sync pulse

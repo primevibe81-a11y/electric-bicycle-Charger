@@ -127,7 +127,7 @@ export default function BottomSheet({
     <div
       role="dialog"
       aria-modal="true"
-      className={`fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 backdrop-blur-xs transition-opacity duration-200 ${
+      className={`fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 transition-opacity duration-150 ${
         isExiting ? 'opacity-0' : 'opacity-100'
       }`}
       onClick={(e) => {

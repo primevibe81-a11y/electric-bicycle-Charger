@@ -55,8 +55,7 @@ import {
 import BatteryIndicator from '../components/BatteryIndicator';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
-import CountUp from '../components/CountUp';
-import { getStaggerStyle, triggerHaptic } from '../services/animationHelpers';
+import { triggerHaptic } from '../services/animationHelpers';
 
 export default function DashboardView({ units, onNotify, onSelectTab }) {
   const [nowTick, setNowTick] = useState(Date.now());
@@ -77,14 +76,6 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
   const [highlightedUnitId, setHighlightedUnitId] = useState(null);
   const [finishConfirmUnit, setFinishConfirmUnit] = useState(null);
   const [lastPluggedSlotId, setLastPluggedSlotId] = useState(null);
-  const [isStaggerActive, setIsStaggerActive] = useState(true);
-
-  // Stagger hanya aktif saat awal render atau saat query pencarian berubah (bukan saat sinkronisasi background)
-  useEffect(() => {
-    setIsStaggerActive(true);
-    const timer = setTimeout(() => setIsStaggerActive(false), 500);
-    return () => clearTimeout(timer);
-  }, [queueSearchQuery]);
 
   // Timer update interval (1 second)
   useEffect(() => {
@@ -316,7 +307,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         {/* Card 1: Butuh Charge */}
         <div
           onClick={() => onSelectTab && onSelectTab('aktif')}
-          className="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-xs hover:border-sky-300 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between pressable-card"
+          className="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-xs hover:border-sky-300 transition-colors cursor-pointer max-h-[72px] flex flex-col justify-between pressable-card"
           title="Lihat unit yang butuh di-charge"
         >
           <div className="flex items-center justify-between text-slate-500">
@@ -324,7 +315,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
             <BatteryCharging className="w-3.5 h-3.5 text-sky-600 shrink-0" />
           </div>
           <div className="flex items-baseline gap-1">
-            <CountUp to={needChargeUnits.length} className="text-lg font-bold text-slate-900 leading-none" />
+            <span className="text-lg font-bold text-slate-900 leading-none tabular-nums">{needChargeUnits.length}</span>
             <span className="text-[10px] text-slate-400">unit</span>
           </div>
         </div>
@@ -332,7 +323,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         {/* Card 2: Kritis */}
         <div
           onClick={() => onSelectTab && onSelectTab('aktif')}
-          className="bg-rose-50/70 rounded-2xl p-2.5 border border-rose-200 shadow-xs hover:border-rose-400 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between pressable-card"
+          className="bg-rose-50/70 rounded-2xl p-2.5 border border-rose-200 shadow-xs hover:border-rose-400 transition-colors cursor-pointer max-h-[72px] flex flex-col justify-between pressable-card"
           title="Unit kritis belum di-charge ≥15 hari"
         >
           <div className="flex items-center justify-between text-rose-700">
@@ -340,7 +331,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
             <AlertOctagon className="w-3.5 h-3.5 text-rose-600 shrink-0" />
           </div>
           <div className="flex items-baseline gap-1">
-            <CountUp to={overdueUnits.length} className="text-lg font-bold text-rose-700 leading-none" />
+            <span className="text-lg font-bold text-rose-700 leading-none tabular-nums">{overdueUnits.length}</span>
             <span className="text-[10px] text-rose-500">unit</span>
           </div>
         </div>
@@ -351,7 +342,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
             const el = document.getElementById('antrian-prioritas-section');
             if (el) el.scrollIntoView({ behavior: 'smooth' });
           }}
-          className="bg-amber-50/70 rounded-2xl p-2.5 border border-amber-200 shadow-xs hover:border-amber-400 transition-all cursor-pointer max-h-[72px] flex flex-col justify-between pressable-card"
+          className="bg-amber-50/70 rounded-2xl p-2.5 border border-amber-200 shadow-xs hover:border-amber-400 transition-colors cursor-pointer max-h-[72px] flex flex-col justify-between pressable-card"
           title="Unit dalam antrian charger"
         >
           <div className="flex items-center justify-between text-amber-800">
@@ -359,7 +350,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
             <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
           </div>
           <div className="flex items-baseline gap-1">
-            <CountUp to={sortedWaiting.length} className="text-lg font-bold text-amber-800 leading-none" />
+            <span className="text-lg font-bold text-amber-800 leading-none tabular-nums">{sortedWaiting.length}</span>
             <span className="text-[10px] text-amber-600">unit</span>
           </div>
         </div>
@@ -616,10 +607,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
               return (
                 <div
                   key={unit.id}
-                  style={getStaggerStyle(index, isStaggerActive)}
-                  className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs pressable-card ${
-                    index < 6 && isStaggerActive ? 'animate-card-enter' : ''
-                  } ${
+                  className={`bg-white rounded-2xl p-3.5 border transition-colors shadow-xs pressable-card unit-card-optimized ${
                     highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
                   } ${
                     isOverdue
@@ -727,7 +715,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
 
       {/* 5. BOTTOM SHEET PENGATURAN SLOT CHARGER */}
       {showSlotSettings && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200">
             <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
 
@@ -831,7 +819,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
 
       {/* 6. MODAL DETAIL / PREVIEW "PANTAU DI LAYAR KUNCI" (LIGHT THEME, FRIENDLY COPY) */}
       {showLiveMonitorDetail && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto">
             <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
 
@@ -919,7 +907,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
 
       {/* 7. MODAL PILIH DURASI CHARGER SEBELUM MULAI */}
       {showDirectStartModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200">
             <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
 
@@ -1026,7 +1014,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
 
       {/* 8. MODAL TAMBAH KE ANTRIAN CHARGER */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto">
             <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
 
@@ -1135,7 +1123,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
       )}
       {/* 9. BOTTOM SHEET KONFIRMASI PENGEMBALIAN LETAK SETELAH CHARGER */}
       {finishConfirmUnit && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3.5 animate-in slide-in-from-bottom duration-200">
             <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
 

@@ -31,7 +31,7 @@ export default function PwaUpdateNotification({ updateInfo, onClose }) {
 
   return (
     <div className="fixed top-3 left-3 right-3 z-[60] animate-in slide-in-from-top-4 duration-300">
-      <div className="max-w-[400px] mx-auto bg-gradient-to-br from-slate-900 via-slate-850 to-emerald-950/90 text-white rounded-3xl p-4 shadow-2xl border-2 border-emerald-500/60 backdrop-blur-md relative overflow-hidden">
+      <div className="max-w-[400px] mx-auto bg-gradient-to-br from-slate-900 via-slate-850 to-emerald-950 text-white rounded-3xl p-4 shadow-2xl border-2 border-emerald-500/60 relative overflow-hidden">
         {/* Glow accent */}
         <div className="absolute -top-10 -right-10 w-28 h-28 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
 

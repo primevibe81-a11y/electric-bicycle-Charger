@@ -39,17 +39,10 @@ export function triggerHaptic(type = 'light') {
 
 /**
  * Returns stagger animation style for unit cards
- * Only animates the first 6 cards with 35ms stagger interval
- * Returns empty object if reduced motion is active or index >= 6
+ * Dinonaktifkan untuk optimalisasi performa 60fps & anti-jitter WebKit Safari iPhone 13
  */
-export function getStaggerStyle(index, isStaggerActive = true) {
-  if (!isStaggerActive || index >= 6 || isReducedMotion()) {
-    return {};
-  }
-  return {
-    animation: `cardEntrance var(--dur-base) var(--ease-out) both`,
-    animationDelay: `${index * 35}ms`
-  };
+export function getStaggerStyle() {
+  return {};
 }
 
 /**

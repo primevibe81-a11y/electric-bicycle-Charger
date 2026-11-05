@@ -154,7 +154,7 @@ export default function ExcelSyncModal({ isOpen, onClose, units = [], onNotify }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/75 animate-in fade-in duration-150">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-sky-100 flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header Modal */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-sky-50 to-white">

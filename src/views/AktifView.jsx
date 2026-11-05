@@ -25,7 +25,7 @@ import BatteryIndicator from '../components/BatteryIndicator';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import AuditBatteryModal from '../components/AuditBatteryModal';
 import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
-import { getStaggerStyle, triggerHaptic } from '../services/animationHelpers';
+import { triggerHaptic } from '../services/animationHelpers';
 import {
   createGadaiUnit,
   enqueueUnitForCharging,
@@ -50,13 +50,11 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
   const [highlightedUnitId, setHighlightedUnitId] = useState(null);
   const [chargingSuccessUnitId, setChargingSuccessUnitId] = useState(null);
   const [removingUnitId, setRemovingUnitId] = useState(null);
-  const [isStaggerActive, setIsStaggerActive] = useState(true);
+  const [displayLimit, setDisplayLimit] = useState(20);
 
-  // Stagger hanya aktif saat awal render atau filter/sort berubah, bukan saat sync background
+  // Reset limit saat filter / pencarian berubah
   useEffect(() => {
-    setIsStaggerActive(true);
-    const timer = setTimeout(() => setIsStaggerActive(false), 500);
-    return () => clearTimeout(timer);
+    setDisplayLimit(20);
   }, [filterType, sortBy, searchQuery]);
 
   // References for horizontal chip scrolling
@@ -140,6 +138,11 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
       return locA.localeCompare(locB);
     });
   }
+
+  // Batasi render awal (misal 20 kartu) untuk menjamin 60fps di WebKit iOS Safari
+  const displayedUnits = useMemo(() => {
+    return processedUnits.slice(0, displayLimit);
+  }, [processedUnits, displayLimit]);
 
   const handleToggleSort = () => {
     if (sortBy === 'DEFAULT') {
@@ -453,8 +456,8 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
         </div>
       )}
 
-      {/* 3. STICKY FILTER & SEARCH BAR */}
-      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-[#F0F9FF]/95 backdrop-blur-md border-b border-sky-100/80 shadow-xs space-y-2">
+      {/* 3. STICKY FILTER & SEARCH BAR (Solid Background, Bebas Blur GPU iOS) */}
+      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-[#F0F9FF] border-b border-sky-100 shadow-xs space-y-2">
         {/* Row 1: Search Input (flex-1) + Sort Button (44x44px) */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
@@ -571,35 +574,33 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               : "Belum ada unit sepeda aktif terdaftar."}
           </div>
         ) : (
-          processedUnits.map((unit, index) => {
-            const isCharging = unit.statusCharger === 'CHARGING';
-            const isWaiting = unit.statusCharger === 'WAITING';
-            const fallbackMasuk = unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
-            const daysAgo = getDaysSinceLastCharge(unit.lastChargedAt, fallbackMasuk);
-            const isCriticalOverdue = daysAgo >= 15;
+          <>
+            {displayedUnits.map((unit, index) => {
+              const isCharging = unit.statusCharger === 'CHARGING';
+              const isWaiting = unit.statusCharger === 'WAITING';
+              const fallbackMasuk = unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
+              const daysAgo = getDaysSinceLastCharge(unit.lastChargedAt, fallbackMasuk);
+              const isCriticalOverdue = daysAgo >= 15;
 
-            const jatuhTempoDate = new Date(unit.jatuhTempoAt).toLocaleDateString('id-ID', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
-            });
+              const jatuhTempoDate = new Date(unit.jatuhTempoAt).toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+              });
 
-            return (
-              <div
-                key={unit.id}
-                style={getStaggerStyle(index, isStaggerActive)}
-                className={`bg-white rounded-2xl p-3.5 border transition-all shadow-xs pressable-card ${
-                  removingUnitId === unit.id ? 'opacity-0 scale-95 transition-all duration-200 pointer-events-none' : ''
-                } ${
-                  index < 6 && isStaggerActive ? 'animate-card-enter' : ''
-                } ${
-                  highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
-                } ${
-                  isCriticalOverdue
-                    ? 'border-slate-200 border-l-4 border-l-rose-500 animate-critical-pulse'
-                    : 'border-slate-200/90'
-                }`}
-              >
+              return (
+                <div
+                  key={unit.id}
+                  className={`bg-white rounded-2xl p-3.5 border transition-colors shadow-xs pressable-card unit-card-optimized ${
+                    removingUnitId === unit.id ? 'opacity-0 scale-95 transition-opacity duration-200 pointer-events-none' : ''
+                  } ${
+                    highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
+                  } ${
+                    isCriticalOverdue
+                      ? 'border-slate-200 border-l-4 border-l-rose-500 animate-critical-pulse'
+                      : 'border-slate-200/90'
+                  }`}
+                >
                 {/* BARIS 1: Nomor Akad (kiri) + Badge Baterai % (kanan) */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
@@ -755,13 +756,25 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                 </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
 
-      {/* 5. BOTTOM SHEET AKSI (⋯) */}
-      {actionSheetUnit && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+          {/* Tombol Tampilkan Lebih Banyak untuk Membatasi Beban DOM iOS Safari */}
+          {processedUnits.length > displayLimit && (
+            <button
+              type="button"
+              onClick={() => setDisplayLimit(prev => prev + 25)}
+              className="w-full h-11 bg-white hover:bg-sky-50 text-sky-700 font-bold text-xs rounded-xl border border-sky-200 shadow-2xs pressable transition-colors flex items-center justify-center gap-1.5"
+            >
+              Tampilkan Lebih Banyak ({displayLimit} dari {processedUnits.length} Unit)
+            </button>
+          )}
+        </>
+      )}
+    </div>
+
+    {/* 5. BOTTOM SHEET AKSI (⋯) */}
+    {actionSheetUnit && (
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200">
             {/* Drag Handle Indicator */}
             <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
@@ -881,7 +894,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
       {/* 6. DETAIL UNIT SHEET (DIBUKA SAAT KARTU DI-TAP) */}
       {detailUnit && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3.5 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto">
             {/* Drag Handle Indicator */}
             <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />

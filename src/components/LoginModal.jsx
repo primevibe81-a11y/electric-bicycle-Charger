@@ -33,7 +33,7 @@ export default function LoginModal({ onLoginSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60">
       <div className="w-full max-w-[370px] bg-white rounded-3xl p-6 shadow-2xl border border-sky-100 animate-in zoom-in-95 duration-200">
         <div className="text-center mb-6">
           <div className="w-14 h-14 bg-gradient-to-tr from-sky-500 to-sky-400 text-white rounded-2xl mx-auto flex items-center justify-center shadow-md shadow-sky-200 mb-3">
