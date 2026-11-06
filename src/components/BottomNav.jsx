@@ -10,8 +10,6 @@ export default function BottomNav({ activeTab, onChangeTab, queueCount = 0 }) {
     { id: 'laporan', label: 'Laporan', icon: FileSpreadsheet },
   ];
 
-  const activeIndex = Math.max(0, tabs.findIndex(t => t.id === activeTab));
-
   // Badge pop animation tracker
   const prevBadgeRef = useRef(queueCount);
   const [badgePopping, setBadgePopping] = useState(false);
@@ -31,47 +29,43 @@ export default function BottomNav({ activeTab, onChangeTab, queueCount = 0 }) {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto z-40 bg-white/95 backdrop-blur-lg border-t border-sky-100 safe-nav-bottom shadow-lg shadow-sky-900/10 select-none">
-      <div className="grid grid-cols-4 h-16 items-center px-2 relative">
-        {/* Indikator pil biru yang meluncur ke tab aktif */}
-        <div
-          aria-hidden="true"
-          className="absolute top-1 bottom-1 left-2 w-[calc((100%-16px)/4)] pointer-events-none transition-transform duration-220 ease-[cubic-bezier(0.2,0.8,0.2,1)] will-change-transform z-0 flex items-center justify-center pt-0.5"
-          style={{
-            transform: `translateX(${activeIndex * 100}%)`
-          }}
-        >
-          <div className="w-12 h-9 rounded-xl bg-sky-100/90 shadow-2xs" />
-        </div>
+    <nav
+      className="fixed bottom-[calc(env(safe-area-inset-bottom)+12px)] left-1/2 -translate-x-1/2 z-50 w-[calc(100%-28px)] max-w-[390px] h-16 rounded-full px-2 flex items-center justify-around bg-white/75 backdrop-blur-xl border border-white/70 shadow-[0_10px_30px_rgba(2,132,199,0.14)] dark:bg-slate-900/80 dark:backdrop-blur-xl dark:border-slate-700/70 dark:shadow-[0_12px_35px_rgba(0,0,0,0.65)] select-none"
+      role="navigation"
+      aria-label="Navigasi Utama"
+    >
+      {tabs.map((tab) => {
+        const IconComponent = tab.icon;
+        const isActive = activeTab === tab.id;
 
-        {/* 4 Tombol Tab Navigation Minimalis (Ikon besar, label di tab aktif) */}
-        {tabs.map((tab) => {
-          const IconComponent = tab.icon;
-          const isActive = activeTab === tab.id;
-
-          return (
-            <button
-              key={tab.id}
-              onClick={() => handleTabClick(tab.id)}
-              className="flex flex-col items-center justify-center h-14 min-h-[44px] py-1 relative z-10 pressable focus:outline-none"
-              aria-selected={isActive}
-              aria-label={tab.label}
-              title={tab.label}
+        return (
+          <button
+            key={tab.id}
+            onClick={() => handleTabClick(tab.id)}
+            className="pressable focus:outline-none flex items-center justify-center min-w-[56px] min-h-[44px]"
+            aria-selected={isActive}
+            aria-label={tab.label}
+            title={tab.label}
+          >
+            <div
+              className={`transition-all duration-200 flex flex-col items-center justify-center ${
+                isActive
+                  ? 'rounded-full bg-sky-500/15 text-sky-600 dark:bg-sky-400/20 dark:text-sky-300 px-3.5 py-1.5 shadow-2xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 px-2 py-1'
+              }`}
             >
               <div className="relative">
-                <div className="p-0.5 rounded-xl flex items-center justify-center">
-                  <IconComponent
-                    className={`transition-all ${
-                      isActive
-                        ? "w-5 h-5 stroke-[2.4] text-sky-700 nav-icon-active"
-                        : "w-5.5 h-5.5 stroke-[1.6] text-slate-400 hover:text-slate-600"
-                    }`}
-                  />
-                </div>
+                <IconComponent
+                  className={`transition-all ${
+                    isActive
+                      ? 'w-5 h-5 stroke-[2.2] text-sky-600 dark:text-sky-300'
+                      : 'w-5 h-5 stroke-[1.6] text-slate-400 dark:text-slate-400'
+                  }`}
+                />
 
                 {tab.badge && (
                   <span
-                    className={`absolute -top-1 -right-2 bg-rose-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white ${
+                    className={`absolute -top-1 -right-2.5 bg-rose-500 text-white text-[9px] font-black min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-900 ${
                       badgePopping ? 'badge-pop' : ''
                     }`}
                   >
@@ -80,16 +74,20 @@ export default function BottomNav({ activeTab, onChangeTab, queueCount = 0 }) {
                 )}
               </div>
 
-              {/* Label aktif hanya pada tab terpilih untuk menjaga kebersihan visual */}
-              {isActive && (
-                <span className="text-[10px] font-extrabold text-sky-800 leading-tight mt-0.5 tracking-tight animate-in fade-in duration-150">
-                  {tab.label}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+              {/* Label Teks selalu tampil pada SEMUA tab */}
+              <span
+                className={`text-[10px] font-medium leading-tight mt-0.5 tracking-tight ${
+                  isActive
+                    ? 'font-bold text-sky-700 dark:text-sky-200'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                {tab.label}
+              </span>
+            </div>
+          </button>
+        );
+      })}
     </nav>
   );
 }

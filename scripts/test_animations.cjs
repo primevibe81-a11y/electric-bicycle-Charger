@@ -72,7 +72,7 @@ it('3. Perpindahan tab instan (anti-ghosting) & reset momentum scroll iOS via us
 it('4. Bottom Navigation memiliki sliding pill indicator & satu-satunya pemegang backdrop-blur', () => {
   const navCode = fs.readFileSync(path.join(rootDir, 'src/components/BottomNav.jsx'), 'utf8');
   assert(navCode.includes('backdrop-blur'), 'BottomNav harus mempertahankan backdrop-blur');
-  assert(navCode.includes('transform: `translateX(${activeIndex * 100}%)`'), 'Harus ada transform sliding pill translateX');
+  assert(navCode.includes('rounded-full bg-sky-500/15') || navCode.includes('transform: `translateX(${activeIndex * 100}%)`'), 'Harus ada floating pill indicator / highlight');
   assert(navCode.includes('triggerHaptic'), 'Harus memicu haptic feedback saat tab ditekan');
 
   // Pastikan sticky bars di view lain tidak memakai backdrop-blur

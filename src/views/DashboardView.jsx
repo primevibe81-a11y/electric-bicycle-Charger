@@ -59,7 +59,7 @@ import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
 import Tooltip from '../components/Tooltip';
 import { triggerHaptic } from '../services/animationHelpers';
 
-export default function DashboardView({ units, onNotify, onSelectTab }) {
+export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAssistant }) {
   const [nowTick, setNowTick] = useState(Date.now());
   const [slotsCapacity, setSlotsCapacity] = useState(() => getChargerSlotsCapacity());
   const [showSlotSettings, setShowSlotSettings] = useState(false);
@@ -312,18 +312,46 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
 
   return (
     <div className="space-y-3 pb-8">
-      {/* 1. RINGKASAN ANGKA PALING ATAS (Ikon di atas, angka besar, tanpa kata "unit" dan label panjang) */}
+      {/* 0. SMART AI SHIFT BRIEFING BANNER (1-Tap Buka Asisten AI Gudang) */}
+      <div
+        onClick={onOpenAiAssistant}
+        className="pressable-card bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-purple-500/10 dark:from-sky-950/40 dark:via-indigo-950/30 dark:to-purple-950/30 border border-sky-200/80 dark:border-indigo-900/50 rounded-2xl p-3 flex items-center justify-between gap-2.5 shadow-2xs cursor-pointer hover:border-sky-400 dark:hover:border-indigo-700 transition-all"
+        title="Buka Asisten AI Gudang"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Sparkles className="w-4 h-4 fill-white" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-900 dark:text-white">Asisten AI Gudang</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-sky-100 dark:bg-sky-900/80 text-sky-700 dark:text-sky-300">
+                Shift Briefing
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
+              {needChargeUnits.length} butuh charge • {sortedWaiting.length} antrian • Ketuk untuk aksi cepat &amp; tanya
+            </p>
+          </div>
+        </div>
+        <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+      </div>
+
+      {/* 1. RINGKASAN ANGKA PALING ATAS (Ikon di atas, angka besar, label tegas di bawah angka) */}
       <section className="grid grid-cols-3 gap-2">
         {/* Card 1: Butuh Charge */}
         <Tooltip content="Butuh Charge: Unit baterai <60% atau ≥7 hari belum diisi daya" position="bottom" className="w-full">
           <div
             onClick={() => onSelectTab && onSelectTab('aktif')}
-            className="w-full bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-xs hover:border-sky-300 transition-colors cursor-pointer max-h-[72px] min-h-[72px] flex flex-col items-center justify-center gap-1 pressable-card"
+            className="w-full bg-white dark:bg-[#151C28] rounded-2xl p-2.5 border border-slate-200/90 dark:border-[#232F42] shadow-xs hover:border-sky-300 dark:hover:border-sky-500 transition-colors cursor-pointer max-h-[72px] min-h-[72px] flex flex-col items-center justify-center gap-0.5 pressable-card"
             title="Butuh Charge"
           >
-            <BatteryCharging className="w-5 h-5 text-sky-600" />
-            <span className="text-xl font-black text-slate-900 leading-none tabular-nums">
+            <BatteryCharging className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            <span className="text-xl font-black text-slate-900 dark:text-white leading-none tabular-nums">
               {needChargeUnits.length}
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              BUTUH CHARGE
             </span>
           </div>
         </Tooltip>
@@ -332,12 +360,15 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         <Tooltip content="Kritis ≥15 Hari: Unit kritis belum masuk antrian charge" position="bottom" className="w-full">
           <div
             onClick={() => onSelectTab && onSelectTab('aktif')}
-            className="w-full bg-rose-50/70 rounded-2xl p-2.5 border border-rose-200 shadow-xs hover:border-rose-400 transition-colors cursor-pointer max-h-[72px] min-h-[72px] flex flex-col items-center justify-center gap-1 pressable-card"
+            className="w-full bg-rose-50/70 dark:bg-rose-950/30 rounded-2xl p-2.5 border border-rose-200 dark:border-rose-900/50 shadow-xs hover:border-rose-400 dark:hover:border-rose-700 transition-colors cursor-pointer max-h-[72px] min-h-[72px] flex flex-col items-center justify-center gap-0.5 pressable-card"
             title="Kritis ≥15 Hari"
           >
-            <AlertOctagon className="w-5 h-5 text-rose-600" />
-            <span className="text-xl font-black text-rose-700 leading-none tabular-nums">
+            <AlertOctagon className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+            <span className="text-xl font-black text-rose-700 dark:text-rose-300 leading-none tabular-nums">
               {unqueuedCriticalUnits.length}
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+              KRITIS ≥15H
             </span>
           </div>
         </Tooltip>
@@ -349,38 +380,40 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
               const el = document.getElementById('antrian-prioritas-section');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="w-full bg-amber-50/70 rounded-2xl p-2.5 border border-amber-200 shadow-xs hover:border-amber-400 transition-colors cursor-pointer max-h-[72px] min-h-[72px] flex flex-col items-center justify-center gap-1 pressable-card"
+            className="w-full bg-amber-50/70 dark:bg-amber-950/30 rounded-2xl p-2.5 border border-amber-200 dark:border-amber-900/50 shadow-xs hover:border-amber-400 dark:hover:border-amber-700 transition-colors cursor-pointer max-h-[72px] min-h-[72px] flex flex-col items-center justify-center gap-0.5 pressable-card"
             title="Antrian"
           >
-            <Clock className="w-5 h-5 text-amber-600" />
-            <span className="text-xl font-black text-amber-800 leading-none tabular-nums">
+            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <span className="text-xl font-black text-amber-800 dark:text-amber-200 leading-none tabular-nums">
               {sortedWaiting.length}
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+              ANTRIAN
             </span>
           </div>
         </Tooltip>
       </section>
 
-      {/* 2. SATU PANEL RINGKAS "PANTAU DI LAYAR KUNCI" (SATU BARIS TINGGI 56PX, IKON + STATUS TITIK + TOGGLE) */}
-      <section className="bg-white rounded-2xl px-3.5 h-14 min-h-[56px] border border-slate-200/90 shadow-xs flex items-center justify-between gap-3">
+      {/* 2. PANEL "PANTAU DI LAYAR KUNCI" (TEKS JUDUL & SUBTEKS TEGAS, TANPA IKON 'I') */}
+      <section className="bg-white dark:bg-[#151C28] rounded-2xl px-3.5 h-14 min-h-[56px] border border-slate-200/90 dark:border-[#232F42] shadow-xs flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="relative">
-            <Smartphone className="w-5 h-5 text-slate-700" />
+          <div className="relative w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+            <Smartphone className="w-4 h-4 text-slate-700 dark:text-slate-200" />
             <span
-              className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white ${
-                isLiveMonitorOn ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
+              className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white dark:border-[#151C28] ${
+                isLiveMonitorOn ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'
               }`}
             />
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowLiveMonitorDetail(true)}
-            className="w-8 h-8 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 flex items-center justify-center transition-colors"
-            title="Penjelasan Layar Kunci"
-            aria-label="Informasi Layar Kunci"
-          >
-            <Info className="w-4 h-4" />
-          </button>
+          <div className="min-w-0">
+            <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-tight">
+              Pantau di Layar Kunci
+            </h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+              Tampilkan sisa waktu di Lock Screen
+            </p>
+          </div>
         </div>
 
         {/* Toggle Switch (44x44px Touch Target) */}
@@ -388,8 +421,8 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
           onClick={handleToggleLiveMonitor}
           aria-label={isLiveMonitorOn ? "Matikan Layar Kunci" : "Aktifkan Layar Kunci"}
           title={isLiveMonitorOn ? "Layar Kunci: Aktif (Klik untuk Matikan)" : "Layar Kunci: Standby (Klik untuk Aktifkan)"}
-          className={`w-12 h-7 rounded-full transition-colors relative focus:outline-none pressable ${
-            isLiveMonitorOn ? 'bg-emerald-600' : 'bg-slate-300'
+          className={`w-12 h-7 rounded-full transition-colors relative focus:outline-none pressable shrink-0 ${
+            isLiveMonitorOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
           }`}
         >
           <span
@@ -401,12 +434,12 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
       </section>
 
       {/* 3. KOMPONEN SATU "SLOT CHARGER" (HEADER: COLOKAN + "0/2" + GEAR, TIAP SLOT 1 BARIS) */}
-      <section className="bg-white rounded-2xl p-3 border border-slate-200/90 shadow-xs space-y-2">
+      <section className="bg-white dark:bg-[#151C28] rounded-2xl p-3 border border-slate-200/90 dark:border-[#232F42] shadow-xs space-y-2">
         {/* Header Slot Charger: Ringkas Ikon Colokan + Kapasitas + Gear Button */}
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <Plug className="w-4 h-4 text-sky-600" />
-            <span className="text-sm font-black text-slate-900 font-mono tabular-nums">
+            <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            <span className="text-sm font-black text-slate-900 dark:text-white font-mono tabular-nums">
               {chargingUnits.length}/{slotsCapacity}
             </span>
           </div>
@@ -414,7 +447,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
           <Tooltip content="Pengaturan Kapasitas Slot" position="left">
             <button
               onClick={() => setShowSlotSettings(true)}
-              className="w-11 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all active:scale-95"
+              className="w-11 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-all active:scale-95"
               aria-label="Pengaturan Slot"
               title="Pengaturan Slot"
             >
@@ -435,24 +468,24 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
               return (
                 <div
                   key={unit.id}
-                  className={`bg-sky-50/70 border border-sky-200 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2 min-h-[58px] transition-colors ${
+                  className={`bg-sky-50/70 dark:bg-gradient-to-br dark:from-sky-600 dark:to-blue-900 border border-sky-200 dark:border-sky-400/30 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2 min-h-[58px] transition-colors text-slate-900 dark:text-white ${
                     lastPluggedSlotId === unit.id ? 'animate-highlight ring-2 ring-sky-300' : ''
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300 animate-pulse shrink-0" />
-                    <span className="font-mono text-xs font-bold text-slate-600 shrink-0">#{slotNumber}</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-700 animate-pulse shrink-0" />
+                    <span className="font-mono text-xs font-bold text-slate-600 dark:text-sky-200 shrink-0">#{slotNumber}</span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-mono font-bold text-slate-900 truncate">#{unit.kodeGadai}</span>
+                        <span className="text-xs font-mono font-bold text-slate-900 dark:text-white truncate">#{unit.kodeGadai}</span>
                         <BatteryIndicator level={unit.batteryLevel} isCharging={true} size="sm" />
                       </div>
-                      <p className="text-[11px] text-slate-500 truncate">{unit.merkSepeda}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-sky-100 truncate">{unit.merkSepeda}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="font-mono text-xs font-bold tabular-nums text-sky-700 pr-1">
+                    <span className="font-mono text-xs font-bold tabular-nums text-sky-700 dark:text-white pr-1">
                       {timeInfo.formatted}
                     </span>
 
@@ -466,7 +499,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                     </button>
                     <button
                       onClick={() => handleCancelActiveCharging(unit)}
-                      className="w-9 h-9 rounded-xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 flex items-center justify-center active:scale-95"
+                      className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 dark:text-slate-300 hover:text-rose-600 border border-slate-200 dark:border-slate-700 flex items-center justify-center active:scale-95"
                       title="Batalkan"
                       aria-label="Batalkan"
                     >
@@ -481,12 +514,12 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
               return (
                 <div
                   key={`empty-slot-${slotIndex}`}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2 min-h-[58px]"
+                  className="bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2 min-h-[58px]"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0" />
-                    <span className="font-mono text-xs font-bold text-slate-400 shrink-0">#{slotNumber}</span>
-                    <Plug className="w-4 h-4 text-slate-300" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
+                    <span className="font-mono text-xs font-bold text-slate-400 dark:text-slate-500 shrink-0">#{slotNumber}</span>
+                    <Plug className="w-4 h-4 text-slate-300 dark:text-slate-600" />
                   </div>
 
                   <div>
@@ -503,11 +536,11 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                     ) : (
                       <button
                         onClick={() => setShowAddModal(true)}
-                        className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center active:scale-95"
+                        className="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center active:scale-95"
                         title="Pilih Unit"
                         aria-label="Pilih Unit"
                       >
-                        <PlusCircle className="w-4 h-4 text-sky-600" />
+                        <PlusCircle className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                       </button>
                     )}
                   </div>
@@ -522,10 +555,10 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
       <section id="antrian-prioritas-section" className="space-y-2.5 pt-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-bold text-slate-900 leading-tight">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
               Antrian
             </h2>
-            <span className="text-xs font-bold px-2 py-0.2 rounded-full bg-sky-100 text-sky-800 font-mono">
+            <span className="text-xs font-bold px-2 py-0.2 rounded-full bg-sky-100 dark:bg-sky-950/80 text-sky-800 dark:text-sky-300 font-mono">
               {sortedWaiting.length}
             </span>
           </div>
@@ -533,11 +566,11 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
           <Tooltip content="Cek Otomatis (≥15 Hari)" position="left">
             <button
               onClick={handleTriggerAutoQueue}
-              className="w-11 h-11 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-slate-200 flex items-center justify-center active:scale-95 transition-all shadow-2xs"
+              className="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-slate-700 text-sky-700 dark:text-sky-300 border border-slate-200 dark:border-slate-700 flex items-center justify-center active:scale-95 transition-all shadow-2xs"
               title="Cek Otomatis (≥15 Hari)"
               aria-label="Cek Otomatis (≥15 Hari)"
             >
-              <RefreshCw className="w-4 h-4 text-sky-600" />
+              <RefreshCw className="w-4 h-4 text-sky-600 dark:text-sky-400" />
             </button>
           </Tooltip>
         </div>
@@ -550,12 +583,12 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
             value={queueSearchQuery}
             onChange={(e) => setQueueSearchQuery(e.target.value)}
             placeholder="Cari..."
-            className="w-full h-11 pl-10 pr-9 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400"
+            className="w-full h-11 pl-10 pr-9 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
           {queueSearchQuery && (
             <button
               onClick={() => setQueueSearchQuery("")}
-              className="w-8 h-8 absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 flex items-center justify-center rounded-lg"
+              className="w-8 h-8 absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center rounded-lg"
               title="Hapus pencarian"
               aria-label="Hapus pencarian"
             >
@@ -567,7 +600,7 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
         {/* Daftar Kartu Antrian Prioritas: Maksimal 3 Baris Bersih */}
         <div className="space-y-2.5">
           {displayedWaiting.length === 0 ? (
-            <div className="bg-white rounded-2xl p-6 text-center text-xs text-slate-500 border border-slate-200">
+            <div className="bg-white dark:bg-[#151C28] rounded-2xl p-6 text-center text-xs text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
               {queueSearchQuery
                 ? `Nomor akad "${queueSearchQuery}" tidak ditemukan.`
                 : 'Antrian tunggu saat ini kosong.'}
@@ -578,25 +611,28 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
               const fallbackMasuk = unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
               const daysAgo = getDaysSinceLastCharge(unit.lastChargedAt, fallbackMasuk);
               const isOverdue = daysAgo >= 15;
+              const kondisiLabel = BATTERY_CONDITIONS[unit.kondisiBaterai]?.label?.split(' ')[0] || 'Normal';
+              const lokasiText = unit.lokasi ? unit.lokasi : 'Lokasi belum diisi';
+              const chargeText = daysAgo === 0 ? 'Charge hari ini' : `Charge ${daysAgo} hari lalu`;
 
               return (
                 <div
                   key={unit.id}
-                  className={`bg-white rounded-2xl p-3 border transition-colors shadow-xs pressable-card unit-card-optimized ${
+                  className={`bg-white dark:bg-[#151C28] rounded-2xl p-3 border transition-colors shadow-xs pressable-card unit-card-optimized ${
                     highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
                   } ${
                     isOverdue
-                      ? 'border-slate-200 border-l-4 border-l-rose-500 animate-critical-pulse'
-                      : 'border-slate-200/90'
+                      ? 'border-slate-200 dark:border-slate-800 border-l-4 border-l-rose-500 animate-critical-pulse'
+                      : 'border-slate-200/90 dark:border-[#232F42]'
                   }`}
                 >
                   {/* BARIS 1: Nomor Akad (kiri) + Badge Baterai (kanan) */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-xs font-bold text-slate-400 font-mono">
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 font-mono">
                         #{originalIndex + 1}
                       </span>
-                      <span className="text-base font-bold text-slate-900 font-mono tracking-tight">
+                      <span className="text-base font-bold text-slate-900 dark:text-white font-mono tracking-tight">
                         #{unit.kodeGadai}
                       </span>
                     </div>
@@ -605,44 +641,30 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
 
                   {/* BARIS 2: Merk Sepeda • Nama Nasabah */}
                   <div className="pt-1 min-w-0">
-                    <p className="text-[13px] text-slate-800 truncate leading-snug">
-                      <span className="font-semibold text-slate-900">{unit.merkSepeda}</span>
-                      <span className="text-slate-400 mx-1.5">•</span>
-                      <span className="text-slate-500 text-[12px]">{unit.namaNasabah}</span>
+                    <p className="text-[13px] text-slate-800 dark:text-slate-200 truncate leading-snug">
+                      <span className="font-semibold text-slate-900 dark:text-white">{unit.merkSepeda}</span>
+                      <span className="text-slate-400 dark:text-slate-600 mx-1.5">•</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-[12px]">{unit.namaNasabah}</span>
                     </p>
                   </div>
 
-                  {/* BARIS 3: Meta Ikon + Aksi */}
-                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 mt-1.5">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      {/* Lokasi Gudang */}
+                  {/* BARIS 3: Metadata Bersih Berpemisah Titik (Normal • Lokasi belum diisi • Charge 142 hari lalu) + Aksi */}
+                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 mt-1.5">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 min-w-0 flex-1 truncate">
+                      <span className="font-medium shrink-0">{kondisiLabel}</span>
+                      <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
                       <button
                         type="button"
                         onClick={() => setEditLokasiUnit(unit)}
-                        className="flex items-center gap-1 text-[11px] truncate pressable"
+                        className="truncate hover:underline text-left"
                         title="Ubah letak di gudang"
                       >
-                        <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-sky-600' : 'text-slate-300'}`} />
-                        {unit.lokasi && (
-                          <span className="truncate max-w-[90px] font-medium text-slate-700">
-                            {unit.lokasi}
-                          </span>
-                        )}
+                        {lokasiText}
                       </button>
-
-                      {/* Waktu Terakhir Charge */}
-                      <span
-                        className={`flex items-center gap-1 text-[11px] font-mono tabular-nums ${
-                          isOverdue ? 'text-rose-600 font-bold' : 'text-slate-500'
-                        }`}
-                        title={`Charge ${daysAgo} hari lalu`}
-                      >
-                        <Clock className={`w-3.5 h-3.5 shrink-0 ${isOverdue ? 'text-rose-600' : 'text-slate-400'}`} />
-                        <span>{daysAgo * 24}j</span>
+                      <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                      <span className={`tabular-nums font-mono shrink-0 ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : ''}`}>
+                        {chargeText}
                       </span>
-
-                      {/* Kondisi Baterai (Bentuk Pembeda Ramah Buta Warna) */}
-                      <BatteryConditionBadge condition={unit.kondisiBaterai || 'PRIMA'} size="xs" />
                     </div>
 
                     {/* Aksi Baris 3: Pasang ke Slot Kosong atau Batalkan */}
@@ -658,14 +680,14 @@ export default function DashboardView({ units, onNotify, onSelectTab }) {
                           <span>Pasang</span>
                         </button>
                       ) : (
-                        <span className="text-[10px] text-slate-400 italic pr-1">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 italic pr-1">
                           Menunggu
                         </span>
                       )}
 
                       <button
                         onClick={() => handleCancelQueue(unit.id, unit.kodeGadai)}
-                        className="h-10 w-10 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 rounded-xl flex items-center justify-center transition-all active:scale-95"
+                        className="h-10 w-10 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-center transition-all active:scale-95"
                         title="Batalkan dari antrian"
                         aria-label="Batalkan"
                       >

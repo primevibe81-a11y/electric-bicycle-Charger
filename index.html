@@ -9,6 +9,19 @@
     <meta name="apple-mobile-web-app-title" content="E-Bike Gadai" />
     <meta name="theme-color" content="#E0F2FE" />
     <title>Antrean Charger Sepeda Listrik & Gadai</title>
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('ebike_theme');
+          var isDark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#0B0F17');
+          }
+        } catch(e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   </head>

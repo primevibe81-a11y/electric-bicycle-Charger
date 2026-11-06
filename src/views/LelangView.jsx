@@ -282,13 +282,13 @@ export default function LelangView({ units, onNotify }) {
                     highlightedUnitId === unit.id ? 'animate-highlight border-purple-400 ring-2 ring-purple-200' : ''
                   } ${
                     isCriticalOverdue
-                      ? 'border-slate-200 border-l-4 border-l-rose-500 animate-critical-pulse'
-                      : 'border-slate-200/90'
-                  }`}
+                      ? 'border-slate-200 dark:border-slate-800 border-l-4 border-l-rose-500 animate-critical-pulse'
+                      : 'border-slate-200/90 dark:border-[#232F42]'
+                  } bg-white dark:bg-[#151C28]`}
                 >
                   {/* BARIS 1: Nomor Akad (kiri) + Badge Baterai (kanan) */}
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-base font-bold text-slate-900 font-mono tracking-tight">
+                    <span className="text-base font-bold text-slate-900 dark:text-white font-mono tracking-tight">
                       #{unit.kodeGadai}
                     </span>
                     <BatteryIndicator level={unit.batteryLevel} isCharging={isCharging} size="sm" />
@@ -296,15 +296,15 @@ export default function LelangView({ units, onNotify }) {
 
                   {/* BARIS 2: Nama Unit & Nasabah Asal (1 baris, ellipsis) */}
                   <div className="pt-1 min-w-0">
-                    <p className="text-[13px] text-slate-800 truncate leading-snug">
-                      <span className="font-semibold text-slate-900">{unit.merkSepeda}</span>
-                      <span className="text-slate-400 mx-1.5">•</span>
-                      <span className="text-slate-500 text-[12px]">Nasabah asal: {unit.namaNasabah}</span>
+                    <p className="text-[13px] text-slate-800 dark:text-slate-200 truncate leading-snug">
+                      <span className="font-semibold text-slate-900 dark:text-white">{unit.merkSepeda}</span>
+                      <span className="text-slate-400 dark:text-slate-600 mx-1.5">•</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-[12px]">Nasabah asal: {unit.namaNasabah}</span>
                     </p>
                   </div>
 
                   {/* BARIS 3: Meta Ikon + Nilai Estimasi + Tombol Aksi */}
-                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 mt-1.5">
+                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 mt-1.5">
                     {/* Sisi Kiri: Meta Info & Nilai Koin */}
                     <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
                       {/* Letak Gudang (Ikon Pin + Teks; jika kosong ikon pudar tanpa teks) */}
@@ -317,9 +317,9 @@ export default function LelangView({ units, onNotify }) {
                         title={unit.lokasi ? `Letak di gudang: ${unit.lokasi}` : 'Ketuk untuk isi letak di gudang'}
                         aria-label="Letak unit di gudang"
                       >
-                        <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-purple-600' : 'text-slate-300'}`} />
+                        <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-purple-600 dark:text-purple-400' : 'text-slate-300 dark:text-slate-600'}`} />
                         {unit.lokasi && (
-                          <span className="truncate max-w-[80px] font-medium text-slate-700">
+                          <span className="truncate max-w-[80px] font-medium text-slate-700 dark:text-slate-300">
                             {unit.lokasi}
                           </span>
                         )}
@@ -328,12 +328,12 @@ export default function LelangView({ units, onNotify }) {
                       {/* Waktu Terakhir Charge */}
                       <span
                         className={`flex items-center gap-1 text-[11px] font-mono tabular-nums ${
-                          isCriticalOverdue ? 'text-rose-600 font-semibold' : 'text-slate-600'
+                          isCriticalOverdue ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-slate-600 dark:text-slate-400'
                         }`}
                         title={`Charge ${daysAgo === 0 ? 'hari ini' : `${daysAgo} hari lalu`}`}
                       >
-                        <Clock className={`w-3.5 h-3.5 shrink-0 ${isCriticalOverdue ? 'text-rose-600' : 'text-slate-400'}`} />
-                        <span>{daysAgo === 0 ? '0j' : `${daysAgo * 24}j`}</span>
+                        <Clock className={`w-3.5 h-3.5 shrink-0 ${isCriticalOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`} />
+                        <span>{daysAgo === 0 ? 'Hari ini' : `${daysAgo}h lalu`}</span>
                       </span>
 
                       {/* Kondisi Baterai (Bentuk Pembeda Ramah Buta Warna) */}
@@ -341,7 +341,7 @@ export default function LelangView({ units, onNotify }) {
 
                       {/* Nilai Estimasi Lelang (Ikon Koin + Nilai Rp) */}
                       <span
-                        className="flex items-center gap-1 text-[11px] font-mono font-bold text-purple-700 tabular-nums"
+                        className="flex items-center gap-1 text-[11px] font-mono font-bold text-purple-700 dark:text-purple-300 tabular-nums"
                         title="Estimasi Nilai Lelang"
                       >
                         <Coins className="w-3.5 h-3.5 text-purple-600 shrink-0" />

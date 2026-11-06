@@ -38,11 +38,17 @@ import {
   getDaysSinceLastCharge
 } from '../services/chargerQueue';
 
-export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onNavigateToTebus }) {
+export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onNavigateToTebus, initialFilter }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState("ALL"); // 'ALL' | 'CRITICAL' | 'DEFECT' | 'NO_LOCATION'
+  const [filterType, setFilterType] = useState(initialFilter || "ALL"); // 'ALL' | 'CRITICAL' | 'DEFECT' | 'NO_LOCATION'
   const [sortBy, setSortBy] = useState("DEFAULT"); // 'DEFAULT' | 'OLDEST_CHARGED' | 'LOKASI_AZ'
+
+  useEffect(() => {
+    if (initialFilter) {
+      setFilterType(initialFilter);
+    }
+  }, [initialFilter]);
   const [auditingUnit, setAuditingUnit] = useState(null);
   const [actionSheetUnit, setActionSheetUnit] = useState(null);
   const [detailUnit, setDetailUnit] = useState(null);
@@ -594,27 +600,27 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               return (
                 <div
                   key={unit.id}
-                  className={`bg-white rounded-2xl p-3 border transition-colors shadow-xs pressable-card unit-card-optimized ${
+                  className={`bg-white dark:bg-[#151C28] rounded-2xl p-3 border transition-colors shadow-xs pressable-card unit-card-optimized ${
                     removingUnitId === unit.id ? 'opacity-0 scale-95 transition-opacity duration-200 pointer-events-none' : ''
                   } ${
                     highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
                   } ${
                     isCriticalOverdue
-                      ? 'border-slate-200 border-l-4 border-l-rose-500 animate-critical-pulse'
-                      : 'border-slate-200/90'
+                      ? 'border-slate-200 dark:border-slate-800 border-l-4 border-l-rose-500 animate-critical-pulse'
+                      : 'border-slate-200/90 dark:border-[#232F42]'
                   }`}
                 >
                   {/* BARIS 1: Nomor Akad (kiri) + Badge Baterai (kanan) */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-base font-bold text-slate-900 font-mono tracking-tight">
+                      <span className="text-base font-bold text-slate-900 dark:text-white font-mono tracking-tight">
                         #{unit.kodeGadai}
                       </span>
                       {Array.isArray(unit.riwayatKodeGadai) && unit.riwayatKodeGadai.length > 0 && (
                         <button
                           type="button"
                           onClick={() => onNavigateToPerpanjang(unit.id)}
-                          className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200 transition-colors shrink-0"
+                          className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
                           title={`Riwayat mutasi perpanjangan (${unit.riwayatKodeGadai.length})`}
                           aria-label="Riwayat mutasi"
                         >
@@ -632,18 +638,18 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                     onClick={() => setDetailUnit(unit)}
                     title="Ketuk untuk melihat detail unit"
                   >
-                    <p className="text-[13px] text-slate-800 truncate leading-snug">
-                      <span className="font-semibold text-slate-900">{unit.merkSepeda}</span>
-                      <span className="text-slate-400 mx-1.5">•</span>
-                      <span className="text-slate-500 text-[12px]">{unit.namaNasabah}</span>
+                    <p className="text-[13px] text-slate-800 dark:text-slate-200 truncate leading-snug">
+                      <span className="font-semibold text-slate-900 dark:text-white">{unit.merkSepeda}</span>
+                      <span className="text-slate-400 dark:text-slate-600 mx-1.5">•</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-[12px]">{unit.namaNasabah}</span>
                     </p>
                   </div>
 
                   {/* BARIS 3: Meta Ikon (kiri) + Tombol Aksi (kanan) */}
-                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 mt-1.5">
+                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 mt-1.5">
                     {/* Meta Info (Ikon + Nilai Ringkas) */}
                     <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
-                      {/* Letak Gudang (Ikon Pin + Teks; jika kosong ikon pudar tanpa teks) */}
+                      {/* Letak Gudang (Ikon Pin + Teks) */}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -656,23 +662,23 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                         title={unit.lokasi ? `Letak di gudang: ${unit.lokasi}` : 'Ketuk untuk isi letak di gudang'}
                         aria-label="Letak unit di gudang"
                       >
-                        <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-sky-600' : 'text-slate-300'}`} />
+                        <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-sky-600 dark:text-sky-400' : 'text-slate-300 dark:text-slate-600'}`} />
                         {unit.lokasi && (
-                          <span className="truncate max-w-[85px] font-medium text-slate-700">
+                          <span className="truncate max-w-[85px] font-medium text-slate-700 dark:text-slate-300">
                             {unit.lokasi}
                           </span>
                         )}
                       </button>
 
-                      {/* Waktu Terakhir Charge (Ikon Jam + Nilai Jam) */}
+                      {/* Waktu Terakhir Charge */}
                       <span
                         className={`flex items-center gap-1 text-[11px] font-mono tabular-nums ${
-                          isCriticalOverdue ? 'text-rose-600 font-semibold' : 'text-slate-600'
+                          isCriticalOverdue ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-slate-600 dark:text-slate-400'
                         }`}
                         title={`Charge ${daysAgo === 0 ? 'hari ini' : `${daysAgo} hari lalu`}`}
                       >
-                        <Clock className={`w-3.5 h-3.5 shrink-0 ${isCriticalOverdue ? 'text-rose-600' : 'text-slate-400'}`} />
-                        <span>{daysAgo === 0 ? '0j' : `${daysAgo * 24}j`}</span>
+                        <Clock className={`w-3.5 h-3.5 shrink-0 ${isCriticalOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`} />
+                        <span>{daysAgo === 0 ? 'Hari ini' : `${daysAgo}h lalu`}</span>
                       </span>
 
                       {/* Jatuh Tempo (Ikon Kalender + Nilai "3 Des") */}

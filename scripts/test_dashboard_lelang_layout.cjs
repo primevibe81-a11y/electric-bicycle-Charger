@@ -112,7 +112,7 @@ if (hasSettingsBottomSheet && hasOccupiedBlockAlert) {
 }
 
 // Lock Screen Live Monitor single row (height 56px / h-14)
-const hasSingleRowLiveMonitor = dashboardCode.includes('h-14 min-h-[56px]') && dashboardCode.includes('Smartphone') && dashboardCode.includes('showLiveMonitorDetail');
+const hasSingleRowLiveMonitor = dashboardCode.includes('h-14 min-h-[56px]') && dashboardCode.includes('Smartphone') && (dashboardCode.includes('Pantau di Layar Kunci') || dashboardCode.includes('showLiveMonitorDetail'));
 if (hasSingleRowLiveMonitor) {
   console.log('✅ 12. Lock Screen Live Monitor refactored to single 56px row (icon + status dot + toggle)');
 } else {

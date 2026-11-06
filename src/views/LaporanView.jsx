@@ -8,6 +8,7 @@ import {
   Bike,
   User,
   Calendar,
+  Clock,
   AlertTriangle,
   AlertOctagon,
   CheckCircle2,
@@ -21,9 +22,12 @@ import {
   Info,
   MapPin,
   Box,
-  PackageCheck
+  PackageCheck,
+  ClipboardCopy,
+  Check
 } from 'lucide-react';
 import { exportLaporanExcel, generatePdfReport } from '../services/reportExport';
+import { copyWhatsAppReportToClipboard } from '../services/whatsappReport';
 import { getDaysSinceLastCharge, getChargeAuditInfo } from '../services/chargerQueue';
 import { extendGadaiUnit, redeemGadaiUnit, normalizeHistoryEntry, updateUnitLocation } from '../services/storage';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
@@ -259,6 +263,25 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
     }
   };
 
+  // Handler: Salin Ringkasan Shift Harian untuk WhatsApp
+  const handleCopyWhatsApp = async () => {
+    triggerHaptic('success');
+    try {
+      await copyWhatsAppReportToClipboard(units, null);
+      onNotify({
+        title: 'Tersalin ke Clipboard! 📋',
+        message: 'Laporan shift harian siap di-paste ke grup WhatsApp kantor.',
+        type: 'success'
+      });
+    } catch (err) {
+      onNotify({
+        title: 'Gagal Menyalin',
+        message: 'Tidak dapat mengakses clipboard browser.',
+        type: 'warning'
+      });
+    }
+  };
+
   // Definisi tab filter
   const filterTabs = [
     { id: 'SEMUA', label: 'Semua', count: stats.total },
@@ -274,10 +297,10 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
       {/* 1. HEADER SECTION (Judul Utuh + Tombol Auto-Sync Icon-Only 44x44px) */}
       <div className="flex items-center justify-between gap-3 pt-1">
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-extrabold text-slate-900 tracking-tight leading-tight truncate">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight truncate">
             Pusat Laporan & Mutasi
           </h2>
-          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-0.5">
             Rekapitulasi seluruh status, ekspor dokumen, dan mutasi e-bike
           </p>
         </div>
@@ -285,13 +308,24 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
         {/* Tombol Auto-Sync Icon-Only (Touch Target 44x44px) */}
         <button
           onClick={() => setIsSyncModalOpen(true)}
-          className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
+          className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-sky-50 dark:bg-sky-950/50 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
           title="Auto-Sync File Excel Transaksi & Buku Besar"
           aria-label="Buka Modal Auto-Sync Excel"
         >
-          <UploadCloud className="w-5 h-5 text-sky-600" />
+          <UploadCloud className="w-5 h-5 text-sky-600 dark:text-sky-400" />
         </button>
       </div>
+
+      {/* Tombol Cepat Salin Ringkasan WA Shift Harian */}
+      <button
+        type="button"
+        onClick={handleCopyWhatsApp}
+        className="pressable w-full h-11 px-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2"
+        title="Salin Ringkasan Laporan Harian untuk WhatsApp"
+      >
+        <ClipboardCopy className="w-4 h-4" />
+        <span>📋 Salin Ringkasan WA</span>
+      </button>
 
       {/* 2. STATS CARDS (Kompak, Ikon di atas, Angka Besar, Tanpa Teks "Unit") */}
       <div className="grid grid-cols-3 gap-2">
@@ -304,14 +338,14 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             }}
             className={`pressable w-full p-2.5 rounded-2xl border text-center transition-all min-h-[68px] flex flex-col items-center justify-center gap-1 ${
               statusFilter === 'SEMUA' || statusFilter === 'AKTIF'
-                ? 'bg-sky-50 border-sky-300 ring-2 ring-sky-400/20 shadow-xs'
-                : 'bg-white border-slate-200/80 hover:bg-slate-50'
+                ? 'bg-sky-50 dark:bg-sky-950/40 border-sky-300 dark:border-sky-800 ring-2 ring-sky-400/20 shadow-xs'
+                : 'bg-white dark:bg-[#151C28] border-slate-200/80 dark:border-[#232F42] hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
             title="Fisik Gudang"
             aria-label="Filter Fisik Gudang"
           >
-            <Box className="w-4 h-4 text-sky-600" />
-            <span className="text-xl font-black text-slate-900 leading-none tabular-nums">
+            <Box className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            <span className="text-xl font-black text-slate-900 dark:text-white leading-none tabular-nums">
               {stats.aktif + stats.lelang}
             </span>
           </button>
@@ -326,14 +360,14 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             }}
             className={`pressable w-full p-2.5 rounded-2xl border text-center transition-colors min-h-[68px] flex flex-col items-center justify-center gap-1 ${
               statusFilter === 'DITEBUS'
-                ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-400/20 shadow-xs'
-                : 'bg-white border-slate-200/80 hover:bg-slate-50'
+                ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 ring-2 ring-blue-400/20 shadow-xs'
+                : 'bg-white dark:bg-[#151C28] border-slate-200/80 dark:border-[#232F42] hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
             title="Ditebus"
             aria-label="Filter Ditebus"
           >
-            <PackageCheck className="w-4 h-4 text-blue-600" />
-            <span className="text-xl font-black text-blue-700 leading-none tabular-nums">
+            <PackageCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-xl font-black text-blue-700 dark:text-blue-300 leading-none tabular-nums">
               {stats.ditebus}
             </span>
           </button>
@@ -348,14 +382,14 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             }}
             className={`pressable w-full p-2.5 rounded-2xl border text-center transition-colors min-h-[68px] flex flex-col items-center justify-center gap-1 ${
               statusFilter === 'BERMASALAH'
-                ? 'bg-rose-100/80 border-rose-300 ring-2 ring-rose-400/30 shadow-xs'
-                : 'bg-rose-50/60 border-rose-200 hover:bg-rose-100/50'
+                ? 'bg-rose-100/80 dark:bg-rose-950/50 border-rose-300 dark:border-rose-800 ring-2 ring-rose-400/30 shadow-xs'
+                : 'bg-rose-50/60 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40 hover:bg-rose-100/50 dark:hover:bg-rose-950/40'
             }`}
             title="Bermasalah"
             aria-label="Filter Bermasalah"
           >
-            <AlertOctagon className="w-4 h-4 text-rose-600" />
-            <span className="text-xl font-black text-rose-600 leading-none tabular-nums">
+            <AlertOctagon className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+            <span className="text-xl font-black text-rose-600 dark:text-rose-300 leading-none tabular-nums">
               {stats.bermasalah}
             </span>
           </button>
@@ -363,8 +397,8 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
       </div>
 
       {/* 3. STICKY CONTROLS (Solid Background, Bebas Blur GPU iOS) */}
-      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-[#F0F9FF] border-b border-sky-100 shadow-xs space-y-2">
-        {/* Row 1: Search Bar + Dua Tombol Ikon Ekspor (Excel & PDF, 44x44px) */}
+      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-[#F0F9FF] dark:bg-[#0B0F17] border-b border-sky-100 dark:border-[#232F42] shadow-xs space-y-2">
+        {/* Row 1: Search Bar + Tiga Tombol Ikon Ekspor (WA, Excel, PDF, 44x44px) */}
         <div className="flex items-center gap-1.5">
           {/* Kolom Pencarian (radius 12px, shadow-none, border jelas) */}
           <div className="relative flex-1">
@@ -374,12 +408,12 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari..."
-              className="w-full h-11 pl-9 pr-9 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 shadow-none focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+              className="w-full h-11 pl-9 pr-9 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 shadow-none focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 aria-label="Hapus pencarian"
               >
                 <X className="w-3.5 h-3.5" />
@@ -387,15 +421,27 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             )}
           </div>
 
+          {/* Tombol Ikon Salin Ringkasan WA (44x44px) */}
+          <Tooltip content="Salin Ringkasan WA" position="bottom">
+            <button
+              onClick={handleCopyWhatsApp}
+              className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 rounded-xl text-emerald-700 dark:text-emerald-300 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
+              title="Salin Ringkasan WA"
+              aria-label="Salin Ringkasan WA"
+            >
+              <ClipboardCopy className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </button>
+          </Tooltip>
+
           {/* Tombol Ikon Ekspor Excel (44x44px, Tooltip saat ditahan lama) */}
           <Tooltip content="Ekspor Excel (.xlsx)" position="bottom">
             <button
               onClick={() => handleExportExcel(filteredUnits)}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white hover:bg-emerald-50 border border-slate-200 rounded-xl text-emerald-700 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 rounded-xl text-emerald-700 dark:text-emerald-300 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
               title="Ekspor Excel (.xlsx)"
               aria-label="Ekspor Excel"
             >
-              <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+              <FileSpreadsheet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </button>
           </Tooltip>
 
@@ -403,11 +449,11 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
           <Tooltip content="Cetak Laporan PDF (.pdf)" position="bottom">
             <button
               onClick={() => handleGeneratePdf(filteredUnits)}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white hover:bg-rose-50 border border-slate-200 rounded-xl text-rose-700 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700 rounded-xl text-rose-700 dark:text-rose-300 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
               title="Cetak Laporan PDF (.pdf)"
               aria-label="Cetak PDF"
             >
-              <FileText className="w-5 h-5 text-rose-600" />
+              <FileText className="w-5 h-5 text-rose-600 dark:text-rose-400" />
             </button>
           </Tooltip>
         </div>
@@ -544,12 +590,12 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                       {/* Waktu Terakhir Charge */}
                       <span
                         className={`flex items-center gap-1 text-[11px] font-mono tabular-nums ${
-                          daysSinceCharge >= 15 ? 'text-rose-600 font-bold' : 'text-slate-600'
+                          daysSinceCharge >= 15 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-600 dark:text-slate-400'
                         }`}
-                        title={`Charge ${daysSinceCharge} hari lalu`}
+                        title={`Charge ${daysSinceCharge === 0 ? 'hari ini' : `${daysSinceCharge} hari lalu`}`}
                       >
-                        <Clock className={`w-3.5 h-3.5 shrink-0 ${daysSinceCharge >= 15 ? 'text-rose-600' : 'text-slate-400'}`} />
-                        <span>{daysSinceCharge * 24}j</span>
+                        <Clock className={`w-3.5 h-3.5 shrink-0 ${daysSinceCharge >= 15 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`} />
+                        <span>{daysSinceCharge === 0 ? 'Hari ini' : `${daysSinceCharge}h lalu`}</span>
                       </span>
 
                       {/* Kondisi Baterai (Bentuk Pembeda Ramah Buta Warna) */}

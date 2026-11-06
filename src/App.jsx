@@ -5,6 +5,7 @@ import Toast from './components/Toast';
 import LoginModal from './components/LoginModal';
 import PwaUpdateNotification from './components/PwaUpdateNotification';
 import ErrorBoundary from './components/ErrorBoundary';
+import AsistenAiBottomSheet from './components/AsistenAiBottomSheet';
 
 import DashboardView from './views/DashboardView';
 import AktifView from './views/AktifView';
@@ -34,6 +35,10 @@ export default function App() {
 
   // Helper aksi awal saat navigasi ke tab Laporan (misal dari tombol Cepat di Aktif)
   const [laporanInitialAction, setLaporanInitialAction] = useState(null);
+
+  // Status & kontrol modal Asisten AI Gudang & filter cepat Aktif
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
+  const [aktifInitialFilter, setAktifInitialFilter] = useState('ALL');
 
   // Track if completion sound was already played for current charging session
   const [finishedAlarmFired, setFinishedAlarmFired] = useState(false);
@@ -161,6 +166,13 @@ export default function App() {
     setActiveTab(newTab);
   };
 
+  const handleAiNavigateToTab = (targetTab, options = {}) => {
+    if (options.filterType) {
+      setAktifInitialFilter(options.filterType);
+    }
+    handleTabChange(targetTab);
+  };
+
   const handleNavigateToPerpanjang = (unitId) => {
     setLaporanInitialAction({ type: 'perpanjang', unitId });
     handleTabChange("laporan");
@@ -176,7 +188,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-900 flex justify-center items-stretch sm:py-4">
       {/* Container Khusus iPhone 13 (Mobile-First 390px x 844px) */}
-      <div className="w-full max-w-[430px] min-h-[100dvh] bg-gradient-to-b from-[#F0F9FF] via-[#E0F2FE] to-[#BAE6FD] relative flex flex-col shadow-2xl overflow-x-hidden sm:rounded-[40px] sm:border-[8px] sm:border-slate-800">
+      <div className="w-full max-w-[430px] min-h-[100dvh] bg-gradient-to-b from-[#F0F9FF] via-[#E0F2FE] to-[#BAE6FD] dark:bg-[#0B0F17] dark:from-[#0B0F17] dark:via-[#0B0F17] dark:to-[#0B0F17] dark:text-slate-100 relative flex flex-col shadow-2xl overflow-x-hidden sm:rounded-[40px] sm:border-[8px] sm:border-slate-800 transition-colors">
         
         {/* Notch simulation decoration for desktop view */}
         <div className="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-36 h-6 bg-slate-800 rounded-b-2xl z-50"></div>
@@ -209,12 +221,13 @@ export default function App() {
               user={currentUser}
               onLogout={handleLogout}
               onNotify={handleNotify}
+              onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
             />
 
-            {/* Main Scrollable View Area with Safe Area Padding */}
+            {/* Main Scrollable View Area with Safe Area Padding (pb-28 agar tidak tertutup floating bottom nav) */}
             <main
               ref={mainRef}
-              className="flex-1 px-4 pt-3 pb-24 overflow-y-auto overscroll-y-contain -webkit-overflow-scrolling-touch"
+              className="flex-1 px-4 pt-3 pb-28 sm:pb-32 overflow-y-auto overscroll-y-contain -webkit-overflow-scrolling-touch"
             >
               <ErrorBoundary key={activeTab} onReset={() => setActiveTab('dashboard')}>
                 {activeTab === 'dashboard' && (
@@ -222,6 +235,7 @@ export default function App() {
                     units={units}
                     onNotify={handleNotify}
                     onSelectTab={handleTabChange}
+                    onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
                   />
                 )}
 
@@ -231,6 +245,7 @@ export default function App() {
                     onNotify={handleNotify}
                     onNavigateToPerpanjang={handleNavigateToPerpanjang}
                     onNavigateToTebus={handleNavigateToTebus}
+                    initialFilter={aktifInitialFilter}
                   />
                 )}
 
@@ -251,11 +266,21 @@ export default function App() {
               </ErrorBoundary>
             </main>
 
-            {/* Fixed Bottom Navigation (4 Tab Bar) */}
+            {/* Floating Dynamic Island Bottom Navigation (Glassmorphism Pill) */}
             <BottomNav
               activeTab={activeTab}
               onChangeTab={handleTabChange}
               queueCount={waitingQueueCount}
+            />
+
+            {/* Bottom Sheet Asisten AI Gudang */}
+            <AsistenAiBottomSheet
+              isOpen={isAiAssistantOpen}
+              onClose={() => setIsAiAssistantOpen(false)}
+              units={units}
+              onNotify={handleNotify}
+              onNavigateToTab={handleAiNavigateToTab}
+              currentUser={currentUser}
             />
           </>
         )}
