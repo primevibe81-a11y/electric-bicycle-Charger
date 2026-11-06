@@ -12,6 +12,7 @@ import {
   saveStoredUnits,
   normalizeHistoryEntry
 } from './storage';
+import { sanitizeText } from './security';
 
 /**
  * Filter cerdas untuk memastikan hanya SEPEDA LISTRIK yang diproses
@@ -120,22 +121,22 @@ export function analyzePawnExcelFiles(transaksiArrayBuffer, bukuBesarArrayBuffer
 
     // A. Deteksi PERPANJANGAN & TEBUS dari FBR Buku Besar
     fbrList.forEach(fbr => {
-      const desc = String(fbr['Deskripsi'] || '');
+      const desc = sanitizeText(fbr['Deskripsi'] || '');
       if (!isElectricBicycle('', '', desc)) return;
 
-      const refNo = String(fbr['Ref No'] || '').trim();
-      const custName = String(fbr['Nama Customer'] || '').trim();
+      const refNo = sanitizeText(fbr['Ref No'] || '');
+      const custName = sanitizeText(fbr['Nama Customer'] || '');
       const existingUnit = existingMap.get(refNo);
 
       // Cek apakah ada akad gadai baru atas nama nasabah dan barang e-bike ini
       const matchingNewOrder = ebikeOrders.find(ord => {
-        const ordCust = String(ord['Nama Customer'] || '').trim().toUpperCase();
-        const ordCode = String(ord['Nomer Gadai'] || '').trim();
+        const ordCust = sanitizeText(ord['Nama Customer'] || '').toUpperCase();
+        const ordCode = sanitizeText(ord['Nomer Gadai'] || '');
         return ordCode !== refNo && ordCust === custName.toUpperCase();
       });
 
       if (matchingNewOrder) {
-        const newCode = String(matchingNewOrder['Nomer Gadai']).trim();
+        const newCode = sanitizeText(matchingNewOrder['Nomer Gadai'] || '');
         processedOldCodes.add(refNo);
         processedNewCodes.add(newCode);
 
@@ -150,7 +151,7 @@ export function analyzePawnExcelFiles(transaksiArrayBuffer, bukuBesarArrayBuffer
           oldKodeGadai: refNo,
           newKodeGadai: newCode,
           namaNasabah: custName,
-          merkSepeda: matchingNewOrder['Nama Barang'] || (existingUnit ? existingUnit.merkSepeda : 'Sepeda Listrik'),
+          merkSepeda: sanitizeText(matchingNewOrder['Nama Barang'] || (existingUnit ? existingUnit.merkSepeda : 'Sepeda Listrik')),
           tglOrderBaru: matchingNewOrder['Tanggal Order'],
           jatuhTempoBaru: matchingNewOrder['Tanggal Jatuh Tempo'],
           jatuhTempoBaruMs: parseIndoDateToTimestamp(matchingNewOrder['Tanggal Jatuh Tempo']) || (Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -170,7 +171,7 @@ export function analyzePawnExcelFiles(transaksiArrayBuffer, bukuBesarArrayBuffer
           unitId: existingUnit ? existingUnit.id : null,
           kodeGadai: refNo,
           namaNasabah: custName,
-          merkSepeda: existingUnit ? existingUnit.merkSepeda : desc.replace(/^Pinjaman a\/n [^ ]+ /i, ''),
+          merkSepeda: existingUnit ? existingUnit.merkSepeda : sanitizeText(desc.replace(/^Pinjaman a\/n [^ ]+ /i, '')),
           tglPelunasan: fbr['Tanggal'],
           existingUnit
         });
@@ -179,7 +180,7 @@ export function analyzePawnExcelFiles(transaksiArrayBuffer, bukuBesarArrayBuffer
 
     // B. Deteksi GADAI BARU dari ebikeOrders yang bukan perpanjangan
     ebikeOrders.forEach(ord => {
-      const code = String(ord['Nomer Gadai']).trim();
+      const code = sanitizeText(ord['Nomer Gadai'] || '');
       if (processedNewCodes.has(code) || existingMap.has(code)) return;
 
       mutations.push({
@@ -187,8 +188,8 @@ export function analyzePawnExcelFiles(transaksiArrayBuffer, bukuBesarArrayBuffer
         label: 'Gadai Baru Masuk (Inflow)',
         badgeColor: 'emerald',
         kodeGadai: code,
-        namaNasabah: ord['Nama Customer'],
-        merkSepeda: ord['Nama Barang'],
+        namaNasabah: sanitizeText(ord['Nama Customer'] || ''),
+        merkSepeda: sanitizeText(ord['Nama Barang'] || ''),
         pinjaman: ord['Jumlah Pinjaman'],
         tglOrder: ord['Tanggal Order'],
         jatuhTempo: ord['Tanggal Jatuh Tempo'],

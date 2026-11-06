@@ -14,6 +14,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { analyzePawnExcelFiles, applyBatchSyncMutations } from '../services/excelSyncEngine';
+import { validateSpreadsheetFile } from '../services/security';
 
 export default function ExcelSyncModal({ isOpen, onClose, units = [], onNotify }) {
   const [fileTransaksi, setFileTransaksi] = useState(null);
@@ -34,22 +35,33 @@ export default function ExcelSyncModal({ isOpen, onClose, units = [], onNotify }
     setDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
-      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-        setFile(file);
-        setAnalysisResult(null);
-      } else {
+      const validation = validateSpreadsheetFile(file);
+      if (!validation.valid) {
         onNotify({
-          title: "Format Tidak Sesuai",
-          message: "Harap upload file Excel format .xlsx atau .xls",
+          title: "File Ditolak",
+          message: validation.message,
           type: "warning"
         });
+        return;
       }
+      setFile(file);
+      setAnalysisResult(null);
     }
   };
 
   const handleFileChange = (e, setFile) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      const validation = validateSpreadsheetFile(file);
+      if (!validation.valid) {
+        e.target.value = "";
+        onNotify({
+          title: "File Ditolak",
+          message: validation.message,
+          type: "warning"
+        });
+        return;
+      }
       setFile(file);
       setAnalysisResult(null);
     }
@@ -69,6 +81,17 @@ export default function ExcelSyncModal({ isOpen, onClose, units = [], onNotify }
       onNotify({
         title: "File Belum Lengkap",
         message: "Silakan upload kedua file Excel (File Transaksi dan Buku Besar).",
+        type: "warning"
+      });
+      return;
+    }
+
+    const valTransaksi = validateSpreadsheetFile(fileTransaksi);
+    const valBukuBesar = validateSpreadsheetFile(fileBukuBesar);
+    if (!valTransaksi.valid || !valBukuBesar.valid) {
+      onNotify({
+        title: "File Ditolak",
+        message: !valTransaksi.valid ? valTransaksi.message : valBukuBesar.message,
         type: "warning"
       });
       return;

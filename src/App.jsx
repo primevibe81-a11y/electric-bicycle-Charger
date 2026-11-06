@@ -139,6 +139,24 @@ export default function App() {
     return () => clearInterval(interval);
   }, [units, finishedAlarmFired]);
 
+  // Periodic Session Expiration / Anti-Tamper Check (Auto-Logout saat 12 jam habis atau sesi dihapus)
+  useEffect(() => {
+    if (!currentUser) return;
+    const interval = setInterval(() => {
+      const active = getActiveSession();
+      if (!active) {
+        setCurrentUser(null);
+        setToast({
+          title: "Sesi Kedaluwarsa 🔒",
+          message: "Sesi Anda telah berakhir demi keamanan data nasabah. Silakan masuk kembali.",
+          type: "warning"
+        });
+      }
+    }, 10000); // Periksa setiap 10 detik
+
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   const handleNotify = (toastPayload) => {
     setToast(toastPayload);
   };

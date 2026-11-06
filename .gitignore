@@ -23,7 +23,18 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment
+# Environment & Secrets
 .env
 .env.*
 !.env.example
+
+# Sensitive Data, Backups, and Reports
+*.xlsx
+*.xls
+*.csv
+*.pdf
+*.backup
+*.bak
+*.sql
+*.sqlite
+*.db

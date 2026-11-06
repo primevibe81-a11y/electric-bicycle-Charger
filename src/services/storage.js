@@ -15,6 +15,7 @@ export { BATTERY_CONDITIONS, BATTERY_CONDITIONS_LIST, getBatteryConditionLabel }
 import { playChimeSound, playGentleBeep, sendNativeNotification } from "./soundNotification";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { REAL_EXCEL_UNITS } from "../data/realUnits";
+import { sanitizeText } from "./security";
 import {
   enqueueMutation,
   removePendingMutations,
@@ -51,10 +52,10 @@ export function setChargerSlotsCapacity(count) {
 export function modelToDb(unit) {
   return {
     id: unit.id,
-    kode_gadai: unit.kodeGadai,
+    kode_gadai: sanitizeText(unit.kodeGadai),
     riwayat_kode_gadai: unit.riwayatKodeGadai || [],
-    merk_sepeda: unit.merkSepeda,
-    nama_nasabah: unit.namaNasabah,
+    merk_sepeda: sanitizeText(unit.merkSepeda),
+    nama_nasabah: sanitizeText(unit.namaNasabah),
     battery_level: Number(unit.batteryLevel) || 100,
     status_barang: unit.statusBarang || 'AKTIF',
     status_charger: unit.statusCharger || 'IDLE',
@@ -62,15 +63,15 @@ export function modelToDb(unit) {
     charge_end_at: unit.chargeEndAt || null,
     charge_duration_ms: unit.chargeDurationMs || DEFAULT_CHARGE_DURATION_MS,
     kondisi_baterai: unit.kondisiBaterai || 'PRIMA',
-    catatan_baterai: unit.catatanBaterai || '',
-    lokasi: unit.lokasi || null,
+    catatan_baterai: sanitizeText(unit.catatanBaterai || ''),
+    lokasi: sanitizeText(unit.lokasi || '') || null,
     lokasi_updated_at: unit.lokasiUpdatedAt || null,
-    lokasi_updated_by: unit.lokasiUpdatedBy || null,
+    lokasi_updated_by: sanitizeText(unit.lokasiUpdatedBy || '') || null,
     riwayat_lokasi: Array.isArray(unit.riwayatLokasi) ? unit.riwayatLokasi : [],
     queued_at: unit.queuedAt || null,
     last_charged_at: unit.lastChargedAt || null,
     jatuh_tempo_at: unit.jatuhTempoAt || null,
-    harga_lelang: unit.hargaLelang || 0,
+    harga_lelang: Number(unit.hargaLelang) || 0,
     updated_at: unit.updatedAt || Date.now()
   };
 }
@@ -366,31 +367,32 @@ export function createGadaiUnit(data) {
   const units = getStoredUnits();
   
   // Validasi unik nomor gadai
-  const cleanKode = String(data.kodeGadai).trim();
+  const cleanKode = sanitizeText(data.kodeGadai);
   const existing = units.find(u => u.kodeGadai === cleanKode && u.statusBarang !== 'DITEBUS' && u.statusBarang !== 'TERJUAL_LELANG');
   if (existing) {
     return { success: false, message: `Kode Gadai ${cleanKode} sudah terdaftar pada unit aktif lain!` };
   }
 
-  const cleanLokasi = data.lokasi ? String(data.lokasi).trim().replace(/\s+/g, ' ').slice(0, 60) : '';
+  const cleanLokasi = data.lokasi ? sanitizeText(data.lokasi).replace(/\s+/g, ' ').slice(0, 60) : '';
+  const cleanPetugas = sanitizeText(data.petugas || 'Admin');
 
   const newUnit = {
     id: "unit-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
     kodeGadai: cleanKode,
     riwayatKodeGadai: [],
-    merkSepeda: data.merkSepeda.trim(),
-    namaNasabah: data.namaNasabah.trim(),
+    merkSepeda: sanitizeText(data.merkSepeda),
+    namaNasabah: sanitizeText(data.namaNasabah),
     batteryLevel: Math.max(0, Math.min(100, Number(data.batteryLevel) || 100)),
     kondisiBaterai: data.kondisiBaterai || 'PRIMA',
-    catatanBaterai: data.catatanBaterai || '',
+    catatanBaterai: sanitizeText(data.catatanBaterai || ''),
     lokasi: cleanLokasi,
     lokasiUpdatedAt: cleanLokasi ? Date.now() : null,
-    lokasiUpdatedBy: cleanLokasi ? (data.petugas || 'Admin') : '',
+    lokasiUpdatedBy: cleanLokasi ? cleanPetugas : '',
     riwayatLokasi: cleanLokasi ? [{
       lokasiLama: '',
       lokasiBaru: cleanLokasi,
       timestamp: Date.now(),
-      petugas: data.petugas || 'Admin'
+      petugas: cleanPetugas
     }] : [],
     chargeDurationMs: DEFAULT_CHARGE_DURATION_MS,
     statusBarang: "AKTIF",
@@ -627,6 +629,8 @@ export function updateBatteryAudit(unitId, kondisiBaterai, catatanBaterai) {
   const unit = units.find(u => u.id === unitId);
   if (!unit) return { success: false, message: "Unit tidak ditemukan." };
 
+  const cleanCatatan = catatanBaterai !== undefined ? sanitizeText(catatanBaterai) : (u.catatanBaterai || '');
+
   const updated = units.map(u => {
     if (u.id === unitId) {
       const finalKondisi = kondisiBaterai || u.kondisiBaterai || 'PRIMA';
@@ -634,14 +638,14 @@ export function updateBatteryAudit(unitId, kondisiBaterai, catatanBaterai) {
         ...u,
         kondisiBaterai: finalKondisi,
         isRusak: finalKondisi !== 'PRIMA',
-        catatanBaterai: catatanBaterai !== undefined ? catatanBaterai : (u.catatanBaterai || ''),
+        catatanBaterai: cleanCatatan,
         updatedAt: Date.now()
       };
     }
     return u;
   });
 
-  saveStoredUnits(updated, true, { action: 'UPDATE_BATTERY_AUDIT', unitId, payload: { kondisiBaterai, catatanBaterai } });
+  saveStoredUnits(updated, true, { action: 'UPDATE_BATTERY_AUDIT', unitId, payload: { kondisiBaterai, catatanBaterai: cleanCatatan } });
   playGentleBeep();
   return {
     success: true,
@@ -655,7 +659,8 @@ export function updateUnitLocation(unitId, newLocation, petugas = 'Admin') {
   const unit = units.find(u => u.id === unitId);
   if (!unit) return { success: false, message: "Unit tidak ditemukan." };
 
-  const cleanLoc = String(newLocation || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+  const cleanLoc = sanitizeText(newLocation).replace(/\s+/g, ' ').slice(0, 60);
+  const cleanPetugas = sanitizeText(petugas || 'Admin');
   const currentLoc = (unit.lokasi || '').trim();
 
   if (cleanLoc === currentLoc) {
@@ -667,7 +672,7 @@ export function updateUnitLocation(unitId, newLocation, petugas = 'Admin') {
     lokasiLama: currentLoc,
     lokasiBaru: cleanLoc,
     timestamp: now,
-    petugas: petugas || 'Admin'
+    petugas: cleanPetugas
   };
 
   const oldHistory = Array.isArray(unit.riwayatLokasi) ? unit.riwayatLokasi : [];
@@ -679,7 +684,7 @@ export function updateUnitLocation(unitId, newLocation, petugas = 'Admin') {
         ...u,
         lokasi: cleanLoc,
         lokasiUpdatedAt: now,
-        lokasiUpdatedBy: petugas || 'Admin',
+        lokasiUpdatedBy: cleanPetugas,
         riwayatLokasi: newHistory,
         updatedAt: now
       };
@@ -690,7 +695,7 @@ export function updateUnitLocation(unitId, newLocation, petugas = 'Admin') {
   saveStoredUnits(updated, true, {
     action: 'UPDATE_LOCATION',
     unitId,
-    payload: { lokasi: cleanLoc, petugas }
+    payload: { lokasi: cleanLoc, petugas: cleanPetugas }
   });
 
   playGentleBeep();
