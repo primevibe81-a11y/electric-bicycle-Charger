@@ -145,38 +145,38 @@ export default function LelangView({ units, onNotify }) {
     <div className="space-y-3 pb-8">
       {/* 1. HEADER HALAMAN RINGKAS */}
       <div className="pt-0.5">
-        <h2 className="text-base font-extrabold text-slate-900 tracking-tight leading-tight">
+        <h2 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
           Manajemen Unit Lelang
         </h2>
-        <p className="text-xs text-slate-500 font-medium">
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
           Perawatan baterai &amp; pencatatan transaksi unit jatuh tempo
         </p>
       </div>
 
       {/* 2. STICKY SEGMENTED TABS & SEARCH BAR (Solid Background, Bebas Blur GPU iOS) */}
-      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2 pb-2 bg-[#F0F9FF] border-b border-sky-100 shadow-xs space-y-2">
+      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2 pb-2 bg-white dark:bg-[#0B0F17] border-b border-slate-200 dark:border-slate-800/80 shadow-xs space-y-2">
         {/* Segmented Tabs: Siap Lelang vs Terjual */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-200/80 rounded-2xl">
+        <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-[#151C28] border border-slate-200 dark:border-[#232F42] rounded-2xl">
           <button
             onClick={() => setActiveSubTab("available")}
             className={`h-9 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
               activeSubTab === "available"
-                ? "bg-white text-purple-700 shadow-xs"
-                : "text-slate-600 hover:text-slate-800"
+                ? "bg-white dark:bg-[#232F42] text-purple-700 dark:text-purple-300 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
-            <Gavel className="w-3.5 h-3.5 text-purple-600" />
+            <Gavel className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
             <span>Siap Lelang ({lelangUnits.length})</span>
           </button>
           <button
             onClick={() => setActiveSubTab("sold")}
             className={`h-9 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
               activeSubTab === "sold"
-                ? "bg-white text-purple-700 shadow-xs"
-                : "text-slate-600 hover:text-slate-800"
+                ? "bg-white dark:bg-[#232F42] text-purple-700 dark:text-purple-300 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>Terjual ({soldUnits.length})</span>
           </button>
         </div>
@@ -189,12 +189,12 @@ export default function LelangView({ units, onNotify }) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari..."
-            className="w-full h-11 pl-10 pr-9 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-slate-400"
+            className="w-full h-11 pl-10 pr-9 bg-slate-50 dark:bg-[#151C28] border border-slate-200 dark:border-[#232F42] rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="w-8 h-8 absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 flex items-center justify-center rounded-lg"
+              className="w-8 h-8 absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 flex items-center justify-center rounded-lg"
               title="Hapus pencarian"
               aria-label="Hapus pencarian"
             >
@@ -211,7 +211,7 @@ export default function LelangView({ units, onNotify }) {
               className={`h-8 px-3 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 pressable ${
                 filterType === "ALL"
                   ? "bg-purple-600 text-white shadow-2xs"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                  : "bg-white dark:bg-[#151C28] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#232F42] hover:bg-slate-50 dark:hover:bg-slate-800"
               }`}
             >
               <span>Semua ({lelangUnits.length})</span>
@@ -222,7 +222,7 @@ export default function LelangView({ units, onNotify }) {
               className={`h-8 px-3 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 pressable ${
                 filterType === "NO_LOCATION"
                   ? "bg-amber-600 text-white shadow-2xs"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                  : "bg-white dark:bg-[#151C28] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#232F42] hover:bg-slate-50 dark:hover:bg-slate-800"
               }`}
               title="Belum Ada Letak"
             >
@@ -230,14 +230,14 @@ export default function LelangView({ units, onNotify }) {
               <span>Tanpa Letak ({noLocationCount})</span>
             </button>
 
-            <div className="w-[1px] h-5 bg-slate-200 mx-0.5 shrink-0" />
+            <div className="w-[1px] h-5 bg-slate-200 dark:bg-slate-800 mx-0.5 shrink-0" />
 
             <button
               onClick={() => setSortBy(sortBy === "LOKASI_AZ" ? "DEFAULT" : "LOKASI_AZ")}
               className={`h-8 px-2.5 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 pressable ${
                 sortBy === "LOKASI_AZ"
                   ? "bg-sky-600 text-white shadow-2xs"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                  : "bg-white dark:bg-[#151C28] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#232F42] hover:bg-slate-50 dark:hover:bg-slate-800"
               }`}
               title="Urutkan letak gudang A-Z"
             >
@@ -252,15 +252,15 @@ export default function LelangView({ units, onNotify }) {
       {activeSubTab === "available" ? (
         <div className="space-y-2.5 pt-1">
           {lelangUnits.length === 0 ? (
-            <div className="bg-white rounded-2xl p-6 text-center text-xs text-slate-500 border border-slate-200">
+            <div className="bg-white dark:bg-[#151C28] rounded-2xl p-6 text-center text-xs text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-[#232F42]">
               Tidak ada unit sepeda listrik yang berada dalam daftar lelang.
             </div>
           ) : filteredLelangUnits.length === 0 ? (
-            <div className="bg-white rounded-2xl p-6 text-center text-xs text-slate-500 border border-slate-200 space-y-2">
+            <div className="bg-white dark:bg-[#151C28] rounded-2xl p-6 text-center text-xs text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-[#232F42] space-y-2">
               <p>Tidak ditemukan unit lelang dengan kata kunci "<strong>{searchQuery}</strong>".</p>
               <button
                 onClick={() => setSearchQuery("")}
-                className="h-9 px-3 bg-purple-50 text-purple-700 border border-purple-200 rounded-xl font-bold text-xs hover:bg-purple-100"
+                className="h-9 px-3 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-xl font-bold text-xs hover:bg-purple-100 dark:hover:bg-purple-900/60"
               >
                 Tampilkan Semua ({lelangUnits.length} Unit)
               </button>
@@ -272,6 +272,9 @@ export default function LelangView({ units, onNotify }) {
               const fallbackMasuk = unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
               const daysAgo = getDaysSinceLastCharge(unit.lastChargedAt, fallbackMasuk);
               const isCriticalOverdue = daysAgo >= 15;
+              const kondisiLabel = getBatteryConditionLabel(unit.kondisiBaterai);
+              const lokasiText = unit.lokasi ? unit.lokasi : 'Lokasi belum diisi';
+              const chargeText = daysAgo === 0 ? 'Charge hari ini' : `Charge ${daysAgo} hari lalu`;
 
               return (
                 <div
@@ -306,45 +309,33 @@ export default function LelangView({ units, onNotify }) {
                   {/* BARIS 3: Meta Ikon + Nilai Estimasi + Tombol Aksi */}
                   <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 mt-1.5">
                     {/* Sisi Kiri: Meta Info & Nilai Koin */}
-                    <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
-                      {/* Letak Gudang (Ikon Pin + Teks; jika kosong ikon pudar tanpa teks) */}
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap text-[11px] text-slate-500 dark:text-slate-400">
+                      <BatteryConditionBadge condition={unit.kondisiBaterai || 'PRIMA'} size="xs" />
+                      <span className={unit.kondisiBaterai && unit.kondisiBaterai !== 'PRIMA' ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-slate-700 dark:text-slate-300'}>
+                        {kondisiLabel}
+                      </span>
+                      <span className="text-slate-300 dark:text-slate-600">•</span>
                       <button
                         type="button"
                         onClick={() => setEditLokasiUnit(unit)}
-                        className={`pressable flex items-center gap-1 text-[11px] truncate ${
-                          highlightedUnitId === unit.id ? 'animate-highlight' : ''
+                        className={`hover:underline truncate max-w-[85px] ${
+                          unit.lokasi ? 'text-slate-700 dark:text-slate-300 font-medium' : 'text-slate-400 dark:text-slate-500'
                         }`}
                         title={unit.lokasi ? `Letak di gudang: ${unit.lokasi}` : 'Ketuk untuk isi letak di gudang'}
-                        aria-label="Letak unit di gudang"
                       >
-                        <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-purple-600 dark:text-purple-400' : 'text-slate-300 dark:text-slate-600'}`} />
-                        {unit.lokasi && (
-                          <span className="truncate max-w-[80px] font-medium text-slate-700 dark:text-slate-300">
-                            {unit.lokasi}
-                          </span>
-                        )}
+                        {lokasiText}
                       </button>
-
-                      {/* Waktu Terakhir Charge */}
-                      <span
-                        className={`flex items-center gap-1 text-[11px] font-mono tabular-nums ${
-                          isCriticalOverdue ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-slate-600 dark:text-slate-400'
-                        }`}
-                        title={`Charge ${daysAgo === 0 ? 'hari ini' : `${daysAgo} hari lalu`}`}
-                      >
-                        <Clock className={`w-3.5 h-3.5 shrink-0 ${isCriticalOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`} />
-                        <span>{daysAgo === 0 ? 'Hari ini' : `${daysAgo}h lalu`}</span>
+                      <span className="text-slate-300 dark:text-slate-600">•</span>
+                      <span className={isCriticalOverdue ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-slate-600 dark:text-slate-400'}>
+                        {chargeText}
                       </span>
-
-                      {/* Kondisi Baterai (Bentuk Pembeda Ramah Buta Warna) */}
-                      <BatteryConditionBadge condition={unit.kondisiBaterai || 'PRIMA'} size="xs" />
-
+                      <span className="text-slate-300 dark:text-slate-600">•</span>
                       {/* Nilai Estimasi Lelang (Ikon Koin + Nilai Rp) */}
                       <span
-                        className="flex items-center gap-1 text-[11px] font-mono font-bold text-purple-700 dark:text-purple-300 tabular-nums"
+                        className="flex items-center gap-1 font-mono font-bold text-purple-700 dark:text-purple-300 tabular-nums shrink-0"
                         title="Estimasi Nilai Lelang"
                       >
-                        <Coins className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                        <Coins className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
                         <span>{formatRupiah(unit.hargaLelang || 2500000)}</span>
                       </span>
                     </div>
@@ -353,7 +344,7 @@ export default function LelangView({ units, onNotify }) {
                     <div className="flex items-center gap-1.5 shrink-0">
                       {isWaiting ? (
                         <div
-                          className="h-10 px-2.5 rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold flex items-center justify-center gap-1 border border-slate-200"
+                          className="h-10 px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700"
                           title="Dalam Antrian Charge"
                         >
                           <Clock className="w-3.5 h-3.5 text-slate-500" />
@@ -361,25 +352,25 @@ export default function LelangView({ units, onNotify }) {
                         </div>
                       ) : isCharging ? (
                         <div
-                          className="h-10 px-2.5 rounded-xl bg-sky-50 text-sky-700 text-xs font-semibold flex items-center justify-center gap-1 border border-sky-200"
+                          className="h-10 px-2.5 rounded-xl bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 text-xs font-semibold flex items-center justify-center gap-1 border border-sky-200 dark:border-sky-500/30"
                           title="Sedang Di-charge"
                         >
-                          <Zap className="w-3.5 h-3.5 text-sky-600" />
+                          <Zap className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                           <span>Di-charge</span>
                         </div>
                       ) : chargingSuccessUnitId === unit.id ? (
-                        <div className="h-10 px-2.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 flex items-center justify-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <div className="h-10 px-2.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 flex items-center justify-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                           <span>Antri</span>
                         </div>
                       ) : (
                         <button
                           onClick={() => handleChargeLelangUnit(unit)}
-                          className="pressable h-10 w-10 rounded-xl border border-sky-300 bg-white hover:bg-sky-50 text-sky-700 flex items-center justify-center transition-all active:scale-95"
+                          className="pressable h-10 w-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sky-700 dark:text-sky-300 flex items-center justify-center transition-all active:scale-95"
                           title="Antrikan Charge"
                           aria-label="Antrikan Charge"
                         >
-                          <Zap className="w-4 h-4 text-sky-600" />
+                          <Zap className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                         </button>
                       )}
 
@@ -407,21 +398,21 @@ export default function LelangView({ units, onNotify }) {
         <div className="space-y-2.5 pt-1">
           {soldUnits.length === 0 ? (
             /* Empty State Informatif untuk Tab Terjual (0) */
-            <div className="bg-white rounded-2xl p-8 border border-slate-200 text-center space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto">
+            <div className="bg-white dark:bg-[#151C28] rounded-2xl p-8 border border-slate-200 dark:border-[#232F42] text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center mx-auto">
                 <PackageCheck className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-bold text-slate-800">Belum ada unit terjual</h3>
-              <p className="text-xs text-slate-500 max-w-[280px] mx-auto leading-relaxed">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Belum ada unit terjual</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[280px] mx-auto leading-relaxed">
                 Unit lelang yang berhasil terjual akan tercatat di sini beserta data pembeli dan nominal penjualan.
               </p>
             </div>
           ) : filteredSoldUnits.length === 0 ? (
-            <div className="bg-white rounded-2xl p-6 text-center text-xs text-slate-500 border border-slate-200 space-y-2">
+            <div className="bg-white dark:bg-[#151C28] rounded-2xl p-6 text-center text-xs text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-[#232F42] space-y-2">
               <p>Tidak ditemukan riwayat lelang dengan kata kunci "<strong>{searchQuery}</strong>".</p>
               <button
                 onClick={() => setSearchQuery("")}
-                className="h-9 px-3 bg-purple-50 text-purple-700 border border-purple-200 rounded-xl font-bold text-xs hover:bg-purple-100"
+                className="h-9 px-3 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-xl font-bold text-xs hover:bg-purple-100 dark:hover:bg-purple-900/60"
               >
                 Tampilkan Semua ({soldUnits.length} Unit)
               </button>
@@ -439,30 +430,30 @@ export default function LelangView({ units, onNotify }) {
               return (
                 <div
                   key={unit.id}
-                  className="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-xs flex items-center justify-between gap-3 unit-card-optimized"
+                  className="bg-white dark:bg-[#151C28] rounded-2xl p-3.5 border border-slate-200/90 dark:border-[#232F42] shadow-xs flex items-center justify-between gap-3 unit-card-optimized"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold text-slate-900">
+                      <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">
                         #{unit.kodeGadai}
                       </span>
-                      <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-emerald-50 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
                         Terjual
                       </span>
                     </div>
-                    <p className="text-xs font-semibold text-slate-800 truncate mt-0.5">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">
                       {unit.merkSepeda}
                     </p>
-                    <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                       Pembeli: {unit.buyerInfo || "-"} • {soldDate}
                     </p>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className="text-xs font-extrabold text-emerald-600 font-mono block">
+                    <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 font-mono block">
                       {formatRupiah(unit.soldPrice)}
                     </span>
-                    <span className="text-[10px] text-slate-400 block">Laku Terjual</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 block">Laku Terjual</span>
                   </div>
                 </div>
               );

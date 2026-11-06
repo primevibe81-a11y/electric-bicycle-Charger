@@ -25,21 +25,21 @@ export default function BatteryConditionBadge({
   const activeCondition = kondisi || condition || 'PRIMA';
   const conf = BATTERY_CONDITIONS[activeCondition] || BATTERY_CONDITIONS.PRIMA;
 
-  let icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />;
-  let shapeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+  let icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />;
+  let shapeClass = "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30";
 
   if (activeCondition === 'DROP_RINGAN') {
-    icon = <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />;
-    shapeClass = "bg-amber-50 text-amber-700 border-amber-200";
+    icon = <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />;
+    shapeClass = "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30";
   } else if (activeCondition === 'SOAK_PARAH') {
-    icon = <AlertTriangle className="w-3.5 h-3.5 text-orange-600" />;
-    shapeClass = "bg-orange-50 text-orange-700 border-orange-200";
+    icon = <AlertTriangle className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />;
+    shapeClass = "bg-orange-50 dark:bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-500/30";
   } else if (activeCondition === 'RUSAK_TOTAL') {
-    icon = <AlertOctagon className="w-3.5 h-3.5 text-rose-600" />;
-    shapeClass = "bg-rose-50 text-rose-700 border-rose-200";
+    icon = <AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />;
+    shapeClass = "bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30";
   } else if (activeCondition === 'KEMBUNG_BAHAYA') {
-    icon = <Flame className="w-3.5 h-3.5 text-purple-600" />;
-    shapeClass = "bg-purple-50 text-purple-700 border-purple-200";
+    icon = <Flame className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />;
+    shapeClass = "bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-500/30";
   }
 
   const isInteractive = Boolean(onClick);

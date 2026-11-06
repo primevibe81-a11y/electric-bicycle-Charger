@@ -324,10 +324,10 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
         title="Salin Ringkasan Laporan Harian untuk WhatsApp"
       >
         <ClipboardCopy className="w-4 h-4" />
-        <span>📋 Salin Ringkasan WA</span>
+        <span>Salin Ringkasan WA</span>
       </button>
 
-      {/* 2. STATS CARDS (Kompak, Ikon di atas, Angka Besar, Tanpa Teks "Unit") */}
+      {/* 2. STATS CARDS (Kompak, Ikon di atas, Angka Besar, Label Teks Jelas) */}
       <div className="grid grid-cols-3 gap-2">
         {/* Total Fisik Card */}
         <Tooltip content="Fisik Gudang: Total unit aktif & lelang di gudang" position="bottom" className="w-full">
@@ -347,6 +347,9 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             <Box className="w-4 h-4 text-sky-600 dark:text-sky-400" />
             <span className="text-xl font-black text-slate-900 dark:text-white leading-none tabular-nums">
               {stats.aktif + stats.lelang}
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-0.5">
+              FISIK GUDANG
             </span>
           </button>
         </Tooltip>
@@ -370,6 +373,9 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             <span className="text-xl font-black text-blue-700 dark:text-blue-300 leading-none tabular-nums">
               {stats.ditebus}
             </span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-0.5">
+              DITEBUS
+            </span>
           </button>
         </Tooltip>
 
@@ -392,73 +398,68 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             <span className="text-xl font-black text-rose-600 dark:text-rose-300 leading-none tabular-nums">
               {stats.bermasalah}
             </span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-0.5">
+              BERMASALAH
+            </span>
           </button>
         </Tooltip>
       </div>
 
       {/* 3. STICKY CONTROLS (Solid Background, Bebas Blur GPU iOS) */}
-      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-[#F0F9FF] dark:bg-[#0B0F17] border-b border-sky-100 dark:border-[#232F42] shadow-xs space-y-2">
-        {/* Row 1: Search Bar + Tiga Tombol Ikon Ekspor (WA, Excel, PDF, 44x44px) */}
-        <div className="flex items-center gap-1.5">
-          {/* Kolom Pencarian (radius 12px, shadow-none, border jelas) */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari..."
-              className="w-full h-11 pl-9 pr-9 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 shadow-none focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                aria-label="Hapus pencarian"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Tombol Ikon Salin Ringkasan WA (44x44px) */}
-          <Tooltip content="Salin Ringkasan WA" position="bottom">
+      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-white dark:bg-[#0B0F17] border-b border-slate-200 dark:border-slate-800/80 shadow-xs space-y-2">
+        {/* Row 1: Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Cari..."
+            className="w-full h-11 pl-9 pr-9 bg-slate-50 dark:bg-[#151C28] border border-slate-200 dark:border-[#232F42] rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 shadow-none focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+          />
+          {searchQuery && (
             <button
-              onClick={handleCopyWhatsApp}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 rounded-xl text-emerald-700 dark:text-emerald-300 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
-              title="Salin Ringkasan WA"
-              aria-label="Salin Ringkasan WA"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              aria-label="Hapus pencarian"
             >
-              <ClipboardCopy className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <X className="w-3.5 h-3.5" />
             </button>
-          </Tooltip>
-
-          {/* Tombol Ikon Ekspor Excel (44x44px, Tooltip saat ditahan lama) */}
-          <Tooltip content="Ekspor Excel (.xlsx)" position="bottom">
-            <button
-              onClick={() => handleExportExcel(filteredUnits)}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 rounded-xl text-emerald-700 dark:text-emerald-300 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
-              title="Ekspor Excel (.xlsx)"
-              aria-label="Ekspor Excel"
-            >
-              <FileSpreadsheet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            </button>
-          </Tooltip>
-
-          {/* Tombol Ikon Cetak PDF (44x44px, Tooltip saat ditahan lama) */}
-          <Tooltip content="Cetak Laporan PDF (.pdf)" position="bottom">
-            <button
-              onClick={() => handleGeneratePdf(filteredUnits)}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700 rounded-xl text-rose-700 dark:text-rose-300 flex items-center justify-center shadow-xs active:scale-95 transition-all shrink-0"
-              title="Cetak Laporan PDF (.pdf)"
-              aria-label="Cetak PDF"
-            >
-              <FileText className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-            </button>
-          </Tooltip>
+          )}
         </div>
 
-        {/* Row 2: Status Filter Tabs dengan Fade Gradient & Auto-scroll */}
+        {/* Row 2: Tiga Tombol Ekspor Berlabel Jelas (PDF Kacab, Excel, Kontak) */}
+        <div className="grid grid-cols-3 gap-1.5">
+          <button
+            onClick={() => handleGeneratePdf(filteredUnits)}
+            className="h-9 px-2 rounded-xl bg-rose-50 dark:bg-rose-500/15 hover:bg-rose-100 dark:hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs pressable transition-all"
+            title="Cetak Laporan PDF untuk Kepala Cabang"
+            aria-label="Cetak PDF Kacab"
+          >
+            <FileText className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+            <span>📄 PDF Kacab</span>
+          </button>
+          <button
+            onClick={() => handleExportExcel(filteredUnits)}
+            className="h-9 px-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/15 hover:bg-emerald-100 dark:hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs pressable transition-all"
+            title="Ekspor Data ke File Excel (.xlsx)"
+            aria-label="Ekspor Excel"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>📊 Excel</span>
+          </button>
+          <button
+            onClick={handleCopyWhatsApp}
+            className="h-9 px-2 rounded-xl bg-sky-50 dark:bg-sky-500/15 hover:bg-sky-100 dark:hover:bg-sky-500/25 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-500/30 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs pressable transition-all"
+            title="Salin Ringkasan untuk Kontak WhatsApp Kacab"
+            aria-label="Kontak WA Kacab"
+          >
+            <ClipboardCopy className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+            <span>⚙️ Kontak</span>
+          </button>
+        </div>
+
+        {/* Row 3: Status Filter Tabs dengan Fade Gradient & Auto-scroll */}
         <div className="relative">
           <div
             ref={tabScrollRef}
@@ -474,13 +475,13 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                   className={`h-8 min-h-[32px] px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all active:scale-95 flex items-center gap-1.5 shrink-0 ${
                     isActive
                       ? 'bg-sky-600 text-white shadow-xs'
-                      : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50'
+                      : 'bg-white dark:bg-[#151C28] text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-[#232F42] hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                 >
                   <span>{tab.label}</span>
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                      isActive ? 'bg-sky-700 text-sky-100' : 'bg-slate-100 text-slate-500'
+                      isActive ? 'bg-sky-700 text-sky-100' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                     }`}
                   >
                     {tab.count}
@@ -491,17 +492,17 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
           </div>
 
           {/* Fade Gradient di tepi kanan petunjuk scroll */}
-          <div className="pointer-events-none absolute right-0 top-0 bottom-1 w-8 bg-gradient-to-l from-[#F0F9FF] to-transparent"></div>
+          <div className="pointer-events-none absolute right-0 top-0 bottom-1 w-8 bg-gradient-to-l from-white dark:from-[#0B0F17] to-transparent"></div>
         </div>
       </div>
 
       {/* 4. DAFTAR KARTU UNIT (Prioritas Area Daftar: Minimal 2-3 Kartu Terlihat Tanpa Scroll) */}
       <div className="space-y-2.5">
         {filteredUnits.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 text-center border border-slate-200/80 shadow-xs">
-            <Bike className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-            <p className="text-xs font-bold text-slate-700">Tidak ada data sepeda listrik</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+          <div className="bg-white dark:bg-[#151C28] rounded-2xl p-8 text-center border border-slate-200/80 dark:border-[#232F42] shadow-xs">
+            <Bike className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-200">Tidak ada data sepeda listrik</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
               {searchQuery ? 'Coba ubah kata kunci pencarian Anda' : 'Belum ada data pada kategori ini'}
             </p>
           </div>
@@ -516,20 +517,23 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
               const isExpanded = expandedUnitId === unit.id;
               const isDitebus = unit.statusBarang === 'DITEBUS';
               const isDefect = isRealBatteryOrPhysicalDefect(unit);
+              const kondisiLabel = getBatteryConditionLabel(unit.kondisiBaterai);
+              const lokasiText = unit.lokasi ? unit.lokasi : 'Lokasi belum diisi';
+              const chargeText = daysSinceCharge === 0 ? 'Charge hari ini' : `Charge ${daysSinceCharge} hari lalu`;
 
               return (
                 <div
                   key={unit.id}
-                  className={`bg-white rounded-2xl p-3 border transition-colors shadow-xs pressable-card unit-card-optimized ${
+                  className={`bg-white dark:bg-[#151C28] rounded-2xl p-3 border transition-colors shadow-xs pressable-card unit-card-optimized border-slate-200/80 dark:border-[#232F42] text-slate-900 dark:text-slate-100 ${
                     highlightedUnitId === unit.id ? 'animate-highlight border-sky-400 ring-2 ring-sky-200' : ''
                   } ${
-                    isDefect ? 'border-rose-300 ring-1 ring-rose-300/30' : 'border-slate-200/80'
+                    isDefect ? 'border-rose-300 dark:border-rose-900/60 ring-1 ring-rose-300/30' : ''
                   }`}
                 >
                   {/* BARIS 1: Nomor Akad + Status Pill + Badge Baterai */}
-                  <div className="flex items-center justify-between gap-1.5 pb-1.5 border-b border-slate-100">
+                  <div className="flex items-center justify-between gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-base font-bold text-slate-900 font-mono tracking-tight">
+                      <span className="text-base font-bold text-slate-900 dark:text-white font-mono tracking-tight">
                         #{unit.kodeGadai}
                       </span>
 
@@ -537,10 +541,10 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                       <span
                         className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                           unit.statusBarang === 'AKTIF'
-                            ? 'bg-emerald-100 text-emerald-800'
+                            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300'
                             : unit.statusBarang === 'LELANG'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-blue-100 text-blue-800'
+                            ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300'
+                            : 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300'
                         }`}
                       >
                         {unit.statusBarang === 'DITEBUS' ? 'DITEBUS' : unit.statusBarang}
@@ -549,10 +553,10 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                       {/* History Mutasi Badge */}
                       {hasHistory && (
                         <span
-                          className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center"
+                          className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 flex items-center justify-center"
                           title="Ada riwayat mutasi perpanjangan"
                         >
-                          <Sparkles className="w-3 h-3 text-amber-600" />
+                          <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                         </span>
                       )}
                     </div>
@@ -562,66 +566,48 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
 
                   {/* BARIS 2: Merk Sepeda • Nama Nasabah */}
                   <div className="pt-1 min-w-0">
-                    <p className="text-[13px] text-slate-800 truncate leading-snug">
-                      <span className="font-semibold text-slate-900">{unit.merkSepeda}</span>
-                      <span className="text-slate-400 mx-1.5">•</span>
-                      <span className="text-slate-500 text-[12px]">{unit.namaNasabah}</span>
+                    <p className="text-[13px] text-slate-800 dark:text-slate-200 truncate leading-snug">
+                      <span className="font-semibold text-slate-900 dark:text-white">{unit.merkSepeda}</span>
+                      <span className="text-slate-400 dark:text-slate-600 mx-1.5">•</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-[12px]">{unit.namaNasabah}</span>
                     </p>
                   </div>
 
-                  {/* BARIS 3: Meta Info (Letak, Charge, Kondisi) + Tombol Audit */}
-                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 mt-1.5">
-                    <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
-                      {/* Lokasi Gudang */}
+                  {/* BARIS 3: Meta Info (Letak, Charge, Kondisi) */}
+                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 mt-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap text-[11px] text-slate-500 dark:text-slate-400">
+                      <BatteryConditionBadge kondisi={unit.kondisiBaterai} size="xs" />
+                      <span className={unit.kondisiBaterai && unit.kondisiBaterai !== 'PRIMA' ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-slate-700 dark:text-slate-300'}>
+                        {kondisiLabel}
+                      </span>
+                      <span className="text-slate-300 dark:text-slate-600">•</span>
                       <button
                         type="button"
                         onClick={() => setEditLokasiUnit(unit)}
-                        className="pressable flex items-center gap-1 text-[11px] truncate"
+                        className={`hover:underline truncate max-w-[85px] ${
+                          unit.lokasi ? 'text-slate-700 dark:text-slate-300 font-medium' : 'text-slate-400 dark:text-slate-500'
+                        }`}
                         title={unit.lokasi ? `Letak di gudang: ${unit.lokasi}` : 'Ketuk untuk isi letak di gudang'}
                       >
-                        <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-sky-600' : 'text-slate-300'}`} />
-                        {unit.lokasi && (
-                          <span className="truncate max-w-[85px] font-medium text-slate-700">
-                            {unit.lokasi}
-                          </span>
-                        )}
+                        {lokasiText}
                       </button>
-
-                      {/* Waktu Terakhir Charge */}
-                      <span
-                        className={`flex items-center gap-1 text-[11px] font-mono tabular-nums ${
-                          daysSinceCharge >= 15 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-600 dark:text-slate-400'
-                        }`}
-                        title={`Charge ${daysSinceCharge === 0 ? 'hari ini' : `${daysSinceCharge} hari lalu`}`}
-                      >
-                        <Clock className={`w-3.5 h-3.5 shrink-0 ${daysSinceCharge >= 15 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`} />
-                        <span>{daysSinceCharge === 0 ? 'Hari ini' : `${daysSinceCharge}h lalu`}</span>
+                      <span className="text-slate-300 dark:text-slate-600">•</span>
+                      <span className={`inline-flex items-center gap-1 ${daysSinceCharge >= 15 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-slate-600 dark:text-slate-400'}`}>
+                        <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span>{chargeText}</span>
                       </span>
-
-                      {/* Kondisi Baterai (Bentuk Pembeda Ramah Buta Warna) */}
-                      <BatteryConditionBadge kondisi={unit.kondisiBaterai} size="xs" />
 
                       {/* Catatan Baterai */}
                       {unit.catatanBaterai && (
                         <button
                           type="button"
                           onClick={() => setExpandedUnitId(isExpanded ? null : unit.id)}
-                          className="text-slate-400 hover:text-slate-600"
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ml-0.5"
                           title={unit.catatanBaterai}
                         >
                           <FileText className="w-3.5 h-3.5" />
                         </button>
                       )}
-                    </div>
-
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => setAuditingUnit(unit)}
-                        className="h-8 px-2.5 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold border border-sky-200 transition-colors"
-                        title="Audit Baterai"
-                      >
-                        Audit
-                      </button>
                     </div>
                   </div>
 
@@ -630,15 +616,15 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                     Catatan biasa berupa teks abu-abu kecil tanpa kotak berwarna. */}
                 {unit.catatanBaterai && (
                   isDefect ? (
-                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] space-y-0.5">
-                      <div className="flex items-center gap-1 text-amber-800 font-bold">
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 rounded-xl text-[11px] space-y-0.5">
+                      <div className="flex items-center gap-1 text-amber-800 dark:text-amber-300 font-bold">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                         <span>Catatan Masalah Fisik / Baterai:</span>
                       </div>
-                      <p className="text-slate-700 pl-4 text-[11px] leading-snug">{unit.catatanBaterai}</p>
+                      <p className="text-slate-700 dark:text-slate-300 pl-4 text-[11px] leading-snug">{unit.catatanBaterai}</p>
                     </div>
                   ) : (
-                    <div className="mt-1.5 flex items-start gap-1 text-[11px] text-slate-500">
+                    <div className="mt-1.5 flex items-start gap-1 text-[11px] text-slate-500 dark:text-slate-400">
                       <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                       <p className="leading-snug">{unit.catatanBaterai}</p>
                     </div>
@@ -647,13 +633,13 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
 
                 {/* Riwayat Mutasi Expandable */}
                 {hasHistory && (
-                  <div className="mt-2 pt-1.5 border-t border-slate-100">
+                  <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-800">
                     <button
                       onClick={() => setExpandedUnitId(isExpanded ? null : unit.id)}
-                      className="w-full flex items-center justify-between text-[11px] text-amber-800 font-bold hover:text-amber-900"
+                      className="w-full flex items-center justify-between text-[11px] text-amber-800 dark:text-amber-400 font-bold hover:text-amber-900 dark:hover:text-amber-300"
                     >
                       <span className="flex items-center gap-1">
-                        <History className="w-3.5 h-3.5 text-amber-600" />
+                        <History className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                         Riwayat Mutasi ({unit.riwayatKodeGadai.length})
                       </span>
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -666,17 +652,17 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                           return (
                             <div
                               key={hIdx}
-                              className="p-2 bg-slate-50 rounded-xl border border-slate-200 text-[10.5px] space-y-0.5"
+                              className="p-2 bg-slate-50 dark:bg-[#111722] rounded-xl border border-slate-200 dark:border-[#232F42] text-[10.5px] space-y-0.5"
                             >
                               <div className="flex items-center justify-between font-bold">
-                                <span className="text-slate-600">
-                                  No. Lama: <strong className="text-amber-700">#{entry.kodeGadaiLama}</strong>
+                                <span className="text-slate-600 dark:text-slate-300">
+                                  No. Lama: <strong className="text-amber-700 dark:text-amber-400">#{entry.kodeGadaiLama}</strong>
                                 </span>
-                                <span className="text-[10px] text-slate-400">
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500">
                                   {entry.tglPerpanjang ? new Date(entry.tglPerpanjang).toLocaleDateString('id-ID') : '-'}
                                 </span>
                               </div>
-                              <p className="text-slate-500">
+                              <p className="text-slate-500 dark:text-slate-400">
                                 Catatan lama: {entry.catatanLama || '-'}
                               </p>
                             </div>
@@ -689,13 +675,13 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
 
                 {/* Quick Action Footer Buttons (hanya untuk unit aktif/lelang, radius 12px, Touch Target >= 44px) */}
                 {!isDitebus && (
-                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                  <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-1.5">
                     <button
                       onClick={() => setAuditUnit(unit)}
-                      className="h-10 min-h-[44px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                      className="h-10 min-h-[44px] px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
                       title="Audit kondisi baterai"
                     >
-                      <ShieldCheck className="w-4 h-4 text-slate-500" />
+                      <ShieldCheck className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                       <span>Audit</span>
                     </button>
 
@@ -705,10 +691,10 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                         setNewKodeGadai('');
                         setCatatanPerpanjang(unit.catatanBaterai || '');
                       }}
-                      className="h-10 min-h-[44px] px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                      className="h-10 min-h-[44px] px-3 bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
                       title="Perpanjang gadai unit"
                     >
-                      <RefreshCw className="w-4 h-4 text-amber-600" />
+                      <RefreshCw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                       <span>Perpanjang</span>
                     </button>
 
@@ -717,10 +703,10 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                         setTebusUnit(unit);
                         setCatatanTebus('');
                       }}
-                      className="h-10 min-h-[44px] px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                      className="h-10 min-h-[44px] px-3 bg-emerald-50 dark:bg-emerald-500/15 hover:bg-emerald-100 dark:hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
                       title="Pelunasan & tebus unit"
                     >
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       <span>Tebus</span>
                     </button>
                   </div>

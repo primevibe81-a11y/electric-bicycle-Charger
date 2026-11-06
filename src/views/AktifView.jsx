@@ -35,7 +35,8 @@ import {
 } from '../services/storage';
 import {
   BATTERY_CONDITIONS,
-  getDaysSinceLastCharge
+  getDaysSinceLastCharge,
+  getBatteryConditionLabel
 } from '../services/chargerQueue';
 
 export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onNavigateToTebus, initialFilter }) {
@@ -279,10 +280,10 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
       {/* 1. Header Bar: Title, Count, & Add Unit Button */}
       <div className="flex items-center justify-between gap-2 pt-0.5">
         <div>
-          <h2 className="text-base font-extrabold text-slate-900 tracking-tight leading-tight">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
             Unit Gadai Aktif
           </h2>
-          <p className="text-xs text-slate-500 font-medium">
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
             Total {aktifUnits.length} unit sepeda aktif
           </p>
         </div>
@@ -463,7 +464,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
       )}
 
       {/* 3. STICKY FILTER & SEARCH BAR (Solid Background, Bebas Blur GPU iOS) */}
-      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-[#F0F9FF] border-b border-sky-100 shadow-xs space-y-2">
+      <div className="sticky -top-3 z-20 -mx-4 px-4 pt-2.5 pb-2 bg-white dark:bg-[#0B0F17] border-b border-slate-200 dark:border-slate-800/80 shadow-xs space-y-2">
         {/* Row 1: Search Input (flex-1) + Sort Button (44x44px) */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
@@ -473,12 +474,12 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari..."
-              className="w-full h-11 pl-10 pr-9 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400"
+              className="w-full h-11 pl-10 pr-9 bg-slate-50 dark:bg-[#151C28] border border-slate-200 dark:border-[#232F42] rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="w-8 h-8 absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 flex items-center justify-center rounded-lg"
+                className="w-8 h-8 absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 flex items-center justify-center rounded-lg"
                 aria-label="Hapus pencarian"
               >
                 <X className="w-4 h-4" />
@@ -493,7 +494,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                 ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
                 : sortBy === 'LOKASI_AZ'
                   ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  : 'bg-white dark:bg-[#151C28] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-[#232F42] hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
             title={
               sortBy === 'OLDEST_CHARGED'
@@ -520,7 +521,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               className={`pressable h-8 px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
                 filterType === 'ALL'
                   ? 'bg-sky-600 text-white shadow-xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                  : 'bg-white dark:bg-[#151C28] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#232F42] hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
             >
               Semua ({aktifUnits.length})
@@ -532,7 +533,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               className={`pressable h-8 px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
                 filterType === 'CRITICAL'
                   ? 'bg-rose-600 text-white shadow-xs'
-                  : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/40 hover:bg-rose-100 dark:hover:bg-rose-950/60'
               }`}
               title="Kritis >14 Hari Belum Charge"
             >
@@ -546,7 +547,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               className={`pressable h-8 px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
                 filterType === 'DEFECT'
                   ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/40 hover:bg-amber-100 dark:hover:bg-amber-950/60'
               }`}
               title="Baterai Bermasalah"
             >
@@ -561,7 +562,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               className={`pressable h-8 px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
                 filterType === 'NO_LOCATION'
                   ? 'bg-slate-800 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+                  : 'bg-white dark:bg-[#151C28] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#232F42] hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
               title="Belum Ada Letak Gudang"
             >
@@ -571,7 +572,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
           </div>
 
           {/* Fade gradient cue for horizontal scroll */}
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#F0F9FF] to-transparent" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-[#0B0F17] to-transparent" />
         </div>
       </div>
 
@@ -591,6 +592,9 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               const fallbackMasuk = unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
               const daysAgo = getDaysSinceLastCharge(unit.lastChargedAt, fallbackMasuk);
               const isCriticalOverdue = daysAgo >= 15;
+              const kondisiLabel = getBatteryConditionLabel(unit.kondisiBaterai);
+              const lokasiText = unit.lokasi ? unit.lokasi : 'Lokasi belum diisi';
+              const chargeText = daysAgo === 0 ? 'Charge hari ini' : `Charge ${daysAgo} hari lalu`;
 
               const jatuhTempoDate = new Date(unit.jatuhTempoAt).toLocaleDateString('id-ID', {
                 day: 'numeric',
@@ -645,83 +649,43 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                     </p>
                   </div>
 
-                  {/* BARIS 3: Meta Ikon (kiri) + Tombol Aksi (kanan) */}
+                  {/* BARIS 3: Meta Info (kiri) + Tombol Aksi (kanan) */}
                   <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 mt-1.5">
-                    {/* Meta Info (Ikon + Nilai Ringkas) */}
-                    <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
-                      {/* Letak Gudang (Ikon Pin + Teks) */}
+                    {/* Meta Info (Teks Bersih dengan Pemisah Titik •) */}
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate min-w-0 flex-1 flex items-center gap-1.5">
+                      <BatteryConditionBadge
+                        condition={unit.kondisiBaterai || 'PRIMA'}
+                        size="xs"
+                        onClick={() => setDetailUnit(unit)}
+                      />
+                      <span className={unit.kondisiBaterai && unit.kondisiBaterai !== 'PRIMA' ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-slate-700 dark:text-slate-300'}>
+                        {kondisiLabel}
+                      </span>
+                      <span className="text-slate-300 dark:text-slate-600">•</span>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditLokasiUnit(unit);
                         }}
-                        className={`pressable flex items-center gap-1 text-[11px] truncate ${
-                          highlightedUnitId === unit.id ? 'animate-highlight' : ''
+                        className={`hover:underline truncate max-w-[110px] ${
+                          unit.lokasi ? 'text-slate-700 dark:text-slate-300 font-medium' : 'text-slate-400 dark:text-slate-500'
                         }`}
                         title={unit.lokasi ? `Letak di gudang: ${unit.lokasi}` : 'Ketuk untuk isi letak di gudang'}
-                        aria-label="Letak unit di gudang"
                       >
-                        <MapPin className={`w-3.5 h-3.5 shrink-0 ${unit.lokasi ? 'text-sky-600 dark:text-sky-400' : 'text-slate-300 dark:text-slate-600'}`} />
-                        {unit.lokasi && (
-                          <span className="truncate max-w-[85px] font-medium text-slate-700 dark:text-slate-300">
-                            {unit.lokasi}
-                          </span>
-                        )}
+                        {lokasiText}
                       </button>
-
-                      {/* Waktu Terakhir Charge */}
-                      <span
-                        className={`flex items-center gap-1 text-[11px] font-mono tabular-nums ${
-                          isCriticalOverdue ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-slate-600 dark:text-slate-400'
-                        }`}
-                        title={`Charge ${daysAgo === 0 ? 'hari ini' : `${daysAgo} hari lalu`}`}
-                      >
-                        <Clock className={`w-3.5 h-3.5 shrink-0 ${isCriticalOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`} />
-                        <span>{daysAgo === 0 ? 'Hari ini' : `${daysAgo}h lalu`}</span>
+                      <span className="text-slate-300 dark:text-slate-600">•</span>
+                      <span className={isCriticalOverdue ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-slate-600 dark:text-slate-400'}>
+                        {chargeText}
                       </span>
-
-                      {/* Jatuh Tempo (Ikon Kalender + Nilai "3 Des") */}
-                      <span
-                        className="flex items-center gap-1 text-[11px] text-slate-600 font-mono tabular-nums"
-                        title={`Jatuh tempo ${jatuhTempoDate}`}
-                      >
-                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>{jatuhTempoDate}</span>
-                      </span>
-
-                      {/* Kondisi Baterai (Bentuk Pembeda Ramah Buta Warna) */}
-                      <BatteryConditionBadge
-                        condition={unit.kondisiBaterai || 'PRIMA'}
-                        size="xs"
-                        onClick={() => setDetailUnit(unit)}
-                      />
-
-                      {/* Status Charger Aktif atau Antrian (Ikon saja bila ada) */}
-                      {isCharging && (
-                        <span
-                          className="w-5 h-5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 flex items-center justify-center"
-                          title="Sedang Di-charge"
-                        >
-                          <Zap className="w-3 h-3 fill-sky-600" />
-                        </span>
-                      )}
-
-                      {isWaiting && (
-                        <span
-                          className="w-5 h-5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center justify-center"
-                          title="Dalam Antrian Charge"
-                        >
-                          <Clock className="w-3 h-3 text-amber-600" />
-                        </span>
-                      )}
 
                       {/* Ikon Catatan Kecil (Bila ada catatan) */}
                       {unit.catatanBaterai && (
                         <button
                           type="button"
                           onClick={() => setDetailUnit(unit)}
-                          className="text-slate-400 hover:text-slate-600"
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ml-0.5"
                           title={unit.catatanBaterai}
                         >
                           <FileText className="w-3.5 h-3.5" />
@@ -732,8 +696,8 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                     {/* Tombol Aksi Baris 3: Utama (Charge) + Titik Tiga (...) ke Bottom Sheet */}
                     <div className="flex items-center gap-1.5 shrink-0">
                       {chargingSuccessUnitId === unit.id ? (
-                        <div className="h-10 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-300">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <div className="h-10 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                           <span>Antri</span>
                         </div>
                       ) : (
@@ -742,7 +706,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                           disabled={isCharging || isWaiting}
                           className={`pressable h-10 px-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                             isCharging || isWaiting
-                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
                               : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
                           }`}
                           title={isCharging ? "Sedang di-charge" : isWaiting ? "Sedang dalam antrian" : "Mulai / jadwalkan charge"}
@@ -755,11 +719,11 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                       {/* Tombol Titik Tiga (⋯) 44x44px untuk membuka Bottom Sheet Aksi */}
                       <button
                         onClick={() => setActionSheetUnit(unit)}
-                        className="pressable h-10 w-10 min-w-[40px] rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center shrink-0 transition-all active:scale-95"
+                        className="pressable h-10 w-10 min-w-[40px] rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0 transition-all active:scale-95"
                         title="Menu aksi lainnya (Perpanjang, Audit, Tebus, Lelang)"
                         aria-label="Aksi Lainnya"
                       >
-                        <MoreHorizontal className="w-4 h-4 text-slate-600" />
+                        <MoreHorizontal className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                       </button>
                     </div>
                   </div>

@@ -66,7 +66,8 @@ if (hasPerpanjangAction && hasAuditAction && hasTebusAction && hasLelangAction) 
 // 7. Check Search & Filter Bar: Sticky, 44x44px sort, fade gradient
 const isSticky = aktifViewCode.includes('sticky -top-3 z-20');
 const hasSort44 = aktifViewCode.includes('h-11 w-11 shrink-0 rounded-xl border');
-const hasFadeGradient = aktifViewCode.includes('bg-gradient-to-l from-[#F0F9FF] to-transparent');
+const hasFadeGradient = aktifViewCode.includes('bg-gradient-to-l from-[#F0F9FF] to-transparent') ||
+                        aktifViewCode.includes('bg-gradient-to-l from-white dark:from-[#0B0F17] to-transparent');
 if (isSticky && hasSort44 && hasFadeGradient) {
   console.log('✅ 7. Sticky search & filter bar verified with 44x44px sort button, horizontal scrollable pill chips, and right fade gradient');
 } else {

@@ -718,22 +718,22 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
       {/* 5. BOTTOM SHEET PENGATURAN SLOT CHARGER */}
       {showSlotSettings && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200">
-            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+          <div className="w-full max-w-lg bg-white dark:bg-[#151C28] rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 border-t border-slate-200 dark:border-[#232F42]">
+            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
-            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                   <Settings className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Pengaturan Slot Charger</h3>
-                  <p className="text-xs text-slate-500">Terisi {chargingUnits.length} dari {slotsCapacity} colokan</p>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Pengaturan Slot Charger</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Terisi {chargingUnits.length} dari {slotsCapacity} colokan</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowSlotSettings(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center"
                 aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
@@ -741,22 +741,22 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
             </div>
 
             {/* Stepper Jumlah Colokan */}
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center space-y-3">
-              <span className="text-xs text-slate-600 font-medium">Kapasitas Colokan Aktif:</span>
+            <div className="bg-slate-50 dark:bg-[#111722] p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center space-y-3">
+              <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">Kapasitas Colokan Aktif:</span>
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={() => handleAdjustSlots(-1)}
                   disabled={slotsCapacity <= MIN_SLOTS_CAPACITY || slotsCapacity <= chargingUnits.length}
-                  className="w-12 h-12 rounded-xl bg-white text-slate-700 flex items-center justify-center font-bold text-base shadow-xs hover:bg-slate-100 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-200"
+                  className="w-12 h-12 rounded-xl bg-white dark:bg-[#151C28] text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-base shadow-xs hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-200 dark:border-[#232F42]"
                   title="Kurangi 1 Slot"
                 >
                   <Minus className="w-5 h-5" />
                 </button>
                 <div className="min-w-[80px]">
-                  <span className="text-2xl font-black text-slate-900 block font-mono">
+                  <span className="text-2xl font-black text-slate-900 dark:text-white block font-mono">
                     {slotsCapacity}
                   </span>
-                  <span className="text-[11px] text-slate-500">Colokan</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Colokan</span>
                 </div>
                 <button
                   onClick={() => handleAdjustSlots(1)}
@@ -822,22 +822,22 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
       {/* 6. MODAL DETAIL / PREVIEW "PANTAU DI LAYAR KUNCI" (LIGHT THEME, FRIENDLY COPY) */}
       {showLiveMonitorDetail && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+          <div className="w-full max-w-lg bg-white dark:bg-[#151C28] rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto border-t border-slate-200 dark:border-[#232F42]">
+            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
-            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                   <Smartphone className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Pantau di Layar Kunci</h3>
-                  <p className="text-xs text-slate-500">Informasi pengisian daya tanpa membuka ponsel</p>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Pantau di Layar Kunci</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Informasi pengisian daya tanpa membuka ponsel</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowLiveMonitorDetail(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center"
                 aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
@@ -845,15 +845,15 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
             </div>
 
             <div className="space-y-2.5 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 leading-relaxed text-slate-700">
+              <div className="p-3 bg-slate-50 dark:bg-[#111722] rounded-xl border border-slate-100 dark:border-slate-800 leading-relaxed text-slate-700 dark:text-slate-300">
                 Sisa waktu charger tampil langsung di layar kunci tanpa membuka HP. Petugas gudang cukup menyalakan layar ponsel untuk melihat status dan sisa waktu pengisian.
               </div>
 
               {/* Status Colokan Aktif Saat Ini */}
               <div className="space-y-2">
-                <span className="text-slate-500 text-[11px] font-semibold block">Pratinjau Status Slot:</span>
+                <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Pratinjau Status Slot:</span>
                 {chargingUnits.length === 0 ? (
-                  <div className="p-3 bg-slate-50 rounded-xl text-center text-slate-400">
+                  <div className="p-3 bg-slate-50 dark:bg-[#111722] rounded-xl text-center text-slate-400 dark:text-slate-500">
                     Tidak ada unit yang sedang di-charge saat ini.
                   </div>
                 ) : (
@@ -862,13 +862,13 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
                     return (
                       <div
                         key={u.id}
-                        className="p-2.5 rounded-xl bg-sky-50/70 border border-sky-100 flex items-center justify-between"
+                        className="p-2.5 rounded-xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-100 dark:border-sky-800/60 flex items-center justify-between"
                       >
                         <div>
-                          <span className="font-bold text-slate-900 block">Slot #{idx + 1}: #{u.kodeGadai}</span>
-                          <span className="text-[11px] text-slate-600">{u.merkSepeda} ({u.batteryLevel}%)</span>
+                          <span className="font-bold text-slate-900 dark:text-white block">Slot #{idx + 1}: #{u.kodeGadai}</span>
+                          <span className="text-[11px] text-slate-600 dark:text-slate-400">{u.merkSepeda} ({u.batteryLevel}%)</span>
                         </div>
-                        <span className="font-mono font-bold text-sky-700 text-sm">
+                        <span className="font-mono font-bold text-sky-700 dark:text-sky-300 text-sm">
                           {timeInfo.formatted}
                         </span>
                       </div>
@@ -910,22 +910,22 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
       {/* 7. MODAL PILIH DURASI CHARGER SEBELUM MULAI */}
       {showDirectStartModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200">
-            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+          <div className="w-full max-w-lg bg-white dark:bg-[#151C28] rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 border-t border-slate-200 dark:border-[#232F42]">
+            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
-            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Tentukan Durasi Pengisian</h3>
-                  <p className="text-xs text-slate-500">Pilih durasi sesuai kondisi dan kapasitas baterai</p>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Tentukan Durasi Pengisian</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Pilih durasi sesuai kondisi dan kapasitas baterai</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowDirectStartModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center"
                 aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
@@ -945,15 +945,15 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
                     }}
                     className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
                       isSelected
-                        ? "border-sky-500 bg-sky-50 text-sky-900 ring-1 ring-sky-400"
-                        : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                        ? "border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 ring-1 ring-sky-400"
+                        : "border-slate-200 dark:border-[#232F42] bg-white dark:bg-[#151C28] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
                     }`}
                   >
                     <div>
                       <span className="text-xs font-bold block">{preset.label}</span>
-                      <span className="text-[11px] text-slate-500">{preset.desc}</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">{preset.desc}</span>
                     </div>
-                    {isSelected && <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0" />}
+                    {isSelected && <CheckCircle2 className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />}
                   </button>
                 );
               })}
@@ -964,20 +964,20 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
                 onClick={() => setIsCustomDuration(true)}
                 className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
                   isCustomDuration
-                    ? "border-sky-500 bg-sky-50 text-sky-900 ring-1 ring-sky-400"
-                    : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                    ? "border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 ring-1 ring-sky-400"
+                    : "border-slate-200 dark:border-[#232F42] bg-white dark:bg-[#151C28] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
                 }`}
               >
                 <div>
                   <span className="text-xs font-bold block">Durasi Kustom</span>
-                  <span className="text-[11px] text-slate-500">Tentukan jam manual (0.5 – 12 Jam)</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Tentukan jam manual (0.5 – 12 Jam)</span>
                 </div>
-                {isCustomDuration && <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0" />}
+                {isCustomDuration && <CheckCircle2 className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />}
               </button>
 
               {isCustomDuration && (
-                <div className="p-3 bg-sky-50/50 rounded-xl border border-sky-200 mt-2">
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                <div className="p-3 bg-sky-50/50 dark:bg-sky-950/30 rounded-xl border border-sky-200 dark:border-sky-800 mt-2">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Masukkan Jumlah Jam:
                   </label>
                   <input
@@ -987,7 +987,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
                     max="12"
                     value={customHours}
                     onChange={(e) => setCustomHours(e.target.value)}
-                    className="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-center text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full h-11 px-3 bg-white dark:bg-[#151C28] border border-slate-200 dark:border-[#232F42] rounded-xl text-center text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
               )}
@@ -997,7 +997,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
               <button
                 type="button"
                 onClick={() => setShowDirectStartModal(false)}
-                className="flex-1 h-11 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200 transition-all"
+                className="flex-1 h-11 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
               >
                 Batal
               </button>
@@ -1017,22 +1017,22 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
       {/* 8. MODAL TAMBAH KE ANTRIAN CHARGER */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+          <div className="w-full max-w-lg bg-white dark:bg-[#151C28] rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto border-t border-slate-200 dark:border-[#232F42]">
+            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
-            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                   <Zap className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Tambah ke Antrian Charger</h3>
-                  <p className="text-xs text-slate-500">Unit ≥15 hari otomatis menjadi prioritas teratas</p>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Tambah ke Antrian Charger</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Unit ≥15 hari otomatis menjadi prioritas teratas</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center"
                 aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
@@ -1126,24 +1126,24 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
       {/* 9. BOTTOM SHEET KONFIRMASI PENGEMBALIAN LETAK SETELAH CHARGER */}
       {finishConfirmUnit && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3.5 animate-in slide-in-from-bottom duration-200">
-            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+          <div className="w-full max-w-lg bg-white dark:bg-[#151C28] rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3.5 animate-in slide-in-from-bottom duration-200 border-t border-slate-200 dark:border-[#232F42]">
+            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
-            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Selesai Pengisian Baterai</h3>
-                  <p className="text-xs text-slate-500">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Selesai Pengisian Baterai</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Unit #{finishConfirmUnit.kodeGadai} • {finishConfirmUnit.merkSepeda}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setFinishConfirmUnit(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center"
                 aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
@@ -1151,8 +1151,8 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
             </div>
 
             <div className="space-y-2.5">
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1 text-xs">
-                <div className="text-slate-600 font-medium">
+              <div className="p-3 bg-slate-50 dark:bg-[#111722] rounded-2xl border border-slate-200/80 dark:border-[#232F42] space-y-1 text-xs">
+                <div className="text-slate-600 dark:text-slate-300 font-medium">
                   Pengisian baterai unit telah selesai. Dikembalikan ke letak sebelumnya?
                 </div>
                 <div className="flex items-center gap-1.5 pt-1 text-slate-800">

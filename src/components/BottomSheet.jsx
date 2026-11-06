@@ -137,7 +137,7 @@ export default function BottomSheet({
       <div
         ref={sheetRef}
         tabIndex={-1}
-        className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-sheet overflow-hidden flex flex-col focus:outline-none"
+        className="w-full max-w-lg bg-white dark:bg-[#151C28] rounded-t-3xl sm:rounded-2xl shadow-sheet overflow-hidden flex flex-col focus:outline-none border-t border-slate-200 dark:border-[#232F42]"
         style={{
           maxHeight,
           transform: isExiting
@@ -160,26 +160,26 @@ export default function BottomSheet({
           className="w-full py-3 cursor-grab active:cursor-grabbing touch-none flex justify-center items-center shrink-0 select-none"
           title="Geser ke bawah untuk menutup"
         >
-          <div className="w-12 h-1.5 bg-slate-300 rounded-full transition-colors group-hover:bg-slate-400" />
+          <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full transition-colors group-hover:bg-slate-400" />
         </div>
 
         {/* Header Bar */}
         {(title || Icon || showCloseButton) && (
-          <div className="flex items-start justify-between px-4 pb-3 border-b border-slate-100 shrink-0">
+          <div className="flex items-start justify-between px-4 pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
               {Icon && (
-                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                   <Icon className="w-5 h-5" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
                 {title && (
-                  <h3 className="text-sm font-bold text-slate-900 leading-tight truncate">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate">
                     {title}
                   </h3>
                 )}
                 {subtitle && (
-                  <p className="text-xs text-slate-500 leading-tight mt-0.5 truncate">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
                     {subtitle}
                   </p>
                 )}
@@ -190,7 +190,7 @@ export default function BottomSheet({
               <button
                 type="button"
                 onClick={handleTriggerClose}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center pressable shrink-0 ml-2"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center pressable shrink-0 ml-2"
                 aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
