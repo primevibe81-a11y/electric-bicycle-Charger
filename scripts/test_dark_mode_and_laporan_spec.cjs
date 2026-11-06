@@ -77,9 +77,12 @@ it('5b. Emoji ganda pada tombol Salin Ringkasan WA telah dihapus', () => {
 });
 
 it('5c. Tombol ekspor & kirim laporan memiliki label teks jelas: PDF Kacab, Excel, Kontak', () => {
-  assert.ok(laporanCode.includes('📄 PDF Kacab'), 'Harus ada tombol 📄 PDF Kacab');
-  assert.ok(laporanCode.includes('📊 Excel'), 'Harus ada tombol 📊 Excel');
-  assert.ok(laporanCode.includes('⚙️ Kontak'), 'Harus ada tombol ⚙️ Kontak');
+  assert.ok(laporanCode.includes('PDF Kacab</span>'), 'Harus ada tombol PDF Kacab');
+  assert.ok(laporanCode.includes('Excel</span>'), 'Harus ada tombol Excel');
+  assert.ok(laporanCode.includes('Kontak</span>'), 'Harus ada tombol Kontak');
+  assert.ok(!laporanCode.includes('📄 PDF Kacab'), 'Tidak boleh ada emoji 📄 di tombol PDF Kacab');
+  assert.ok(!laporanCode.includes('📊 Excel'), 'Tidak boleh ada emoji 📊 di tombol Excel');
+  assert.ok(!laporanCode.includes('⚙️ Kontak'), 'Tidak boleh ada emoji ⚙️ di tombol Kontak');
 });
 
 // 6. Bersihkan Ikon Bisu & Tombol Putih Menyilaukan di Dalam Kartu Unit (Semua Tab)

@@ -30,7 +30,7 @@ export default function BottomNav({ activeTab, onChangeTab, queueCount = 0 }) {
 
   return (
     <nav
-      className="fixed bottom-[calc(env(safe-area-inset-bottom)+12px)] left-1/2 -translate-x-1/2 z-50 w-[calc(100%-28px)] max-w-[390px] h-16 rounded-full px-2 flex items-center justify-around bg-white/75 backdrop-blur-xl border border-white/70 shadow-[0_10px_30px_rgba(2,132,199,0.14)] dark:bg-slate-900/80 dark:backdrop-blur-xl dark:border-slate-700/70 dark:shadow-[0_12px_35px_rgba(0,0,0,0.65)] select-none"
+      className="fixed bottom-[calc(env(safe-area-inset-bottom)+12px)] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-28px)] max-w-[390px] h-16 rounded-full px-2 flex items-center justify-around bg-white/75 backdrop-blur-xl border border-white/70 shadow-[0_10px_30px_rgba(2,132,199,0.14)] dark:bg-slate-900/80 dark:backdrop-blur-xl dark:border-slate-700/70 dark:shadow-[0_12px_35px_rgba(0,0,0,0.65)] select-none"
       role="navigation"
       aria-label="Navigasi Utama"
     >

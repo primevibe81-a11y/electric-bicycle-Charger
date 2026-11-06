@@ -313,7 +313,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
   const emptySlotsCount = Math.max(0, slotsCapacity - chargingUnits.length);
 
   return (
-    <div className="space-y-3 pb-8">
+    <div className="space-y-3 pb-28">
       {/* 0. SMART AI SHIFT BRIEFING BANNER (1-Tap Buka Asisten AI Gudang) */}
       <div
         onClick={onOpenAiAssistant}
@@ -717,7 +717,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
 
       {/* 5. BOTTOM SHEET PENGATURAN SLOT CHARGER */}
       {showSlotSettings && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white dark:bg-[#151C28] rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 border-t border-slate-200 dark:border-[#232F42]">
             <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
@@ -821,7 +821,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
 
       {/* 6. MODAL DETAIL / PREVIEW "PANTAU DI LAYAR KUNCI" (LIGHT THEME, FRIENDLY COPY) */}
       {showLiveMonitorDetail && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white dark:bg-[#151C28] rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto border-t border-slate-200 dark:border-[#232F42]">
             <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
@@ -909,7 +909,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
 
       {/* 7. MODAL PILIH DURASI CHARGER SEBELUM MULAI */}
       {showDirectStartModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white dark:bg-[#151C28] rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 border-t border-slate-200 dark:border-[#232F42]">
             <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
@@ -1016,7 +1016,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
 
       {/* 8. MODAL TAMBAH KE ANTRIAN CHARGER */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white dark:bg-[#151C28] rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto border-t border-slate-200 dark:border-[#232F42]">
             <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
@@ -1041,7 +1041,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
 
             {eligibleUnits.length === 0 ? (
               <div className="p-4 text-center">
-                <p className="text-xs text-slate-500 mb-3">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                   Tidak ada unit berstatus Aktif atau Lelang yang tersedia (semua sedang di-charge atau mengantri).
                 </p>
                 <button
@@ -1049,7 +1049,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
                     setShowAddModal(false);
                     if (onSelectTab) onSelectTab('aktif');
                   }}
-                  className="h-11 px-4 bg-sky-50 text-sky-700 rounded-xl text-xs font-bold border border-sky-200 hover:bg-sky-100 transition-all"
+                  className="h-11 px-4 bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 rounded-xl text-xs font-bold border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/60 transition-all"
                 >
                   Lihat Daftar Unit di Tab Aktif
                 </button>
@@ -1057,7 +1057,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
             ) : (
               <form onSubmit={handleEnqueueSubmit} className="space-y-3 pt-1">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Pilih Sepeda Listrik
                   </label>
                   <select
@@ -1068,7 +1068,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
                       if (unit) setInputBattery(String(unit.batteryLevel));
                     }}
                     required
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full h-11 px-3 bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   >
                     <option value="">-- Pilih Nomor Gadai --</option>
                     {eligibleUnits.map(u => {
@@ -1084,7 +1084,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Persentase Baterai Saat Ini (0 - 100%)
                   </label>
                   <input
@@ -1095,9 +1095,9 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
                     value={inputBattery}
                     onChange={(e) => setInputBattery(e.target.value)}
                     required
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full h-11 px-3 bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-slate-700 rounded-xl text-center text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
-                  <div className="flex items-center gap-1.5 text-[11px] text-sky-700 mt-1.5 font-medium">
+                  <div className="flex items-center gap-1.5 text-[11px] text-sky-700 dark:text-sky-400 mt-1.5 font-medium">
                     <Info className="w-3.5 h-3.5 shrink-0" />
                     <span>Unit yang sudah ≥15 hari otomatis ditempatkan di posisi teratas (#1).</span>
                   </div>
@@ -1107,7 +1107,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="flex-1 h-11 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200 transition-all"
+                    className="flex-1 h-11 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                   >
                     Batal
                   </button>
@@ -1125,7 +1125,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
       )}
       {/* 9. BOTTOM SHEET KONFIRMASI PENGEMBALIAN LETAK SETELAH CHARGER */}
       {finishConfirmUnit && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white dark:bg-[#151C28] rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3.5 animate-in slide-in-from-bottom duration-200 border-t border-slate-200 dark:border-[#232F42]">
             <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 

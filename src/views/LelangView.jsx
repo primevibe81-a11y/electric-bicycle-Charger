@@ -142,7 +142,7 @@ export default function LelangView({ units, onNotify }) {
   };
 
   return (
-    <div className="space-y-3 pb-8">
+    <div className="space-y-3 pb-28">
       {/* 1. HEADER HALAMAN RINGKAS */}
       <div className="pt-0.5">
         <h2 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
@@ -464,26 +464,26 @@ export default function LelangView({ units, onNotify }) {
 
       {/* 4. BOTTOM SHEET KONFIRMASI CATAT TERJUAL LELANG */}
       {selectedUnitForSale && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-lg bg-white dark:bg-[#151C28] text-slate-900 dark:text-slate-100 rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 border-t border-slate-200 dark:border-[#232F42]">
             {/* Drag Handle Indicator */}
-            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
-            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
                   <Tag className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Konfirmasi Penjualan Lelang</h3>
-                  <p className="text-xs text-slate-500">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Konfirmasi Penjualan Lelang</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Unit #{selectedUnitForSale.kodeGadai} • {selectedUnitForSale.merkSepeda}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedUnitForSale(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center"
                 aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
@@ -492,25 +492,25 @@ export default function LelangView({ units, onNotify }) {
 
             <form onSubmit={handleSaleSubmit} className="space-y-3 pt-1">
               {/* Ringkasan Singkat Unit */}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs space-y-1">
-                <div className="flex justify-between text-slate-500">
+              <div className="bg-slate-50 dark:bg-[#111722] p-3 rounded-xl border border-slate-100 dark:border-slate-800 text-xs space-y-1">
+                <div className="flex justify-between text-slate-500 dark:text-slate-400">
                   <span>Nasabah Asal:</span>
-                  <span className="font-semibold text-slate-800">{selectedUnitForSale.namaNasabah}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedUnitForSale.namaNasabah}</span>
                 </div>
-                <div className="flex justify-between text-slate-500">
+                <div className="flex justify-between text-slate-500 dark:text-slate-400">
                   <span>Letak Unit:</span>
-                  <span className="font-semibold text-slate-800">{selectedUnitForSale.lokasi || 'Belum diisi'}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedUnitForSale.lokasi || 'Belum diisi'}</span>
                 </div>
-                <div className="flex justify-between text-slate-500">
+                <div className="flex justify-between text-slate-500 dark:text-slate-400">
                   <span>Estimasi Awal:</span>
-                  <span className="font-semibold text-purple-700">
+                  <span className="font-semibold text-purple-700 dark:text-purple-400">
                     {formatRupiah(selectedUnitForSale.hargaLelang || 2500000)}
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Nominal Laku Terjual (Rp)
                 </label>
                 <input
@@ -520,12 +520,12 @@ export default function LelangView({ units, onNotify }) {
                   value={soldPrice}
                   onChange={(e) => setSoldPrice(e.target.value)}
                   placeholder="Contoh: 2800000"
-                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full h-11 px-3 bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Nama Pembeli &amp; Nomor Kuitansi
                 </label>
                 <input
@@ -534,12 +534,12 @@ export default function LelangView({ units, onNotify }) {
                   value={buyerInfo}
                   onChange={(e) => setBuyerInfo(e.target.value)}
                   placeholder="Contoh: Pak Herman (0812xxxx) / Kuitansi L-09"
-                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full h-11 px-3 bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
-              <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-100 flex items-start gap-2 text-xs text-purple-900">
-                <Info className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+              <div className="p-2.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/50 flex items-start gap-2 text-xs text-purple-900 dark:text-purple-300">
+                <Info className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
                 <p className="text-[11px] leading-snug">
                   Aksi ini bersifat final: unit akan dipindahkan ke tab <strong>Terjual</strong> dan dilepas dari daftar siap lelang.
                 </p>
@@ -549,7 +549,7 @@ export default function LelangView({ units, onNotify }) {
                 <button
                   type="button"
                   onClick={() => setSelectedUnitForSale(null)}
-                  className="flex-1 h-11 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200 transition-all"
+                  className="flex-1 h-11 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                 >
                   Batal
                 </button>

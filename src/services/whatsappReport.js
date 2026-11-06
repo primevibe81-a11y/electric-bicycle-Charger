@@ -3,7 +3,8 @@
  * Formats a clean, professional summary of warehouse operations ready to send to WhatsApp.
  */
 
-import { getDaysSinceLastCharge } from './chargerQueue';
+import { getDaysSinceLastCharge, BATTERY_CONDITIONS } from './chargerQueue';
+import { isRealBatteryOrPhysicalDefect } from './storage';
 
 export function generateWhatsAppReport(units = [], currentUser = null) {
   const now = new Date();
@@ -21,9 +22,9 @@ export function generateWhatsAppReport(units = [], currentUser = null) {
   const hour = now.getHours();
   const shiftName = hour >= 6 && hour < 14 ? 'Pagi (08:00 - 14:00)' : hour >= 14 && hour < 21 ? 'Sore (14:00 - 21:00)' : 'Malam';
 
-  const aktifUnits = units.filter(u => u.statusGadai === 'AKTIF');
-  const lelangUnits = units.filter(u => u.statusGadai === 'LELANG');
-  const tebusUnits = units.filter(u => u.statusGadai === 'DITEBUS');
+  const aktifUnits = units.filter(u => (u.statusBarang || u.statusGadai) === 'AKTIF');
+  const lelangUnits = units.filter(u => (u.statusBarang || u.statusGadai) === 'LELANG');
+  const tebusUnits = units.filter(u => (u.statusBarang || u.statusGadai) === 'DITEBUS');
   const fisikGudang = aktifUnits.length + lelangUnits.length;
 
   const chargingUnits = units.filter(u => u.statusCharger === 'CHARGING');
@@ -37,23 +38,21 @@ export function generateWhatsAppReport(units = [], currentUser = null) {
 
   // Kritis >= 15 hari
   const criticalUnits = units.filter(u => {
-    if (u.statusGadai === 'DITEBUS') return false;
+    if ((u.statusBarang || u.statusGadai) === 'DITEBUS') return false;
     const fallbackMasuk = u.jatuhTempoAt ? u.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
     const daysAgo = getDaysSinceLastCharge(u.lastChargedAt, fallbackMasuk);
     return daysAgo >= 15;
   });
 
-  // Unit bermasalah
+  // Unit bermasalah (Hanya yang benar-benar rusak/drop atau komplain fisik asli, bukan mutasi/otomatis)
   const defectUnits = units.filter(u => {
-    if (u.statusGadai === 'DITEBUS') return false;
-    const isDefectCond = u.kondisiBaterai && u.kondisiBaterai !== 'PRIMA';
-    const isOverdueHeavy = getDaysSinceLastCharge(u.lastChargedAt) >= 60;
-    return isDefectCond || isOverdueHeavy;
+    if ((u.statusBarang || u.statusGadai) === 'DITEBUS') return false;
+    return isRealBatteryOrPhysicalDefect(u);
   });
 
   // Unit tanpa lokasi
   const noLocationUnits = units.filter(u => {
-    if (u.statusGadai === 'DITEBUS') return false;
+    if ((u.statusBarang || u.statusGadai) === 'DITEBUS') return false;
     return !u.lokasi || u.lokasi.trim() === '';
   });
 
@@ -72,7 +71,8 @@ export function generateWhatsAppReport(units = [], currentUser = null) {
   let defectDetails = '- Tidak ada unit terindikasi defect / aki drop.';
   if (defectUnits.length > 0) {
     defectDetails = defectUnits.slice(0, 5).map(u => {
-      const label = u.kondisiBaterai !== 'PRIMA' ? u.kondisiBaterai : 'Telat >60 Hari';
+      const condObj = BATTERY_CONDITIONS[u.kondisiBaterai];
+      const label = condObj ? condObj.label : (u.catatanBaterai || 'Kondisi Menurun');
       return `   • #${u.kodeGadai} (${u.merkSepeda}): ${label}`;
     }).join('\n');
     if (defectUnits.length > 5) {

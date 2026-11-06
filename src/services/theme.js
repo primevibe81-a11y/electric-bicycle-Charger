@@ -29,11 +29,14 @@ export function applyTheme(theme) {
     document.documentElement.classList.remove('dark');
   }
 
-  // Update mobile status bar theme-color
-  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-  if (metaThemeColor) {
-    metaThemeColor.setAttribute('content', isDark ? '#0B0F17' : '#E0F2FE');
+  // Update mobile status bar theme-color dynamically
+  let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+  if (!metaThemeColor) {
+    metaThemeColor = document.createElement('meta');
+    metaThemeColor.setAttribute('name', 'theme-color');
+    document.head.appendChild(metaThemeColor);
   }
+  metaThemeColor.setAttribute('content', isDark ? '#0B0F17' : '#F4F8FB');
 
   try {
     localStorage.setItem(STORAGE_KEY, theme);

@@ -77,7 +77,7 @@ export default function Tooltip({
       {isVisible && content && (
         <div
           role="tooltip"
-          className={`absolute z-50 pointer-events-none whitespace-nowrap bg-slate-900/95 text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-lg border border-slate-700/50 backdrop-blur-xs animate-in fade-in zoom-in-95 duration-150 ${
+          className={`absolute z-[120] pointer-events-none whitespace-nowrap bg-slate-900/95 text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-lg border border-slate-700/50 backdrop-blur-xs animate-in fade-in zoom-in-95 duration-150 ${
             positionClasses[position] || positionClasses.top
           }`}
         >

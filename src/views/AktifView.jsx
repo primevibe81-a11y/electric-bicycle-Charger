@@ -276,7 +276,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
   };
 
   return (
-    <div className="space-y-3 pb-8">
+    <div className="space-y-3 pb-28">
       {/* 1. Header Bar: Title, Count, & Add Unit Button */}
       <div className="flex items-center justify-between gap-2 pt-0.5">
         <div>
@@ -747,29 +747,29 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
     {/* 5. BOTTOM SHEET AKSI (⋯) */}
     {actionSheetUnit && (
-      <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200">
+      <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-lg bg-white dark:bg-[#151C28] text-slate-900 dark:text-slate-100 rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3 animate-in slide-in-from-bottom duration-200 border-t border-slate-200 dark:border-[#232F42]">
             {/* Drag Handle Indicator */}
-            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
             {/* Header Bottom Sheet */}
-            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div>
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                   Aksi Unit #{actionSheetUnit.kodeGadai}
                 </h3>
-                <p className="text-xs text-slate-500 truncate max-w-[280px]">
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[280px]">
                   {actionSheetUnit.merkSepeda} • {actionSheetUnit.namaNasabah}
                 </p>
                 {/* Informasi Lokasi Fisik di Aksi Cepat */}
-                <div className="flex items-center gap-1 mt-1 text-[11px] text-slate-600">
-                  <MapPin className="w-3 h-3 text-sky-600 shrink-0" />
+                <div className="flex items-center gap-1 mt-1 text-[11px] text-slate-600 dark:text-slate-300">
+                  <MapPin className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
                   <span>Letak: <strong>{actionSheetUnit.lokasi || 'Belum diisi'}</strong></span>
                 </div>
               </div>
               <button
                 onClick={() => setActionSheetUnit(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center"
                 aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
@@ -785,16 +785,16 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   setActionSheetUnit(null);
                   onNavigateToPerpanjang(target.id);
                 }}
-                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
+                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
               >
-                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                   <RefreshCw className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-slate-900">Perpanjang Gadai</div>
-                  <div className="text-[11px] text-slate-500">Perpanjang masa gadai & terbitkan nomor akad baru</div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">Perpanjang Gadai</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Perpanjang masa gadai & terbitkan nomor akad baru</div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" />
               </button>
 
               {/* Action: Ubah Letak Unit */}
@@ -804,18 +804,18 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   setActionSheetUnit(null);
                   setEditLokasiUnit(target);
                 }}
-                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
+                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
               >
-                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-slate-900">Ubah Letak Unit</div>
-                  <div className="text-[11px] text-slate-500">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">Ubah Letak Unit</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
                     Posisi rak gudang: {actionSheetUnit.lokasi || 'Belum diisi'}
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" />
               </button>
 
               {/* Action 1: Audit Baterai (Line icon ShieldCheck) */}
@@ -825,49 +825,49 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   setActionSheetUnit(null);
                   setAuditingUnit(target);
                 }}
-                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
+                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
               >
-                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-slate-900">Audit Baterai</div>
-                  <div className="text-[11px] text-slate-500">Catat voltase, kesehatan sel, dan kondisi fisik</div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">Audit Baterai</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Catat voltase, kesehatan sel, dan kondisi fisik</div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" />
               </button>
 
               {/* Action 2: Tebus Unit (Line icon CheckCircle2) */}
               <button
                 onClick={() => handleTebusConfirm(actionSheetUnit)}
-                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
+                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
               >
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-slate-900">Tebus Unit</div>
-                  <div className="text-[11px] text-slate-500">Pelunasan pinjaman gadai &amp; serah terima sepeda</div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">Tebus Unit</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Pelunasan pinjaman gadai &amp; serah terima sepeda</div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" />
               </button>
 
               {/* Divider sebelum aksi besar Lelang */}
-              <div className="border-t border-slate-100 my-1" />
+              <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
 
               {/* Action 3: Pindah ke Lelang */}
               <button
                 onClick={() => handleMoveToLelang(actionSheetUnit)}
-                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 bg-purple-50/60 hover:bg-purple-100/70 text-purple-900 border border-purple-200/80 transition-colors"
+                className="pressable w-full min-h-[44px] p-2.5 rounded-xl text-left flex items-center gap-3 bg-purple-50/60 dark:bg-purple-950/40 hover:bg-purple-100/70 dark:hover:bg-purple-900/60 text-purple-900 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60 transition-colors"
               >
-                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 flex items-center justify-center shrink-0">
                   <Gavel className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-purple-950">Pindahkan ke Lelang</div>
-                  <div className="text-[11px] text-purple-700">Lepas unit jatuh tempo ke lelang barang</div>
+                  <div className="text-xs font-bold text-purple-950 dark:text-purple-200">Pindahkan ke Lelang</div>
+                  <div className="text-[11px] text-purple-700 dark:text-purple-400">Lepas unit jatuh tempo ke lelang barang</div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-purple-400 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-purple-400 dark:text-purple-500 shrink-0" />
               </button>
             </div>
 
@@ -875,7 +875,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
             <div className="pt-2">
               <button
                 onClick={() => setActionSheetUnit(null)}
-                className="pressable w-full h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
+                className="pressable w-full h-11 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all"
               >
                 Batal
               </button>
@@ -886,23 +886,23 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
       {/* 6. DETAIL UNIT SHEET (DIBUKA SAAT KARTU DI-TAP) */}
       {detailUnit && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3.5 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/60 p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-lg bg-white dark:bg-[#151C28] text-slate-900 dark:text-slate-100 rounded-t-3xl sm:rounded-2xl p-4 shadow-sheet space-y-3.5 animate-in slide-in-from-bottom duration-200 max-h-[90vh] overflow-y-auto border-t border-slate-200 dark:border-[#232F42]">
             {/* Drag Handle Indicator */}
-            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto" />
+            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
 
-            <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-start justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div>
-                <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-100 uppercase">
+                <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-full border border-sky-100 dark:border-sky-800 uppercase">
                   Detail Unit Gadai
                 </span>
-                <h3 className="text-base font-bold text-slate-900 font-mono mt-1">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white font-mono mt-1">
                   #{detailUnit.kodeGadai}
                 </h3>
               </div>
               <button
                 onClick={() => setDetailUnit(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center"
                 aria-label="Tutup Detail"
               >
                 <X className="w-4 h-4" />
@@ -910,20 +910,20 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1.5">
-                <div className="text-slate-500 text-[11px]">Informasi Sepeda &amp; Nasabah</div>
-                <div className="font-bold text-slate-900 text-sm">{detailUnit.merkSepeda}</div>
-                <div className="text-slate-700 flex items-center gap-1.5">
+              <div className="bg-slate-50 dark:bg-[#111722] p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+                <div className="text-slate-500 dark:text-slate-400 text-[11px]">Informasi Sepeda &amp; Nasabah</div>
+                <div className="font-bold text-slate-900 dark:text-white text-sm">{detailUnit.merkSepeda}</div>
+                <div className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-slate-400" />
                   <span>{detailUnit.namaNasabah}</span>
                 </div>
               </div>
 
               {/* Letak Fisik di Gudang */}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center justify-between">
+              <div className="bg-slate-50 dark:bg-[#111722] p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <span className="text-[11px] text-slate-500 block">Letak di Gudang:</span>
-                  <span className="font-semibold text-slate-800 text-xs">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Letak di Gudang:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
                     {detailUnit.lokasi ? detailUnit.lokasi : 'Belum diisi'}
                   </span>
                 </div>
@@ -934,7 +934,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                     setDetailUnit(null);
                     setEditLokasiUnit(target);
                   }}
-                  className="pressable h-8 px-2.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold flex items-center gap-1"
+                  className="pressable h-8 px-2.5 rounded-lg bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 text-xs font-bold flex items-center gap-1"
                 >
                   <MapPin className="w-3.5 h-3.5" />
                   <span>Ubah</span>
@@ -942,20 +942,20 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                  <span className="text-[11px] text-slate-500 block mb-1">Kondisi Baterai</span>
+                <div className="bg-slate-50 dark:bg-[#111722] p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">Kondisi Baterai</span>
                   <BatteryConditionBadge condition={detailUnit.kondisiBaterai || 'PRIMA'} size="sm" />
                 </div>
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                  <span className="text-[11px] text-slate-500 block mb-1">Daya Tersisa</span>
+                <div className="bg-slate-50 dark:bg-[#111722] p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">Daya Tersisa</span>
                   <BatteryIndicator level={detailUnit.batteryLevel} isCharging={detailUnit.statusCharger === 'CHARGING'} size="sm" />
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2">
+              <div className="bg-slate-50 dark:bg-[#111722] p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-500">Terakhir Di-charge:</span>
-                  <span className="font-semibold text-slate-800">
+                  <span className="text-slate-500 dark:text-slate-400">Terakhir Di-charge:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
                     {detailUnit.lastChargedAt
                       ? new Date(detailUnit.lastChargedAt).toLocaleDateString('id-ID', {
                           day: 'numeric',
@@ -966,8 +966,8 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-500">Jatuh Tempo:</span>
-                  <span className="font-semibold text-slate-800">
+                  <span className="text-slate-500 dark:text-slate-400">Jatuh Tempo:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
                     {new Date(detailUnit.jatuhTempoAt).toLocaleDateString('id-ID', {
                       day: 'numeric',
                       month: 'long',
@@ -979,12 +979,12 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
               {/* Catatan Lengkap Fisik / Baterai */}
               {detailUnit.catatanBaterai && (
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-1.5 text-slate-500 text-[11px] mb-1 font-semibold">
+                <div className="bg-slate-50 dark:bg-[#111722] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px] mb-1 font-semibold">
                     <FileText className="w-3.5 h-3.5 text-slate-400" />
                     <span>Catatan Fisik &amp; Baterai:</span>
                   </div>
-                  <p className="text-slate-800 text-xs leading-relaxed whitespace-pre-wrap">
+                  <p className="text-slate-800 dark:text-slate-200 text-xs leading-relaxed whitespace-pre-wrap">
                     {detailUnit.catatanBaterai}
                   </p>
                 </div>
@@ -992,16 +992,16 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
 
               {/* Riwayat Mutasi Kode Gadai Jika Ada */}
               {Array.isArray(detailUnit.riwayatKodeGadai) && detailUnit.riwayatKodeGadai.length > 0 && (
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1.5">
-                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-700">
-                    <History className="w-3.5 h-3.5 text-slate-500" />
+                <div className="bg-slate-50 dark:bg-[#111722] p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    <History className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                     <span>Riwayat Perpanjangan Akad:</span>
                   </div>
                   <div className="space-y-1">
                     {detailUnit.riwayatKodeGadai.map((rk, idx) => (
-                      <div key={idx} className="text-[11px] text-slate-600 flex items-center justify-between">
+                      <div key={idx} className="text-[11px] text-slate-600 dark:text-slate-300 flex items-center justify-between">
                         <span className="font-mono font-semibold">#{rk.kodeGadai}</span>
-                        <span className="text-slate-400">
+                        <span className="text-slate-400 dark:text-slate-500">
                           {new Date(rk.perpanjangAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
                       </div>
@@ -1025,7 +1025,7 @@ export default function AktifView({ units, onNotify, onNavigateToPerpanjang, onN
               </button>
               <button
                 onClick={() => setDetailUnit(null)}
-                className="pressable h-11 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
+                className="pressable h-11 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all"
               >
                 Tutup
               </button>

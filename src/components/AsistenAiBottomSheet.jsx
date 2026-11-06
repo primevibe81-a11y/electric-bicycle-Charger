@@ -57,8 +57,8 @@ export default function AsistenAiBottomSheet({
 
   // Perhitungan Data Real-Time untuk Morning Shift Briefing
   const briefingData = useMemo(() => {
-    const aktifUnits = units.filter(u => u.statusGadai === 'AKTIF');
-    const lelangUnits = units.filter(u => u.statusGadai === 'LELANG');
+    const aktifUnits = units.filter(u => (u.statusBarang || u.statusGadai) === 'AKTIF');
+    const lelangUnits = units.filter(u => (u.statusBarang || u.statusGadai) === 'LELANG');
     const waitingUnits = units.filter(u => u.statusCharger === 'WAITING');
     const chargingUnits = units.filter(u => u.statusCharger === 'CHARGING');
     const capacity = getChargerSlotsCapacity();
@@ -80,14 +80,14 @@ export default function AsistenAiBottomSheet({
     });
 
     const needChargeSoon = units.filter(u => {
-      if (u.statusGadai === 'DITEBUS' || u.statusCharger === 'CHARGING') return false;
+      if ((u.statusBarang || u.statusGadai) === 'DITEBUS' || u.statusCharger === 'CHARGING') return false;
       const fallbackMasuk = u.jatuhTempoAt ? u.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
       const days = getDaysSinceLastCharge(u.lastChargedAt, fallbackMasuk);
       return days >= 14;
     }).length;
 
-    const noLocationCount = units.filter(u => u.statusGadai !== 'DITEBUS' && (!u.lokasi || !u.lokasi.trim())).length;
-    const defectCount = units.filter(u => u.statusGadai !== 'DITEBUS' && u.kondisiBaterai && u.kondisiBaterai !== 'PRIMA').length;
+    const noLocationCount = units.filter(u => (u.statusBarang || u.statusGadai) !== 'DITEBUS' && (!u.lokasi || !u.lokasi.trim())).length;
+    const defectCount = units.filter(u => (u.statusBarang || u.statusGadai) !== 'DITEBUS' && u.kondisiBaterai && u.kondisiBaterai !== 'PRIMA').length;
 
     return {
       aktifCount: aktifUnits.length,
@@ -252,7 +252,7 @@ export default function AsistenAiBottomSheet({
       const now = Date.now();
       const in7Days = now + 7 * 24 * 60 * 60 * 1000;
       const dueSoon = units.filter(u => {
-        if (u.statusGadai !== 'AKTIF') return false;
+        if ((u.statusBarang || u.statusGadai) !== 'AKTIF') return false;
         return u.jatuhTempoAt && u.jatuhTempoAt >= now && u.jatuhTempoAt <= in7Days;
       });
 
@@ -265,7 +265,7 @@ export default function AsistenAiBottomSheet({
     // 5. Cek Unit Paling Telat Charge / Kritis
     if (q.includes('telat') || q.includes('kritis') || q.includes('terlama') || q.includes('paling lama')) {
       const sorted = [...units]
-        .filter(u => u.statusGadai !== 'DITEBUS')
+        .filter(u => (u.statusBarang || u.statusGadai) !== 'DITEBUS')
         .sort((a, b) => {
           const fallA = a.jatuhTempoAt ? a.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
           const fallB = b.jatuhTempoAt ? b.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
@@ -280,7 +280,7 @@ export default function AsistenAiBottomSheet({
 
     // 6. Cek Unit Belum Ada Lokasi
     if (q.includes('lokasi') || q.includes('letak') || q.includes('rak') || q.includes('posisi')) {
-      const noLoc = units.filter(u => u.statusGadai !== 'DITEBUS' && (!u.lokasi || !u.lokasi.trim()));
+      const noLoc = units.filter(u => (u.statusBarang || u.statusGadai) !== 'DITEBUS' && (!u.lokasi || !u.lokasi.trim()));
       return {
         reply: `Terdapat ${noLoc.length} unit yang posisi rak / letak gudangnya belum dicatat:`,
         items: noLoc.slice(0, 5)
@@ -289,7 +289,7 @@ export default function AsistenAiBottomSheet({
 
     // 7. Cek Unit Siap Lelang
     if (q.includes('lelang') || q.includes('siap lelang')) {
-      const lelang = units.filter(u => u.statusGadai === 'LELANG');
+      const lelang = units.filter(u => (u.statusBarang || u.statusGadai) === 'LELANG');
       return {
         reply: `Terdapat total ${lelang.length} unit dalam status siap lelang:`,
         items: lelang.slice(0, 5)
@@ -324,7 +324,7 @@ export default function AsistenAiBottomSheet({
           lokasi: u.lokasi || 'Belum diisi',
           baterai: u.batteryLevel,
           kondisi: u.kondisiBaterai || 'PRIMA',
-          status: u.statusGadai,
+          status: u.statusBarang || u.statusGadai,
           charger: u.statusCharger
         }));
 
@@ -390,7 +390,7 @@ export default function AsistenAiBottomSheet({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
       <div
         className="w-full max-w-[430px] max-h-[90vh] bg-white dark:bg-[#151C28] text-slate-900 dark:text-slate-100 rounded-t-3xl shadow-2xl border-t border-sky-100 dark:border-[#232F42] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-250"
       >

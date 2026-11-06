@@ -126,11 +126,47 @@ export function getStoredUnits() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_UNITS));
       return SEED_UNITS;
     }
-    return parsed;
+
+    // Sanitasi: Pisahkan catatan mutasi dari catatan baterai jika data sebelumnya tercampur
+    let needsResave = false;
+    const sanitized = parsed.map(u => {
+      const batNote = String(u.catatanBaterai || '').trim();
+      const isMutationInBattery = /perpanjangan\s+(otomatis|dari)|diperpanjang\s+dari\s+#/i.test(batNote);
+      if (isMutationInBattery) {
+        needsResave = true;
+        return {
+          ...u,
+          catatanMutasi: u.catatanMutasi || batNote,
+          catatanBaterai: ''
+        };
+      }
+      return u;
+    });
+
+    if (needsResave) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
+      } catch (e) {}
+    }
+
+    return sanitized;
   } catch {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_UNITS));
     return SEED_UNITS;
   }
+}
+
+/**
+ * Helper deteksi apakah unit benar-benar memiliki kerusakan fisik atau aki drop nyata
+ * (bukan catatan mutasi perpanjangan atau kata "otomatis")
+ */
+export function isRealBatteryOrPhysicalDefect(unit) {
+  if (!unit) return false;
+  if (unit.isRusak === true) return true;
+  if (unit.kondisiBaterai && unit.kondisiBaterai !== 'PRIMA') return true;
+  const note = String(unit.catatanBaterai || '').toLowerCase();
+  if (!note || /perpanjang|mutasi|otomatis/i.test(note)) return false;
+  return /\b(rusak|drop|mati total|bocor|kendur|patah|cacat|sobek|terkelupas)\b/i.test(note);
 }
 
 /**
@@ -593,9 +629,11 @@ export function updateBatteryAudit(unitId, kondisiBaterai, catatanBaterai) {
 
   const updated = units.map(u => {
     if (u.id === unitId) {
+      const finalKondisi = kondisiBaterai || u.kondisiBaterai || 'PRIMA';
       return {
         ...u,
-        kondisiBaterai: kondisiBaterai || u.kondisiBaterai || 'PRIMA',
+        kondisiBaterai: finalKondisi,
+        isRusak: finalKondisi !== 'PRIMA',
         catatanBaterai: catatanBaterai !== undefined ? catatanBaterai : (u.catatanBaterai || ''),
         updatedAt: Date.now()
       };
@@ -740,13 +778,15 @@ export function extendGadaiUnit(unitId, newKodeGadai, newJatuhTempoAt, catatanPe
 
   const updated = units.map(u => {
     if (u.id === unitId) {
+      const mutasiNote = catatanPerpanjangan ? String(catatanPerpanjangan).trim() : `Perpanjangan dari nomor lama #${oldCode}`;
       return {
         ...u,
         kodeGadai: cleanNewCode,
         riwayatKodeGadai: [historyEntry, ...oldHistory],
         jatuhTempoAt: Number(newJatuhTempoAt) || (Date.now() + 30 * 24 * 60 * 60 * 1000),
         statusBarang: 'AKTIF',
-        catatanBaterai: catatanPerpanjangan ? `${catatanPerpanjangan} (diperpanjang dari #${oldCode})` : (unit.catatanBaterai || `Diperpanjang dari #${oldCode}`),
+        catatanMutasi: mutasiNote,
+        catatanBaterai: unit.catatanBaterai || '',
         updatedAt: Date.now()
         // PENTING: Jika sedang CHARGING atau WAITING, sisa timer dan posisi antrian tetap utuh!
       };

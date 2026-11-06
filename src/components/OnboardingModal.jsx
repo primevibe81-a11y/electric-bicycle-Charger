@@ -101,12 +101,12 @@ export default function OnboardingModal({ forceOpen = false, onClose = null }) {
   const current = steps[currentStep];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-2xs animate-in fade-in duration-200">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200 text-center relative">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-2xs animate-in fade-in duration-200">
+      <div className="w-full max-w-sm bg-white dark:bg-[#151C28] text-slate-900 dark:text-slate-100 rounded-3xl p-5 shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200 text-center relative">
         {/* Tombol Tutup / Lewati */}
         <button
           onClick={handleFinish}
-          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1"
+          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 p-1"
           aria-label="Lewati panduan"
         >
           <X className="w-5 h-5" />
@@ -118,25 +118,25 @@ export default function OnboardingModal({ forceOpen = false, onClose = null }) {
             <div
               key={idx}
               className={`h-1.5 rounded-full transition-all duration-200 ${
-                idx === currentStep ? 'w-6 bg-sky-600' : 'w-2 bg-slate-200'
+                idx === currentStep ? 'w-6 bg-sky-600' : 'w-2 bg-slate-200 dark:bg-slate-700'
               }`}
             />
           ))}
         </div>
 
         {/* Visual Box */}
-        <div className="my-2 bg-slate-50/80 rounded-2xl p-2 border border-slate-100">
+        <div className="my-2 bg-slate-50/80 dark:bg-[#111722] rounded-2xl p-2 border border-slate-100 dark:border-slate-800">
           {current.visual}
         </div>
 
         {/* Title & Desc */}
-        <h3 className="text-base font-extrabold text-slate-900 leading-snug mt-2">
+        <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-snug mt-2">
           {current.title}
         </h3>
-        <p className="text-xs font-semibold text-sky-600 mt-0.5">
+        <p className="text-xs font-semibold text-sky-600 dark:text-sky-400 mt-0.5">
           {current.subtitle}
         </p>
-        <p className="text-xs text-slate-600 leading-relaxed mt-2 px-1">
+        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mt-2 px-1">
           {current.desc}
         </p>
 
@@ -146,7 +146,7 @@ export default function OnboardingModal({ forceOpen = false, onClose = null }) {
             <button
               type="button"
               onClick={() => setCurrentStep(prev => prev - 1)}
-              className="pressable h-11 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold"
+              className="pressable h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold"
             >
               Kembali
             </button>

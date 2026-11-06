@@ -179,7 +179,7 @@ export default function Header({ user, onLogout, onNotify, onOpenAiAssistant }) 
 
       {/* Profile & Settings Bottom Sheet */}
       {isProfileOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="w-full max-w-[430px] bg-white dark:bg-[#151C28] text-slate-900 dark:text-slate-100 rounded-t-3xl p-5 shadow-2xl border-t border-slate-100 dark:border-slate-800 space-y-4 animate-in slide-in-from-bottom duration-200">
             {/* Sheet Handle */}
             <div className="w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-1" />

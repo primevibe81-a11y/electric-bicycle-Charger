@@ -6,7 +6,7 @@
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import { getDaysSinceLastCharge, getChargeAuditInfo } from './chargerQueue';
-import { normalizeHistoryEntry } from './storage';
+import { normalizeHistoryEntry, isRealBatteryOrPhysicalDefect } from './storage';
 
 /**
  * Format timestamp to Indo date string
@@ -146,10 +146,10 @@ export function generatePdfReport(units, options = {}) {
     });
   }
 
-  const totalAktif = units.filter(u => u.statusBarang === 'AKTIF').length;
-  const totalLelang = units.filter(u => u.statusBarang === 'LELANG').length;
-  const totalDitebus = units.filter(u => u.statusBarang === 'DITEBUS').length;
-  const totalBermasalah = units.filter(u => u.kondisiBaterai && u.kondisiBaterai !== 'PRIMA').length;
+  const totalAktif = units.filter(u => (u.statusBarang || u.statusGadai) === 'AKTIF').length;
+  const totalLelang = units.filter(u => (u.statusBarang || u.statusGadai) === 'LELANG').length;
+  const totalDitebus = units.filter(u => (u.statusBarang || u.statusGadai) === 'DITEBUS').length;
+  const totalBermasalah = units.filter(isRealBatteryOrPhysicalDefect).length;
 
   let y = 14;
 

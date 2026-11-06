@@ -54,6 +54,14 @@ button, a, input, select, textarea, [role="button"] {
   touch-action: manipulation;
 }
 
+html, body {
+  overscroll-behavior-y: none;
+  background-color: #F4F8FB;
+}
+html.dark, html.dark body {
+  background-color: #0B0F17;
+}
+
 body {
   margin: 0;
   padding: 0;

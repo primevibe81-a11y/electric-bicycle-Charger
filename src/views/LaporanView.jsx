@@ -42,14 +42,17 @@ import { triggerHaptic } from '../services/animationHelpers';
 
 /**
  * Filter cerdas untuk mendeteksi apakah sebuah unit benar-benar memiliki
- * komplain / cacat baterai atau fisik nyata (bukan catatan informatif biasa)
+ * komplain / cacat baterai atau fisik nyata (bukan catatan informatif biasa / mutasi)
  */
-function isRealBatteryOrPhysicalDefect(unit) {
+export function isRealBatteryOrPhysicalDefect(unit) {
+  if (!unit) return false;
+  if (unit.isRusak === true) return true;
   if (unit.kondisiBaterai && unit.kondisiBaterai !== 'PRIMA') {
     return true;
   }
   const note = String(unit.catatanBaterai || '').toLowerCase();
-  return /rusak|drop|mati|bocor|kendur|patah|cacat|kurang|sobek|terkelupas/i.test(note);
+  if (!note || /perpanjang|mutasi|otomatis/i.test(note)) return false;
+  return /\b(rusak|drop|mati total|bocor|kendur|patah|cacat|sobek|terkelupas)\b/i.test(note);
 }
 
 export default function LaporanView({ units = [], onNotify, initialAction = null }) {
@@ -293,7 +296,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
   ];
 
   return (
-    <div className="space-y-3 pb-8">
+    <div className="space-y-3 pb-28">
       {/* 1. HEADER SECTION (Judul Utuh + Tombol Auto-Sync Icon-Only 44x44px) */}
       <div className="flex items-center justify-between gap-3 pt-1">
         <div className="flex-1 min-w-0">
@@ -437,7 +440,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             aria-label="Cetak PDF Kacab"
           >
             <FileText className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-            <span>📄 PDF Kacab</span>
+            <span className="whitespace-nowrap text-xs font-semibold">PDF Kacab</span>
           </button>
           <button
             onClick={() => handleExportExcel(filteredUnits)}
@@ -446,7 +449,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             aria-label="Ekspor Excel"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>📊 Excel</span>
+            <span className="whitespace-nowrap text-xs font-semibold">Excel</span>
           </button>
           <button
             onClick={handleCopyWhatsApp}
@@ -455,7 +458,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
             aria-label="Kontak WA Kacab"
           >
             <ClipboardCopy className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-            <span>⚙️ Kontak</span>
+            <span className="whitespace-nowrap text-xs font-semibold">Kontak</span>
           </button>
         </div>
 
@@ -629,6 +632,14 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                       <p className="leading-snug">{unit.catatanBaterai}</p>
                     </div>
                   )
+                )}
+
+                {/* 6b. CATATAN MUTASI (PERPANJANGAN): Terpisah dari keluhan kerusakan */}
+                {unit.catatanMutasi && (
+                  <div className="mt-1.5 flex items-start gap-1 text-[11px] text-sky-700 dark:text-sky-300">
+                    <History className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
+                    <p className="leading-snug">{unit.catatanMutasi}</p>
+                  </div>
                 )}
 
                 {/* Riwayat Mutasi Expandable */}
@@ -834,21 +845,21 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
 
       {/* MODAL QUICK PERPANJANG */}
       {perpanjangUnit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/75 animate-in fade-in duration-150">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl border border-sky-100 space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-slate-950/75 animate-in fade-in duration-150">
+          <div className="w-full max-w-sm bg-white dark:bg-[#151C28] text-slate-900 dark:text-slate-100 rounded-3xl p-5 shadow-2xl border border-sky-100 dark:border-slate-800 space-y-3.5">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center">
                   <RefreshCw className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-800">Perpanjangan Gadai Cepat</h3>
-                  <p className="text-[10px] text-slate-400">Unit #{perpanjangUnit.kodeGadai} • {perpanjangUnit.namaNasabah}</p>
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-white">Perpanjangan Gadai Cepat</h3>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">Unit #{perpanjangUnit.kodeGadai} • {perpanjangUnit.namaNasabah}</p>
                 </div>
               </div>
               <button
                 onClick={() => setPerpanjangUnit(null)}
-                className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 flex items-center justify-center"
+                className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -856,7 +867,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
 
             <form onSubmit={handlePerpanjangSubmit} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Nomor Gadai Baru
                 </label>
                 <input
@@ -865,18 +876,18 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                   value={newKodeGadai}
                   onChange={(e) => setNewKodeGadai(e.target.value)}
                   placeholder="Contoh: 26_0038119"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Durasi Perpanjangan (Hari)
                 </label>
                 <select
                   value={perpanjangDays}
                   onChange={(e) => setPerpanjangDays(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="15">15 Hari</option>
                   <option value="30">30 Hari (1 Bulan)</option>
@@ -885,7 +896,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Catatan Kondisi / Fisik Baru (Opsional)
                 </label>
                 <textarea
@@ -893,7 +904,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                   onChange={(e) => setCatatanPerpanjang(e.target.value)}
                   placeholder="Catatan kondisi saat diperpanjang..."
                   rows={2}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
@@ -910,41 +921,41 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
 
       {/* MODAL QUICK TEBUS */}
       {tebusUnit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/75 animate-in fade-in duration-150">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl border border-sky-100 space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-slate-950/75 animate-in fade-in duration-150">
+          <div className="w-full max-w-sm bg-white dark:bg-[#151C28] text-slate-900 dark:text-slate-100 rounded-3xl p-5 shadow-2xl border border-sky-100 dark:border-slate-800 space-y-3.5">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-800">Pelunasan & Penebusan Cepat</h3>
-                  <p className="text-[10px] text-slate-400">Unit #{tebusUnit.kodeGadai} • {tebusUnit.namaNasabah}</p>
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-white">Pelunasan & Penebusan Cepat</h3>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">Unit #{tebusUnit.kodeGadai} • {tebusUnit.namaNasabah}</p>
                 </div>
               </div>
               <button
                 onClick={() => setTebusUnit(null)}
-                className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 flex items-center justify-center"
+                className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleTebusSubmit} className="space-y-3">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
-                <p className="text-slate-600">
-                  Barang: <strong className="text-slate-800">{tebusUnit.merkSepeda}</strong>
+              <div className="p-3 bg-slate-50 dark:bg-[#111722] rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                <p className="text-slate-600 dark:text-slate-400">
+                  Barang: <strong className="text-slate-800 dark:text-slate-200">{tebusUnit.merkSepeda}</strong>
                 </p>
-                <p className="text-slate-600">
-                  Nasabah: <strong className="text-slate-800">{tebusUnit.namaNasabah}</strong>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Nasabah: <strong className="text-slate-800 dark:text-slate-200">{tebusUnit.namaNasabah}</strong>
                 </p>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500">
                   Unit akan dikeluarkan dari antrian charger dan berstatus DITEBUS.
                 </p>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Catatan Penebusan (Opsional)
                 </label>
                 <textarea
@@ -952,7 +963,7 @@ export default function LaporanView({ units = [], onNotify, initialAction = null
                   onChange={(e) => setCatatanTebus(e.target.value)}
                   placeholder="Contoh: Ditebus lunas oleh nasabah langsung..."
                   rows={2}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
