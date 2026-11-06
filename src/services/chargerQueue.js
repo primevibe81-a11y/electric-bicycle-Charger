@@ -16,37 +16,73 @@ export const BATTERY_CONDITIONS = {
     label: 'Prima (Normal)',
     badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
     iconColor: 'text-emerald-600',
-    desc: 'Sel baterai sehat, daya stabil'
+    desc: 'Sel baterai sehat, daya stabil',
+    isRusak: false
   },
   DROP_RINGAN: {
     id: 'DROP_RINGAN',
     label: 'Drop Ringan',
     badgeClass: 'bg-amber-100 text-amber-800 border-amber-200',
     iconColor: 'text-amber-600',
-    desc: 'Perlu sering diisi daya'
+    desc: 'Perlu sering diisi daya',
+    isRusak: true
   },
   SOAK_PARAH: {
     id: 'SOAK_PARAH',
     label: 'Soak Parah',
     badgeClass: 'bg-orange-100 text-orange-800 border-orange-200',
     iconColor: 'text-orange-600',
-    desc: 'Cepat habis drastis'
+    desc: 'Cepat habis drastis',
+    isRusak: true
   },
   RUSAK_TOTAL: {
     id: 'RUSAK_TOTAL',
     label: 'Rusak / Mati',
     badgeClass: 'bg-rose-100 text-rose-800 border-rose-200',
     iconColor: 'text-rose-600',
-    desc: 'Arus charger tidak masuk'
+    desc: 'Arus charger tidak masuk',
+    isRusak: true
   },
   KEMBUNG_BAHAYA: {
     id: 'KEMBUNG_BAHAYA',
     label: 'Kembung Bahaya',
     badgeClass: 'bg-purple-100 text-purple-800 border-purple-200 animate-pulse',
     iconColor: 'text-purple-600',
-    desc: 'Fisik baterai menggembung'
+    desc: 'Fisik baterai menggembung',
+    isRusak: true
   }
 };
+
+// Aliases untuk format id lowercase (kompatibilitas menyeluruh)
+BATTERY_CONDITIONS.normal = BATTERY_CONDITIONS.PRIMA;
+BATTERY_CONDITIONS.aki_drop = BATTERY_CONDITIONS.DROP_RINGAN;
+BATTERY_CONDITIONS.soket_rusak = BATTERY_CONDITIONS.SOAK_PARAH;
+BATTERY_CONDITIONS.mati_total = BATTERY_CONDITIONS.RUSAK_TOTAL;
+BATTERY_CONDITIONS.kunci_kontak = BATTERY_CONDITIONS.KEMBUNG_BAHAYA;
+
+// Daftar kondisi baterai format array untuk form selector
+export const BATTERY_CONDITIONS_LIST = [
+  { id: 'normal', key: 'PRIMA', label: 'Normal (Prima)', isRusak: false },
+  { id: 'aki_drop', key: 'DROP_RINGAN', label: 'Aki Drop / Tidak Mengisi', isRusak: true },
+  { id: 'soket_rusak', key: 'SOAK_PARAH', label: 'Charger / Soket Rusak', isRusak: true },
+  { id: 'mati_total', key: 'RUSAK_TOTAL', label: 'Kelistrikan Mati Total', isRusak: true },
+  { id: 'kunci_kontak', key: 'KEMBUNG_BAHAYA', label: 'Kunci / Kontak Bermasalah', isRusak: true }
+];
+
+/**
+ * Helper aman untuk mengambil label kondisi baterai tanpa pernah melempar ReferenceError
+ */
+export function getBatteryConditionLabel(kondisi) {
+  if (!kondisi) return 'Normal';
+  const condStr = String(kondisi).trim();
+  const c = BATTERY_CONDITIONS[condStr] ||
+            BATTERY_CONDITIONS[condStr.toUpperCase()] ||
+            BATTERY_CONDITIONS[condStr.toLowerCase()];
+  if (c && c.label) {
+    return c.label.split(' ')[0];
+  }
+  return condStr === 'PRIMA' || condStr === 'normal' ? 'Normal' : condStr;
+}
 
 /**
  * Validasi kode gadai: Mendukung format alfanumerik / kode akad (contoh: 26_0037861)

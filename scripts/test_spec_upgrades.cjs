@@ -100,6 +100,39 @@ it('5b. Automasi Salin Laporan Harian WhatsApp di Menu Laporan', () => {
   assert.ok(laporanCode.includes('Salin Ringkasan WA'), 'LaporanView harus memiliki tombol Salin Ringkasan WA');
 });
 
+// 6. Fix Crash ReferenceError: BATTERY_CONDITIONS
+it('6a. chargerQueue.js dan storage.js mengekspor BATTERY_CONDITIONS, BATTERY_CONDITIONS_LIST, dan getBatteryConditionLabel', () => {
+  const cq = require('../src/services/chargerQueue.js');
+  assert.ok(cq.BATTERY_CONDITIONS, 'BATTERY_CONDITIONS harus diekspor');
+  assert.ok(cq.BATTERY_CONDITIONS.normal, 'Alias lowercase .normal harus ada');
+  assert.ok(cq.BATTERY_CONDITIONS.aki_drop, 'Alias lowercase .aki_drop harus ada');
+  assert.ok(Array.isArray(cq.BATTERY_CONDITIONS_LIST), 'BATTERY_CONDITIONS_LIST harus array');
+  assert.strictEqual(typeof cq.getBatteryConditionLabel, 'function', 'getBatteryConditionLabel harus berupa function');
+  assert.strictEqual(cq.getBatteryConditionLabel('PRIMA'), 'Prima');
+  assert.strictEqual(cq.getBatteryConditionLabel(null), 'Normal');
+
+  const st = fs.readFileSync('src/services/storage.js', 'utf8');
+  assert.ok(st.includes('export { BATTERY_CONDITIONS, BATTERY_CONDITIONS_LIST, getBatteryConditionLabel }'), 'storage.js harus me-re-export konstanta baterai');
+});
+
+it('6b. DashboardView.jsx mengimpor BATTERY_CONDITIONS dan getBatteryConditionLabel', () => {
+  const dashCode = fs.readFileSync('src/views/DashboardView.jsx', 'utf8');
+  assert.ok(dashCode.includes('BATTERY_CONDITIONS'), 'DashboardView harus mengimpor BATTERY_CONDITIONS');
+  assert.ok(dashCode.includes('getBatteryConditionLabel'), 'DashboardView harus mengimpor getBatteryConditionLabel');
+  assert.ok(!dashCode.includes('BATTERY_CONDITIONS[unit.kondisiBaterai]?.label'), 'Akses langsung tidak aman harus diganti helper getBatteryConditionLabel');
+});
+
+// 7. Fix Judul Header Terpotong di Layar 390px (iPhone 13)
+it('7. Header dioptimasi untuk iPhone 13 (390px): judul whitespace-nowrap, logo w-8 h-8, tombol w-8 h-8 dengan gap-1', () => {
+  const headerCode = fs.readFileSync('src/components/Header.jsx', 'utf8');
+  assert.ok(headerCode.includes('whitespace-nowrap'), 'Judul header harus memiliki whitespace-nowrap agar tidak terpotong');
+  assert.ok(headerCode.includes('w-8 h-8 rounded-lg'), 'Logo atau tombol harus berukuran w-8 h-8 rounded-lg');
+  assert.ok(headerCode.includes('gap-1 shrink-0'), 'Sisi kanan tombol harus memiliki gap-1');
+
+  const badgeCode = fs.readFileSync('src/components/NetworkStatusBadge.jsx', 'utf8');
+  assert.ok(badgeCode.includes('w-8 h-8 rounded-lg'), 'NetworkStatusBadge harus berukuran w-8 h-8 rounded-lg');
+});
+
 console.log(`\n=============================================`);
 console.log(`🏁 Total Tests: ${passCount + failCount}`);
 console.log(`✅ Passed: ${passCount}`);

@@ -4,8 +4,14 @@ import {
   MIN_SLOTS_CAPACITY,
   MAX_SLOTS_CAPACITY,
   sortWaitingQueue,
-  getDaysSinceLastCharge
+  getDaysSinceLastCharge,
+  BATTERY_CONDITIONS,
+  BATTERY_CONDITIONS_LIST,
+  getBatteryConditionLabel
 } from "./chargerQueue";
+
+// Re-export untuk kompatibilitas impor menyeluruh
+export { BATTERY_CONDITIONS, BATTERY_CONDITIONS_LIST, getBatteryConditionLabel };
 import { playChimeSound, playGentleBeep, sendNativeNotification } from "./soundNotification";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { REAL_EXCEL_UNITS } from "../data/realUnits";

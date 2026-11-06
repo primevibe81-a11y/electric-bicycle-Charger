@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { exportLaporanExcel, generatePdfReport } from '../services/reportExport';
 import { copyWhatsAppReportToClipboard } from '../services/whatsappReport';
-import { getDaysSinceLastCharge, getChargeAuditInfo } from '../services/chargerQueue';
+import { getDaysSinceLastCharge, getChargeAuditInfo, BATTERY_CONDITIONS, getBatteryConditionLabel } from '../services/chargerQueue';
 import { extendGadaiUnit, redeemGadaiUnit, normalizeHistoryEntry, updateUnitLocation } from '../services/storage';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import BatteryIndicator from '../components/BatteryIndicator';

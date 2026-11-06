@@ -34,7 +34,9 @@ import {
   CHARGE_PRESETS,
   getDaysSinceLastCharge,
   MIN_SLOTS_CAPACITY,
-  MAX_SLOTS_CAPACITY
+  MAX_SLOTS_CAPACITY,
+  BATTERY_CONDITIONS,
+  getBatteryConditionLabel
 } from '../services/chargerQueue';
 import {
   finishChargingUnit,
@@ -611,7 +613,7 @@ export default function DashboardView({ units, onNotify, onSelectTab, onOpenAiAs
               const fallbackMasuk = unit.jatuhTempoAt ? unit.jatuhTempoAt - 30 * 24 * 60 * 60 * 1000 : null;
               const daysAgo = getDaysSinceLastCharge(unit.lastChargedAt, fallbackMasuk);
               const isOverdue = daysAgo >= 15;
-              const kondisiLabel = BATTERY_CONDITIONS[unit.kondisiBaterai]?.label?.split(' ')[0] || 'Normal';
+              const kondisiLabel = getBatteryConditionLabel(unit.kondisiBaterai);
               const lokasiText = unit.lokasi ? unit.lokasi : 'Lokasi belum diisi';
               const chargeText = daysAgo === 0 ? 'Charge hari ini' : `Charge ${daysAgo} hari lalu`;
 

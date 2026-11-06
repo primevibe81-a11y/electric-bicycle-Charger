@@ -23,7 +23,7 @@ import BatteryIndicator from '../components/BatteryIndicator';
 import BatteryConditionBadge from '../components/BatteryConditionBadge';
 import LetakUnitBottomSheet from '../components/LetakUnitBottomSheet';
 import { enqueueUnitForCharging, markLelangSold, updateUnitLocation } from '../services/storage';
-import { getDaysSinceLastCharge } from '../services/chargerQueue';
+import { getDaysSinceLastCharge, BATTERY_CONDITIONS, getBatteryConditionLabel } from '../services/chargerQueue';
 import { triggerHaptic } from '../services/animationHelpers';
 
 export default function LelangView({ units, onNotify }) {

@@ -111,45 +111,45 @@ export default function Header({ user, onLogout, onNotify, onOpenAiAssistant }) 
     <>
       <header className="sticky top-0 z-30 bg-white/95 dark:bg-[#151C28]/95 backdrop-blur-md border-b border-sky-100 dark:border-[#232F42] px-4 py-2.5 shadow-xs transition-colors">
         <div className="flex items-center justify-between gap-2">
-          {/* Sisi Kiri: Logo + Nama Aplikasi */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-sky-400 text-white flex items-center justify-center shadow-xs shrink-0">
-              <Zap className="w-5 h-5 fill-white" />
+          {/* Sisi Kiri: Logo + Nama Aplikasi (whitespace-nowrap & w-8 h-8 rounded-lg) */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-sky-400 text-white flex items-center justify-center shadow-xs shrink-0">
+              <Zap className="w-4 h-4 fill-white" />
             </div>
-            <h1 className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate">
+            <h1 className="text-sm font-bold tracking-tight whitespace-nowrap text-slate-900 dark:text-white leading-tight">
               E-Bike Gadai
             </h1>
           </div>
 
-          {/* Sisi Kanan: AI Assistant + Cloud + Dark Mode + Notifikasi + Avatar Profil */}
-          <div className="flex items-center gap-0.5 shrink-0">
-            {/* Tombol Asisten AI Gudang (Touch Target 44x44px) */}
+          {/* Sisi Kanan: AI Assistant + Cloud + Dark Mode + Notifikasi + Avatar Profil (w-8 h-8 & gap-1) */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Tombol Asisten AI Gudang */}
             <button
               onClick={onOpenAiAssistant}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-all active:scale-95"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-all active:scale-95"
               title="Buka Asisten AI Gudang"
               aria-label="Asisten AI Gudang"
             >
               <Sparkles className="w-4 h-4 fill-indigo-500/20" />
             </button>
 
-            {/* Status Cloud (Ikon Awan + Titik Status, Tanpa Teks) */}
+            {/* Status Cloud (Ikon Awan + Titik Status) */}
             <NetworkStatusBadge onNotify={onNotify} />
 
             {/* Tombol Toggle Dark Mode (Sun / Moon) */}
             <button
               onClick={handleToggleTheme}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-slate-600 dark:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95"
               title={isDark ? "Ganti ke Mode Terang (Light)" : "Ganti ke Mode Gelap (Dark)"}
               aria-label="Toggle Dark Mode"
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* Tombol Notifikasi (Touch Target 44x44px) */}
+            {/* Tombol Notifikasi */}
             <button
               onClick={handleToggleNotif}
-              className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-all active:scale-95 ${
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-95 ${
                 notifGranted
                   ? 'text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-slate-800'
                   : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
@@ -164,10 +164,10 @@ export default function Header({ user, onLogout, onNotify, onOpenAiAssistant }) 
               )}
             </button>
 
-            {/* Tombol Avatar Profil (Touch Target 44x44px) */}
+            {/* Tombol Avatar Profil */}
             <button
               onClick={() => setIsProfileOpen(true)}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs border border-slate-200 dark:border-slate-700 transition-all active:scale-95"
+              className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs border border-slate-200 dark:border-slate-700 transition-all active:scale-95"
               title="Menu Profil & Pengaturan"
               aria-label="Buka Menu Profil"
             >

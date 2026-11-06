@@ -88,26 +88,26 @@ export default function NetworkStatusBadge({ onNotify }) {
       <button
         onClick={handleManualSyncClick}
         aria-label={tooltipText}
-        className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center relative transition-all active:scale-95 ${
+        className={`w-8 h-8 rounded-lg flex items-center justify-center relative transition-all active:scale-95 ${
           isSyncing
-            ? 'text-sky-600 bg-sky-50'
+            ? 'text-sky-600 bg-sky-50 dark:bg-sky-950/40'
             : !isOnline
-              ? 'text-amber-600 bg-amber-50 hover:bg-amber-100'
-              : 'text-slate-600 hover:bg-slate-50'
+              ? 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100'
+              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
         } ${justSynced ? 'animate-cloud-pulse ring-2 ring-emerald-300' : ''}`}
       >
         {isSyncing ? (
-          <RefreshCw className="w-4 h-4 animate-spin text-sky-600" />
+          <RefreshCw className="w-4 h-4 animate-spin text-sky-600 dark:text-sky-400" />
         ) : !isOnline ? (
-          <CloudOff className="w-4 h-4 text-amber-600" />
+          <CloudOff className="w-4 h-4 text-amber-600 dark:text-amber-400" />
         ) : (
-          <Cloud className="w-4 h-4 text-slate-600" />
+          <Cloud className="w-4 h-4 text-slate-600 dark:text-slate-300" />
         )}
 
         {/* Status Dot Indikator (Hijau = Online, Amber = Offline / Pending) */}
         {!isSyncing && (
           <span
-            className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full border-2 border-white ${
+            className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-2 border-white dark:border-[#151C28] ${
               !isOnline || pendingCount > 0 ? 'bg-amber-500' : 'bg-emerald-500'
             }`}
           />
